@@ -1,0 +1,7 @@
+{
+  "name": "Aura Nails & Spa",
+  "description": "Boutique de manicura rusa, spa relajante y nail art en un santuario de autocuidado y bienestar.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

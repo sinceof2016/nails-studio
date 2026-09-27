@@ -1,0 +1,138 @@
+import React from 'react';
+import { Service } from '../types';
+
+interface ServiceDetailModalProps {
+  service: Service | null;
+  onClose: () => void;
+  onBookService: (service: Service) => void;
+}
+
+export const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
+  service,
+  onClose,
+  onBookService
+}) => {
+  if (!service) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+      <div
+        className="fixed inset-0"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div className="relative w-full max-w-md bg-[#fdf9f3] rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col z-10 animate-in slide-in-from-bottom duration-300">
+        {/* Top image banner */}
+        <div className="relative w-full h-52 shrink-0 bg-[#f7f3ed]">
+          <img
+            src={service.image}
+            alt={service.name}
+            className="w-full h-full object-cover"
+          />
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-[#1c1c18] hover:bg-white transition-colors shadow-sm"
+          >
+            <span className="material-symbols-outlined text-[20px]">close</span>
+          </button>
+          <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md text-[#1c1c18] text-xs font-semibold flex items-center gap-1 shadow-sm">
+            <span className="material-symbols-outlined text-[14px] text-[#745849] fill">
+              star
+            </span>
+            {service.rating} <span className="text-[#504444] font-normal">({service.reviewsCount})</span>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="overflow-y-auto px-5 py-4 space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#7c5357]">
+                {service.categoryLabel}
+              </span>
+              <h3 className="text-xl font-bold text-[#1c1c18] font-['Plus_Jakarta_Sans',sans-serif] leading-tight">
+                {service.name}
+              </h3>
+            </div>
+            <div className="text-right shrink-0">
+              <span className="text-2xl font-bold text-[#7c5357]">
+                ${service.price}
+              </span>
+              <span className="block text-[11px] text-[#504444]">USD</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 text-xs text-[#504444] py-1 border-y border-[#e8b4b8]/20">
+            <div className="flex items-center gap-1">
+              <span className="material-symbols-outlined text-[16px] text-[#7c5357]">
+                schedule
+              </span>
+              <span>{service.durationMinutes} minutos</span>
+            </div>
+            <span>•</span>
+            <div className="flex items-center gap-1">
+              <span className="material-symbols-outlined text-[16px] text-[#52b788]">
+                verified
+              </span>
+              <span>Esterilización médica individual</span>
+            </div>
+          </div>
+
+          <p className="text-xs text-[#504444] leading-relaxed">
+            {service.description}
+          </p>
+
+          {/* Steps */}
+          {service.steps && service.steps.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-xs font-semibold text-[#1c1c18] font-['Plus_Jakarta_Sans',sans-serif]">
+                ¿Qué incluye esta sesión?
+              </h4>
+              <ol className="space-y-2">
+                {service.steps.map((step, index) => (
+                  <li key={index} className="flex items-start gap-2.5 text-xs text-[#504444]">
+                    <span className="w-5 h-5 rounded-full bg-[#ffdadc] text-[#623c40] font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
+                      {index + 1}
+                    </span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
+          {/* Recommended for */}
+          {service.recommendedFor && (
+            <div className="p-3 rounded-2xl bg-[#ffdadc]/30 border border-[#e8b4b8]/40">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-[#7c5357] mb-1 font-['Plus_Jakarta_Sans',sans-serif]">
+                <span className="material-symbols-outlined text-[16px]">
+                  auto_awesome
+                </span>
+                Ideal para
+              </div>
+              <p className="text-xs text-[#504444]">
+                {service.recommendedFor}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 bg-white/90 border-t border-[#e8b4b8]/20 flex gap-2">
+          <button
+            onClick={() => {
+              onBookService(service);
+              onClose();
+            }}
+            className="w-full py-3 px-4 rounded-full bg-[#7c5357] hover:bg-[#674246] text-white font-semibold text-sm shadow-[0_4px_16px_rgba(124,83,87,0.25)] active:scale-95 transition-all flex items-center justify-center gap-2"
+          >
+            <span>Reservar este servicio (${service.price})</span>
+            <span className="material-symbols-outlined text-[18px]">
+              calendar_add_on
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};

@@ -1,0 +1,1076 @@
+import React, { useState, useMemo, useEffect } from 'react';
+import {
+  Appointment,
+  AdminUser,
+  SalonCutRecord,
+  ExpenseRecord,
+  CashRegisterClose,
+  ClientProfile
+} from '../types';
+import { QrCodeModal } from '../components/QrCodeModal';
+import { ClientHistoryModal } from '../components/ClientHistoryModal';
+import { SPECIALISTS } from '../data/mockData';
+import { formatCOP } from '../utils/format';
+import { validateSafeText, validateColombianPhone, checkRateLimit } from '../utils/security';
+import { sendUltraMsgWhatsApp } from '../services/whatsappService';
+
+interface AdminScreenProps {
+  admin: AdminUser;
+  appointments: Appointment[];
+  cuts: SalonCutRecord[];
+  expenses: ExpenseRecord[];
+  cashCloses: CashRegisterClose[];
+  onUpdateStatus: (appointmentId: string, newStatus: Appointment['status']) => void;
+  onCancelAppointment: (appointmentId: string) => void;
+  onNavigateToBooking: () => void;
+  onRegisterCut: (cut: SalonCutRecord) => void;
+  onAddExpense: (expense: ExpenseRecord) => void;
+  onSaveCashClose: (close: CashRegisterClose) => void;
+  initialTab?: 'agenda' | 'caja' | 'cortes' | 'clientes';
+  onTabChange?: (tab: 'agenda' | 'caja' | 'cortes' | 'clientes') => void;
+}
+
+export const AdminScreen: React.FC<AdminScreenProps> = ({
+  admin,
+  appointments,
+  cuts,
+  expenses,
+  cashCloses,
+  onUpdateStatus,
+  onCancelAppointment,
+  onNavigateToBooking,
+  onRegisterCut,
+  onAddExpense,
+  onSaveCashClose,
+  initialTab = 'agenda',
+  onTabChange
+}) => {
+  // Navigation tabs within Admin
+  const [activeAdminTab, setActiveAdminTab] = useState<'agenda' | 'caja' | 'cortes' | 'clientes'>(initialTab);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveAdminTab(initialTab);
+    }
+  }, [initialTab]);
+
+  const handleSelectTab = (tab: 'agenda' | 'caja' | 'cortes' | 'clientes') => {
+    setActiveAdminTab(tab);
+    if (onTabChange) {
+      onTabChange(tab);
+    }
+  };
+
+  // Filters for Agenda
+  const [filterStatus, setFilterStatus] = useState<string>('todos');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [specialistFilter, setSpecialistFilter] = useState<string>('todos');
+  const [selectedAppointmentForQr, setSelectedAppointmentForQr] = useState<Appointment | null>(null);
+  const [expandedAptId, setExpandedAptId] = useState<string | null>(null);
+  const [googleCalendarFeedback, setGoogleCalendarFeedback] = useState<string | null>(null);
+
+  // Client History Modal state (Fixes black screen bug!)
+  const [selectedClientForHistory, setSelectedClientForHistory] = useState<ClientProfile | null>(null);
+
+  // New Cut modal state (Default in COP: 95.000 COP)
+  const [showNewCutModal, setShowNewCutModal] = useState(false);
+  const [cutClientName, setCutClientName] = useState('');
+  const [cutClientPhone, setCutClientPhone] = useState('');
+  const [cutServiceName, setCutServiceName] = useState('Manicura Rusa Glazed Donut');
+  const [cutServicePrice, setCutServicePrice] = useState(95000);
+  const [cutSpecialistId, setCutSpecialistId] = useState(SPECIALISTS[0].id);
+  const [cutPaymentMethod, setCutPaymentMethod] = useState<'efectivo' | 'nequi_daviplata' | 'tarjeta_datafono'>('efectivo');
+  const [cutTip, setCutTip] = useState(0);
+  const [cutNote, setCutNote] = useState('');
+  const [cutValidationError, setCutValidationError] = useState<string | null>(null);
+
+  // New Expense modal state (Default in COP: 45.000 COP)
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [expenseConcept, setExpenseConcept] = useState('');
+  const [expenseAmount, setExpenseAmount] = useState(45000);
+  const [expenseCategory, setExpenseCategory] = useState<'insumos' | 'servicios' | 'mantenimiento' | 'caja_menor'>('insumos');
+  const [expenseValidationError, setExpenseValidationError] = useState<string | null>(null);
+
+  // Cash Close modal state (Default in COP: 200.000 COP)
+  const [showCloseModal, setShowCloseModal] = useState(false);
+  const [cashBase, setCashBase] = useState(200000);
+  const [countedCash, setCountedCash] = useState(200000);
+
+  // Status counters
+  const totalCount = appointments.length;
+  const confirmedCount = appointments.filter((a) => a.status === 'confirmada').length;
+  const inPrepCount = appointments.filter((a) => a.status === 'en_preparacion').length;
+  const completedCount = appointments.filter((a) => a.status === 'completada').length;
+  const canceledCount = appointments.filter((a) => a.status === 'cancelada').length;
+
+  // Daily totals calculation in COP
+  const totalCashIncome = cuts
+    .filter((c) => c.metodoPago === 'efectivo')
+    .reduce((acc, curr) => acc + curr.servicioPrecio + curr.propina, 0);
+
+  const totalDigitalIncome = cuts
+    .filter((c) => c.metodoPago !== 'efectivo')
+    .reduce((acc, curr) => acc + curr.servicioPrecio + curr.propina, 0);
+
+  const totalExpensesAmount = expenses.reduce((acc, curr) => acc + curr.monto, 0);
+
+  const expectedCashInHand = cashBase + totalCashIncome - totalExpensesAmount;
+
+  // Specialists liquidation breakdown
+  const specialistsLiquidation = useMemo(() => {
+    return SPECIALISTS.map((spec) => {
+      const specCuts = cuts.filter((c) => c.especialistaId === spec.id);
+      const totalServices = specCuts.reduce((acc, c) => acc + c.servicioPrecio, 0);
+      const totalCommission = specCuts.reduce((acc, c) => acc + c.comisionEspecialista, 0);
+      const totalTips = specCuts.reduce((acc, c) => acc + c.propina, 0);
+      return {
+        ...spec,
+        cutsCount: specCuts.length,
+        totalServices,
+        totalCommission,
+        totalTips,
+        payoutTotal: totalCommission + totalTips
+      };
+    });
+  }, [cuts]);
+
+  // Clients database synthesized with safe normalization
+  const clientProfiles: ClientProfile[] = useMemo(() => {
+    const map = new Map<string, ClientProfile>();
+
+    appointments.forEach((apt) => {
+      const cleanPhone = (apt.clientPhone || '').replace(/\D/g, '').slice(-10);
+      const key = cleanPhone || (apt.clientName || 'Cliente').toLowerCase().trim();
+
+      if (!map.has(key)) {
+        map.set(key, {
+          id: `cli-${cleanPhone || Math.abs(key.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0))}`,
+          nombre: apt.clientName || 'Clienta Aura',
+          telefono: apt.clientPhone || '+57 300 000 0000',
+          email: apt.clientEmail || `${(apt.clientName || 'cliente').toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
+          totalCitas: 1,
+          gastoTotal: apt.totalPrice || 0,
+          primeraVisita: apt.date || 'Reciente',
+          ultimaVisita: apt.date || 'Reciente',
+          servicioFavorito: apt.serviceName || 'Manicura Rusa',
+          especialistaFavorita: apt.specialistName || 'Valentina R.',
+          clasificacion: 'Nuevo',
+          notasCuidado: apt.notes
+        });
+      } else {
+        const item = map.get(key)!;
+        item.totalCitas += 1;
+        item.gastoTotal += apt.totalPrice || 0;
+        item.ultimaVisita = apt.date || item.ultimaVisita;
+        item.clasificacion = item.totalCitas >= 3 ? 'VIP Frecuente' : 'Recurrente';
+      }
+    });
+
+    return Array.from(map.values());
+  }, [appointments]);
+
+  // Filtered appointments
+  const filteredAppointments = useMemo(() => {
+    return appointments.filter((apt) => {
+      const matchStatus = filterStatus === 'todos' || apt.status === filterStatus;
+      const matchSpecialist =
+        specialistFilter === 'todos' || apt.specialistId === specialistFilter;
+      const q = searchQuery.toLowerCase().trim();
+      const matchQuery =
+        q === '' ||
+        (apt.clientName || '').toLowerCase().includes(q) ||
+        (apt.bookingCode || '').toLowerCase().includes(q) ||
+        (apt.serviceName || '').toLowerCase().includes(q) ||
+        (apt.specialistName || '').toLowerCase().includes(q);
+      return matchStatus && matchSpecialist && matchQuery;
+    });
+  }, [appointments, filterStatus, specialistFilter, searchQuery]);
+
+  // Handle Google Calendar sync
+  const handleSyncGoogleCalendar = (apt: Appointment) => {
+    setGoogleCalendarFeedback(`Cita ${apt.bookingCode} sincronizada exitosamente con Google Calendar`);
+    setTimeout(() => setGoogleCalendarFeedback(null), 3000);
+  };
+
+  // Status Change with optional WhatsApp notification
+  const handleStatusChangeWithNotification = async (apt: Appointment, newStatus: Appointment['status']) => {
+    onUpdateStatus(apt.id, newStatus);
+
+    if (newStatus === 'en_preparacion' || newStatus === 'completada') {
+      const statusText = newStatus === 'en_preparacion' ? 'te estamos esperando en cabina' : 'ha sido completada. ¡Gracias por visitarnos!';
+      const msg = `Hola ${apt.clientName}, tu cita ${apt.bookingCode} en Aura Nails & Spa ${statusText}.`;
+      await sendUltraMsgWhatsApp({
+        phone: apt.clientPhone,
+        message: msg,
+        clientName: apt.clientName,
+        bookingCode: apt.bookingCode
+      });
+    }
+  };
+
+  // Submit new Cut with validation & rate limit
+  const handleSubmitCut = (e: React.FormEvent) => {
+    e.preventDefault();
+    setCutValidationError(null);
+
+    // 1. Rate Limit check
+    const rateCheck = checkRateLimit('booking');
+    if (!rateCheck.allowed) {
+      setCutValidationError(`Has superado el límite de operaciones rápidas. Espera ${rateCheck.retryAfterSeconds}s.`);
+      return;
+    }
+
+    // 2. Security validation against injections
+    const nameVal = validateSafeText(cutClientName, 'Nombre del Cliente');
+    if (!nameVal.isValid) {
+      setCutValidationError(nameVal.reason || 'Nombre no válido.');
+      return;
+    }
+
+    const noteVal = validateSafeText(cutNote, 'Nota del Servicio');
+    if (!noteVal.isValid) {
+      setCutValidationError(noteVal.reason || 'Nota no válida.');
+      return;
+    }
+
+    const phoneVal = validateColombianPhone(cutClientPhone);
+    if (!phoneVal.isValid) {
+      setCutValidationError(phoneVal.reason || 'Teléfono no válido.');
+      return;
+    }
+
+    const spec = SPECIALISTS.find((s) => s.id === cutSpecialistId) || SPECIALISTS[0];
+    const commissionPercent = spec.commissionRate || 50;
+    const priceNum = Math.max(0, Number(cutServicePrice) || 0);
+    const tipNum = Math.max(0, Number(cutTip) || 0);
+    const comisionEspecialista = Math.round((priceNum * commissionPercent) / 100);
+    const recaudoSalon = priceNum - comisionEspecialista;
+
+    const newCut: SalonCutRecord = {
+      id: `cut-${Date.now().toString().slice(-5)}`,
+      fecha: 'Hoy, 27 Sept',
+      hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      clienteNombre: cutClientName || 'Cliente en Salón',
+      clienteTelefono: cutClientPhone || '+57 300 000 0000',
+      servicioNombre: cutServiceName,
+      servicioPrecio: priceNum,
+      especialistaId: spec.id,
+      especialistaNombre: spec.name,
+      comisionPorcentaje: commissionPercent,
+      comisionEspecialista,
+      recaudoSalon,
+      propina: tipNum,
+      metodoPago: cutPaymentMethod,
+      sucursalId: admin.branchId || 'chico',
+      nota: cutNote
+    };
+
+    onRegisterCut(newCut);
+    setShowNewCutModal(false);
+    setCutClientName('');
+    setCutClientPhone('');
+    setCutNote('');
+
+    // Send automatic WhatsApp receipt
+    sendUltraMsgWhatsApp({
+      phone: cutClientPhone,
+      message: `✨ *AURA NAILS & SPA - RECIBO DE PAGO* ✨
+¡Hola ${cutClientName}! Confirmamos el cobro de tu servicio:
+📋 *Servicio:* ${cutServiceName}
+💰 *Total Pagado:* ${formatCOP(priceNum + tipNum)}
+💅 *Atendido por:* ${spec.name}
+Método: ${cutPaymentMethod.replace('_', ' ')}
+¡Gracias por tu visita a nuestra sede Chicó!`,
+      clientName: cutClientName
+    });
+  };
+
+  // Submit Expense with validation & rate limit
+  const handleSubmitExpense = (e: React.FormEvent) => {
+    e.preventDefault();
+    setExpenseValidationError(null);
+
+    const conceptVal = validateSafeText(expenseConcept, 'Concepto del Gasto');
+    if (!conceptVal.isValid) {
+      setExpenseValidationError(conceptVal.reason || 'Concepto no válido.');
+      return;
+    }
+
+    const newExp: ExpenseRecord = {
+      id: `exp-${Date.now().toString().slice(-4)}`,
+      fecha: 'Hoy, 27 Sept',
+      concepto: expenseConcept || 'Gasto operativo',
+      categoria: expenseCategory,
+      monto: Math.max(0, Number(expenseAmount) || 0),
+      sucursalId: admin.branchId || 'chico',
+      registradoPor: admin.name
+    };
+
+    onAddExpense(newExp);
+    setShowExpenseModal(false);
+    setExpenseConcept('');
+  };
+
+  // Submit Cash Close
+  const handleSubmitCashClose = () => {
+    const diff = Number(countedCash) - expectedCashInHand;
+    const newClose: CashRegisterClose = {
+      id: `close-${Date.now().toString().slice(-4)}`,
+      fecha: 'Hoy, 27 Sept',
+      hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      baseInicial: Number(cashBase),
+      entradasEfectivo: totalCashIncome,
+      entradasDigitales: totalDigitalIncome,
+      egresosGastos: totalExpensesAmount,
+      efectivoEsperado: expectedCashInHand,
+      efectivoContado: Number(countedCash),
+      diferencia: diff,
+      estado: diff === 0 ? 'cuadrada' : 'descuadre',
+      responsableNombre: admin.name,
+      sucursalId: admin.branchId || 'chico'
+    };
+    onSaveCashClose(newClose);
+    setShowCloseModal(false);
+  };
+
+  return (
+    <div className="w-full space-y-6 pb-12 animate-in fade-in duration-200">
+      {/* Admin Credentials & Quick Highlights Banner */}
+      <div className="rounded-3xl bg-gradient-to-r from-[#221A14] via-[#3a2b20] to-[#7C571C] p-6 sm:p-7 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute -right-8 -bottom-8 w-44 h-44 rounded-full bg-white/10 blur-xl pointer-events-none" />
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 relative z-10">
+          <div className="flex items-center gap-3">
+            <img
+              src={admin.avatar}
+              alt={admin.name}
+              className="w-14 h-14 rounded-full object-cover ring-2 ring-[#C49756]"
+            />
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg sm:text-xl font-bold font-['Plus_Jakarta_Sans',sans-serif]">
+                  {admin.name}
+                </h2>
+                <span className="px-2.5 py-0.5 rounded-full bg-[#C49756]/20 text-[#DFCBB5] text-[10px] font-bold tracking-wider uppercase border border-[#C49756]/40">
+                  ★ {admin.role}
+                </span>
+              </div>
+              <p className="text-xs text-[#DFCBB5]">{admin.title} · {admin.branch}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-mono border border-emerald-400/30">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              Firestore Sincronizado
+            </span>
+          </div>
+        </div>
+
+        {/* Quick Metrics in COP */}
+        <div className="pt-4 border-t border-white/15 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center relative z-10">
+          <div className="p-2 rounded-2xl bg-white/5">
+            <span className="text-[10px] text-white/70 block uppercase tracking-wider">Citas Hoy</span>
+            <strong className="text-base sm:text-lg font-bold font-['Plus_Jakarta_Sans',sans-serif]">{totalCount}</strong>
+          </div>
+          <div className="p-2 rounded-2xl bg-white/5">
+            <span className="text-[10px] text-white/70 block uppercase tracking-wider">Caja Efectivo</span>
+            <strong className="text-base sm:text-lg font-bold text-[#DFCBB5] font-mono">
+              {formatCOP(expectedCashInHand)}
+            </strong>
+          </div>
+          <div className="p-2 rounded-2xl bg-white/5">
+            <span className="text-[10px] text-white/70 block uppercase tracking-wider">Cortes / Cobros</span>
+            <strong className="text-base sm:text-lg font-bold font-['Plus_Jakarta_Sans',sans-serif]">{cuts.length}</strong>
+          </div>
+          <div className="p-2 rounded-2xl bg-white/5">
+            <span className="text-[10px] text-white/70 block uppercase tracking-wider">Directorio Clientes</span>
+            <strong className="text-base sm:text-lg font-bold text-emerald-300 font-['Plus_Jakarta_Sans',sans-serif]">
+              {clientProfiles.length}
+            </strong>
+          </div>
+        </div>
+      </div>
+
+      {/* Admin Module Navigation Pills */}
+      <div className="bg-white rounded-2xl p-1.5 border border-[#DFCBB5]/60 shadow-xs flex gap-1 overflow-x-auto no-scrollbar">
+        <button
+          onClick={() => handleSelectTab('agenda')}
+          className={`flex-1 min-w-[100px] py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            activeAdminTab === 'agenda'
+              ? 'bg-[#7C571C] text-white shadow-xs'
+              : 'text-[#6F5A4B] hover:text-[#221A14]'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[16px]">event</span>
+          <span>Agenda ({totalCount})</span>
+        </button>
+
+        <button
+          onClick={() => handleSelectTab('caja')}
+          className={`flex-1 min-w-[100px] py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            activeAdminTab === 'caja'
+              ? 'bg-[#7C571C] text-white shadow-xs'
+              : 'text-[#6F5A4B] hover:text-[#221A14]'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[16px]">point_of_sale</span>
+          <span>Caja &amp; Arqueo</span>
+        </button>
+
+        <button
+          onClick={() => handleSelectTab('cortes')}
+          className={`flex-1 min-w-[100px] py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            activeAdminTab === 'cortes'
+              ? 'bg-[#7C571C] text-white shadow-xs'
+              : 'text-[#6F5A4B] hover:text-[#221A14]'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[16px]">receipt_long</span>
+          <span>Liquidación</span>
+        </button>
+
+        <button
+          onClick={() => handleSelectTab('clientes')}
+          className={`flex-1 min-w-[100px] py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            activeAdminTab === 'clientes'
+              ? 'bg-[#7C571C] text-white shadow-xs'
+              : 'text-[#6F5A4B] hover:text-[#221A14]'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[16px]">group</span>
+          <span>Clientes ({clientProfiles.length})</span>
+        </button>
+      </div>
+
+      {/* Google Calendar Notification Banner */}
+      {googleCalendarFeedback && (
+        <div className="p-3.5 rounded-2xl bg-[#dce8dc] text-[#2d6a4f] text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-200">
+          <span className="material-symbols-outlined text-[20px]">event_available</span>
+          <span>{googleCalendarFeedback}</span>
+        </div>
+      )}
+
+      {/* 1. AGENDA TAB */}
+      {activeAdminTab === 'agenda' && (
+        <div className="space-y-4">
+          {/* Search & Actions Bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="relative flex-1">
+              <span className="material-symbols-outlined absolute left-3.5 top-2.5 text-[#827474] text-[18px]">
+                search
+              </span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar por clienta, código AURA o manicurista..."
+                className="w-full h-10 pl-10 pr-9 rounded-full bg-white border border-[#DFCBB5] text-xs text-[#221A14] placeholder-[#827474] focus:outline-none focus:ring-2 focus:ring-[#7C571C]/30 shadow-xs"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-2.5 text-[#827474] hover:text-[#221A14]"
+                >
+                  <span className="material-symbols-outlined text-[16px]">close</span>
+                </button>
+              )}
+            </div>
+
+            <button
+              onClick={onNavigateToBooking}
+              className="h-10 px-5 rounded-full bg-[#7C571C] hover:bg-[#684714] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs shrink-0 cursor-pointer active:scale-95 transition-all"
+            >
+              <span className="material-symbols-outlined text-[16px]">add</span>
+              <span>Nueva Cita</span>
+            </button>
+          </div>
+
+          {/* Status Filter Chips */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+            <button
+              onClick={() => setFilterStatus('todos')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                filterStatus === 'todos'
+                  ? 'bg-[#7C571C] text-white shadow-xs'
+                  : 'bg-white text-[#6F5A4B] border border-[#DFCBB5]/80 hover:bg-[#FBEBE1]'
+              }`}
+            >
+              Todas ({totalCount})
+            </button>
+            <button
+              onClick={() => setFilterStatus('confirmada')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                filterStatus === 'confirmada'
+                  ? 'bg-[#2d6a4f] text-white shadow-xs'
+                  : 'bg-white text-[#2d6a4f] border border-[#dce8dc] hover:bg-[#dce8dc]/40'
+              }`}
+            >
+              Confirmadas ({confirmedCount})
+            </button>
+            <button
+              onClick={() => setFilterStatus('en_preparacion')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                filterStatus === 'en_preparacion'
+                  ? 'bg-[#71547c] text-white shadow-xs'
+                  : 'bg-white text-[#71547c] border border-[#f8d8ff] hover:bg-[#f8d8ff]/40'
+              }`}
+            >
+              En Cabina ({inPrepCount})
+            </button>
+            <button
+              onClick={() => setFilterStatus('completada')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                filterStatus === 'completada'
+                  ? 'bg-[#504444] text-white shadow-xs'
+                  : 'bg-white text-[#504444] border border-[#ebe8e2] hover:bg-[#ebe8e2]/50'
+              }`}
+            >
+              Completadas ({completedCount})
+            </button>
+            <button
+              onClick={() => setFilterStatus('cancelada')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                filterStatus === 'cancelada'
+                  ? 'bg-[#ba1a1a] text-white shadow-xs'
+                  : 'bg-white text-[#ba1a1a] border border-[#ffdad6] hover:bg-[#ffdad6]/40'
+              }`}
+            >
+              Canceladas ({canceledCount})
+            </button>
+          </div>
+
+          {/* Appointments Grid: Fully Responsive */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredAppointments.length === 0 ? (
+              <div className="col-span-full text-center py-12 px-6 bg-white rounded-3xl border border-[#DFCBB5]/60">
+                <span className="material-symbols-outlined text-[#DFCBB5] text-[44px] mb-2">
+                  event_busy
+                </span>
+                <h4 className="text-sm font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif]">
+                  No se encontraron citas con estos filtros
+                </h4>
+                <p className="text-xs text-[#6F5A4B] mt-1">
+                  Prueba cambiando el estado o la búsqueda para ver más registros de la agenda.
+                </p>
+              </div>
+            ) : (
+              filteredAppointments.map((apt) => {
+                const isExpanded = expandedAptId === apt.id;
+
+                return (
+                  <div
+                    key={apt.id}
+                    className="bg-white rounded-3xl p-5 shadow-xs border border-[#DFCBB5]/60 space-y-3 transition-all hover:border-[#7C571C]/40"
+                  >
+                    {/* Header row */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono font-bold text-[#7C571C] bg-[#FBEBE1] px-2.5 py-0.5 rounded-md">
+                          {apt.bookingCode}
+                        </span>
+                        <span className="text-xs text-[#6F5A4B] font-medium flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px] text-[#7C571C]">schedule</span>
+                          {apt.date} · {apt.time}
+                        </span>
+                      </div>
+
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                          apt.status === 'confirmada'
+                            ? 'bg-[#dce8dc] text-[#2d6a4f]'
+                            : apt.status === 'en_preparacion'
+                            ? 'bg-[#f8d8ff] text-[#71547c]'
+                            : apt.status === 'completada'
+                            ? 'bg-[#f1ede7] text-[#504444]'
+                            : 'bg-[#ffdad6] text-[#ba1a1a]'
+                        }`}
+                      >
+                        {apt.status === 'confirmada' && 'Confirmada'}
+                        {apt.status === 'en_preparacion' && 'En Cabina'}
+                        {apt.status === 'completada' && 'Completada'}
+                        {apt.status === 'cancelada' && 'Cancelada'}
+                      </span>
+                    </div>
+
+                    {/* Client info & Service in COP */}
+                    <div className="flex gap-3 items-center">
+                      <img
+                        src={apt.serviceImage}
+                        alt={apt.serviceName}
+                        className="w-14 h-14 rounded-2xl object-cover shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline justify-between">
+                          <h4 className="text-sm font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif] truncate">
+                            {apt.clientName}
+                          </h4>
+                          <span className="text-sm font-bold text-[#7C571C] font-mono shrink-0 ml-2">
+                            {formatCOP(apt.totalPrice)}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-[#6F5A4B] truncate mt-0.5 font-medium">
+                          {apt.serviceName} ({apt.serviceDuration} min)
+                        </p>
+
+                        <div className="flex items-center gap-1.5 text-xs text-[#7C571C] mt-1">
+                          <img
+                            src={apt.specialistAvatar}
+                            alt={apt.specialistName}
+                            className="w-4 h-4 rounded-full object-cover"
+                          />
+                          <span className="truncate">
+                            Asignada: <strong>{apt.specialistName}</strong>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Contact & Integrations Bar */}
+                    <div className="p-2.5 rounded-2xl bg-[#FFF8F5] border border-[#DFCBB5]/50 text-xs flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-[#221A14] font-semibold">
+                        <span className="material-symbols-outlined text-[15px] text-[#52b788]">call</span>
+                        <span>{apt.clientPhone}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleSyncGoogleCalendar(apt)}
+                          className="text-[11px] font-semibold text-[#7C571C] hover:underline flex items-center gap-0.5 cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+                          <span>Google Cal</span>
+                        </button>
+                        <a
+                          href={`https://wa.me/${(apt.clientPhone || '').replace(/[^0-9]/g, '')}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[11px] font-bold text-[#52b788] hover:underline flex items-center gap-0.5"
+                        >
+                          <span>WhatsApp</span>
+                          <span className="material-symbols-outlined text-[13px]">open_in_new</span>
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="pt-2 border-t border-[#ebe8e2] flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 text-[11px] font-semibold text-[#6F5A4B]">
+                          <span>Estado:</span>
+                          <select
+                            value={apt.status}
+                            onChange={(e) => handleStatusChangeWithNotification(apt, e.target.value as any)}
+                            className="h-7 px-2 rounded-full bg-[#FBEBE1] border border-[#DFCBB5] text-[11px] font-bold text-[#221A14] focus:outline-none cursor-pointer"
+                          >
+                            <option value="confirmada">Confirmada</option>
+                            <option value="en_preparacion">En Cabina</option>
+                            <option value="completada">Completada</option>
+                            <option value="cancelada">Cancelada</option>
+                          </select>
+                        </div>
+
+                        <button
+                          onClick={() => setSelectedAppointmentForQr(apt)}
+                          className="h-7 px-2.5 rounded-full bg-white border border-[#DFCBB5] hover:bg-[#FBEBE1] text-[#7C571C] text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">qr_code</span>
+                          <span>Pase QR</span>
+                        </button>
+                      </div>
+
+                      <button
+                        onClick={() => setExpandedAptId(isExpanded ? null : apt.id)}
+                        className="text-xs font-semibold text-[#7C571C] hover:underline flex items-center gap-0.5 cursor-pointer ml-auto"
+                      >
+                        <span>{isExpanded ? 'Menos' : 'Detalles'}</span>
+                        <span className="material-symbols-outlined text-[16px]">
+                          {isExpanded ? 'expand_less' : 'expand_more'}
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* Expanded details */}
+                    {isExpanded && (
+                      <div className="p-3 rounded-2xl bg-[#FFF8F5] border border-[#DFCBB5]/50 space-y-2 text-xs text-[#6F5A4B] animate-in fade-in duration-150">
+                        {apt.notes && (
+                          <div>
+                            <strong className="text-[#221A14] block">Observaciones:</strong>
+                            <p className="italic text-[#7C571C] mt-0.5">{apt.notes}</p>
+                          </div>
+                        )}
+                        <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#DFCBB5]/40">
+                          <div>
+                            <span className="text-[10px] text-[#827474]">Tono Solicitado:</span>
+                            <div className="font-semibold text-[#221A14]">{apt.polishColor || 'Por definir'}</div>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-[#827474]">Forma de Uña:</span>
+                            <div className="font-semibold text-[#221A14]">{apt.nailShape || 'Por definir'}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 2. CAJA & ARQUEO TAB */}
+      {activeAdminTab === 'caja' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button
+              onClick={() => setShowNewCutModal(true)}
+              className="p-4 rounded-3xl bg-[#7C571C] text-white text-xs font-bold shadow-xs hover:bg-[#684714] transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[20px]">add_circle</span>
+              <span>+ Registrar Cobro en Caja</span>
+            </button>
+
+            <button
+              onClick={() => setShowExpenseModal(true)}
+              className="p-4 rounded-3xl bg-white border border-rose-300 text-[#ba1a1a] text-xs font-bold shadow-xs hover:bg-rose-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[20px]">remove_circle_outline</span>
+              <span>- Gasto de Caja Menor</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setCountedCash(expectedCashInHand);
+                setShowCloseModal(true);
+              }}
+              className="p-4 rounded-3xl bg-white border border-emerald-400 text-emerald-800 text-xs font-bold shadow-xs hover:bg-emerald-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[20px]">lock_clock</span>
+              <span>Cierre de Caja del Día</span>
+            </button>
+          </div>
+
+          {/* Arqueo de Canales Dashboard in COP */}
+          <div className="bg-white rounded-3xl p-6 border border-[#DFCBB5]/60 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-[#ebe8e2] pb-3">
+              <h4 className="text-sm font-bold uppercase tracking-wider text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif] flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#7C571C] text-[20px]">account_balance_wallet</span>
+                Arqueo de Caja &amp; Gaveta Física (Pesos Colombianos)
+              </h4>
+              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                En Vivo Firestore
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div className="p-3.5 rounded-2xl bg-[#FFF8F5] border border-[#DFCBB5]">
+                <span className="text-[10px] text-[#6F5A4B] block">Base Inicial en Caja:</span>
+                <strong className="text-base text-[#221A14] font-bold font-mono">{formatCOP(cashBase)}</strong>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-[#FFF8F5] border border-[#DFCBB5]">
+                <span className="text-[10px] text-[#6F5A4B] block">(+) Entradas Efectivo:</span>
+                <strong className="text-base text-emerald-700 font-bold font-mono">+{formatCOP(totalCashIncome)}</strong>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-[#FFF8F5] border border-[#DFCBB5]">
+                <span className="text-[10px] text-[#6F5A4B] block">(-) Gastos Caja Menor:</span>
+                <strong className="text-base text-[#ba1a1a] font-bold font-mono">-{formatCOP(totalExpensesAmount)}</strong>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-[#FBEBE1] border border-[#C49756]">
+                <span className="text-[10px] text-[#7C571C] font-semibold block">Efectivo en Gaveta:</span>
+                <strong className="text-base text-[#7C571C] font-bold font-mono">{formatCOP(expectedCashInHand)}</strong>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-[#ebe8e2] flex items-center justify-between text-xs">
+              <span className="text-[#6F5A4B]">Entradas Digitales (Nequi / Daviplata / Datáfono):</span>
+              <strong className="text-[#71547c] font-mono text-sm">{formatCOP(totalDigitalIncome)}</strong>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. LIQUIDACIÓN TAB */}
+      {activeAdminTab === 'cortes' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {specialistsLiquidation.map((spec) => (
+              <div key={spec.id} className="bg-white rounded-3xl p-5 border border-[#DFCBB5]/60 shadow-xs space-y-3">
+                <div className="flex items-center gap-3">
+                  <img src={spec.avatar} alt={spec.name} className="w-12 h-12 rounded-full object-cover ring-2 ring-[#C49756]" />
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif]">{spec.name}</h4>
+                    <p className="text-xs text-[#7C571C] font-medium">{spec.role} · {spec.commissionRate}%</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-base font-bold text-emerald-700 font-mono">{formatCOP(spec.payoutTotal)}</span>
+                    <span className="block text-[10px] text-[#827474]">A Liquidar</span>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-[#ebe8e2] grid grid-cols-3 gap-1 text-center text-xs">
+                  <div>
+                    <span className="text-[10px] text-[#827474] block">Servicios ({spec.cutsCount}):</span>
+                    <strong className="text-[#221A14] font-mono">{formatCOP(spec.totalServices)}</strong>
+                  </div>
+                  <div className="border-x border-[#ebe8e2]">
+                    <span className="text-[10px] text-[#827474] block">Comisión:</span>
+                    <strong className="text-[#7C571C] font-mono">{formatCOP(spec.totalCommission)}</strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-[#827474] block">Propinas:</span>
+                    <strong className="text-emerald-700 font-mono">+{formatCOP(spec.totalTips)}</strong>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 4. CLIENTES TAB (WITH FIXED CLIENT HISTORY MODAL) */}
+      {activeAdminTab === 'clientes' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif]">
+              Directorio de Clientes ({clientProfiles.length})
+            </h3>
+            <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+              100% Verificados
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {clientProfiles.map((client) => (
+              <div key={client.id} className="bg-white rounded-3xl p-5 border border-[#DFCBB5]/60 shadow-xs space-y-3 flex flex-col justify-between hover:border-[#7C571C]/50 transition-all">
+                <div>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="text-sm font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif]">
+                        {client.nombre}
+                      </h4>
+                      <p className="text-xs text-[#6F5A4B] flex items-center gap-1 mt-0.5">
+                        <span className="material-symbols-outlined text-[13px] text-[#52b788]">call</span>
+                        <span>{client.telefono}</span>
+                      </p>
+                    </div>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${client.clasificacion === 'VIP Frecuente' ? 'bg-[#ffdadc] text-[#7c5357]' : 'bg-[#dce8dc] text-[#2d6a4f]'}`}>
+                      {client.clasificacion}
+                    </span>
+                  </div>
+
+                  <div className="pt-2 border-t border-[#ebe8e2] grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-[10px] text-[#827474]">Total Visitas:</span>
+                      <strong className="block text-[#221A14]">{client.totalCitas} citas</strong>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-[#827474]">Inversión Total:</span>
+                      <strong className="block text-[#7C571C] font-mono">{formatCOP(client.gastoTotal)}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions: Ver Citas (Fixed black screen bug) + WhatsApp */}
+                <div className="pt-3 border-t border-[#ebe8e2] flex items-center justify-between gap-2">
+                  <button
+                    onClick={() => setSelectedClientForHistory(client)}
+                    className="px-3.5 py-1.5 rounded-full bg-[#7C571C] hover:bg-[#684714] text-white text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">history</span>
+                    <span>Ver Citas</span>
+                  </button>
+
+                  <a
+                    href={`https://wa.me/${(client.telefono || '').replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold border border-emerald-200 flex items-center gap-1"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">chat</span>
+                    <span>WhatsApp</span>
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 1: REGISTRAR CORTE / COBRO EN COP */}
+      {showNewCutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="relative w-full max-w-sm bg-[#FFF8F5] rounded-3xl p-6 shadow-2xl border border-[#DFCBB5] space-y-3.5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#DFCBB5]/50 pb-2">
+              <h3 className="font-bold text-sm text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif]">
+                Registrar Servicio Realizado en Caja (COP)
+              </h3>
+              <button onClick={() => setShowNewCutModal(false)} className="w-7 h-7 rounded-full hover:bg-[#FBEBE1] flex items-center justify-center text-[#6F5A4B]">
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+
+            {cutValidationError && (
+              <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs">
+                {cutValidationError}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitCut} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-semibold text-[#6F5A4B] mb-1">Nombre de la Clienta</label>
+                <input
+                  type="text"
+                  required
+                  value={cutClientName}
+                  onChange={(e) => setCutClientName(e.target.value)}
+                  placeholder="Ej. Mariana Duque"
+                  className="w-full h-9 px-3 rounded-xl bg-white border border-[#DFCBB5] text-xs text-[#221A14]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-[#6F5A4B] mb-1">WhatsApp (+57)</label>
+                <input
+                  type="text"
+                  required
+                  value={cutClientPhone}
+                  onChange={(e) => setCutClientPhone(e.target.value)}
+                  placeholder="+57 312 849 2011"
+                  className="w-full h-9 px-3 rounded-xl bg-white border border-[#DFCBB5] text-xs font-mono text-[#221A14]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block font-semibold text-[#6F5A4B] mb-1">Valor en COP ($)</label>
+                  <input
+                    type="number"
+                    step="1000"
+                    required
+                    value={cutServicePrice}
+                    onChange={(e) => setCutServicePrice(Number(e.target.value))}
+                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#DFCBB5] text-xs font-mono font-bold text-[#7C571C]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-[#6F5A4B] mb-1">Propina COP ($)</label>
+                  <input
+                    type="number"
+                    step="1000"
+                    value={cutTip}
+                    onChange={(e) => setCutTip(Number(e.target.value))}
+                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#DFCBB5] text-xs font-mono text-emerald-700"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-[#6F5A4B] mb-1">Manicurista Asignada</label>
+                <select
+                  value={cutSpecialistId}
+                  onChange={(e) => setCutSpecialistId(e.target.value)}
+                  className="w-full h-9 px-2 rounded-xl bg-white border border-[#DFCBB5] text-xs text-[#221A14]"
+                >
+                  {SPECIALISTS.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name} ({s.commissionRate}%)</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-[#6F5A4B] mb-1">Método de Pago</label>
+                <select
+                  value={cutPaymentMethod}
+                  onChange={(e) => setCutPaymentMethod(e.target.value as any)}
+                  className="w-full h-9 px-2 rounded-xl bg-white border border-[#DFCBB5] text-xs text-[#221A14]"
+                >
+                  <option value="efectivo">Efectivo en Gaveta</option>
+                  <option value="nequi_daviplata">Nequi / Daviplata</option>
+                  <option value="tarjeta_datafono">Tarjeta Datáfono</option>
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-2.5 rounded-xl bg-[#7C571C] hover:bg-[#684714] text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+              >
+                Guardar Cobro &amp; Enviar Recibo WhatsApp
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: GASTO DE CAJA MENOR */}
+      {showExpenseModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="relative w-full max-w-sm bg-[#FFF8F5] rounded-3xl p-6 shadow-2xl border border-[#DFCBB5] space-y-3.5">
+            <div className="flex items-center justify-between border-b border-[#DFCBB5]/50 pb-2">
+              <h3 className="font-bold text-sm text-[#ba1a1a]">Registrar Egreso / Gasto de Caja Menor</h3>
+              <button onClick={() => setShowExpenseModal(false)} className="w-7 h-7 rounded-full hover:bg-[#FBEBE1] flex items-center justify-center text-[#6F5A4B]">
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+
+            {expenseValidationError && (
+              <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs">
+                {expenseValidationError}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitExpense} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-semibold text-[#6F5A4B] mb-1">Concepto del Gasto</label>
+                <input
+                  type="text"
+                  required
+                  value={expenseConcept}
+                  onChange={(e) => setExpenseConcept(e.target.value)}
+                  placeholder="Ej. Insumos desechables o esterilización"
+                  className="w-full h-9 px-3 rounded-xl bg-white border border-[#DFCBB5] text-xs text-[#221A14]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-[#6F5A4B] mb-1">Monto en COP ($)</label>
+                <input
+                  type="number"
+                  step="1000"
+                  required
+                  value={expenseAmount}
+                  onChange={(e) => setExpenseAmount(Number(e.target.value))}
+                  className="w-full h-9 px-3 rounded-xl bg-white border border-rose-300 text-xs font-mono font-bold text-[#ba1a1a]"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-2.5 rounded-xl bg-[#ba1a1a] hover:bg-rose-800 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+              >
+                Descontar de Caja Menor
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Client History Modal - Fixed, resilient and fully integrated */}
+      <ClientHistoryModal
+        client={selectedClientForHistory}
+        appointments={appointments}
+        cuts={cuts}
+        onClose={() => setSelectedClientForHistory(null)}
+      />
+
+      {/* QR Code Modal */}
+      <QrCodeModal
+        appointment={selectedAppointmentForQr}
+        onClose={() => setSelectedAppointmentForQr(null)}
+      />
+    </div>
+  );
+};

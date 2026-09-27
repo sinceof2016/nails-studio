@@ -1,0 +1,117 @@
+{
+  "entities": {
+    "Appointment": {
+      "title": "Appointment",
+      "description": "Cita de servicio en el salón de belleza y spa.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "serviceId": { "type": "string" },
+        "serviceName": { "type": "string" },
+        "servicePrice": { "type": "number" },
+        "serviceDuration": { "type": "number" },
+        "serviceImage": { "type": "string" },
+        "specialistId": { "type": "string" },
+        "specialistName": { "type": "string" },
+        "specialistRole": { "type": "string" },
+        "specialistAvatar": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "clientName": { "type": "string" },
+        "clientPhone": { "type": "string" },
+        "clientEmail": { "type": "string" },
+        "notes": { "type": "string" },
+        "polishColor": { "type": "string" },
+        "nailShape": { "type": "string" },
+        "selectedAddOns": { "type": "array" },
+        "totalPrice": { "type": "number" },
+        "paymentMethod": { "type": "string" },
+        "tipAmount": { "type": "number" },
+        "status": { "type": "string", "enum": ["confirmada", "en_preparacion", "completada", "cancelada"] },
+        "bookingCode": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "syncedToGoogleCalendar": { "type": "boolean" },
+        "branchId": { "type": "string" }
+      },
+      "required": ["serviceName", "clientName", "clientPhone", "totalPrice", "status", "bookingCode"]
+    },
+    "SalonCutRecord": {
+      "title": "SalonCutRecord",
+      "description": "Registro contable de servicio o corte finalizado en caja.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fecha": { "type": "string" },
+        "hora": { "type": "string" },
+        "clienteNombre": { "type": "string" },
+        "clienteTelefono": { "type": "string" },
+        "servicioNombre": { "type": "string" },
+        "servicioPrecio": { "type": "number" },
+        "especialistaId": { "type": "string" },
+        "especialistaNombre": { "type": "string" },
+        "comisionPorcentaje": { "type": "number" },
+        "comisionEspecialista": { "type": "number" },
+        "recaudoSalon": { "type": "number" },
+        "propina": { "type": "number" },
+        "metodoPago": { "type": "string" },
+        "sucursalId": { "type": "string" },
+        "nota": { "type": "string" }
+      },
+      "required": ["fecha", "clienteNombre", "servicioNombre", "servicioPrecio", "especialistaNombre", "metodoPago"]
+    },
+    "ExpenseRecord": {
+      "title": "ExpenseRecord",
+      "description": "Registro de gasto o egreso operativo de caja.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fecha": { "type": "string" },
+        "concepto": { "type": "string" },
+        "categoria": { "type": "string" },
+        "monto": { "type": "number" },
+        "sucursalId": { "type": "string" },
+        "registradoPor": { "type": "string" }
+      },
+      "required": ["fecha", "concepto", "monto"]
+    },
+    "CashRegisterClose": {
+      "title": "CashRegisterClose",
+      "description": "Comprobante oficial de arqueo y cierre diario de caja.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fecha": { "type": "string" },
+        "hora": { "type": "string" },
+        "baseInicial": { "type": "number" },
+        "entradasEfectivo": { "type": "number" },
+        "entradasDigitales": { "type": "number" },
+        "egresosGastos": { "type": "number" },
+        "efectivoEsperado": { "type": "number" },
+        "efectivoContado": { "type": "number" },
+        "diferencia": { "type": "number" },
+        "estado": { "type": "string" },
+        "responsableNombre": { "type": "string" },
+        "sucursalId": { "type": "string" }
+      },
+      "required": ["fecha", "baseInicial", "entradasEfectivo", "efectivoEsperado", "efectivoContado", "estado"]
+    }
+  },
+  "firestore": {
+    "/appointments/{appointmentId}": {
+      "schema": "Appointment",
+      "description": "Colección global de citas y reservas del salón."
+    },
+    "/salon_cuts/{cutId}": {
+      "schema": "SalonCutRecord",
+      "description": "Libro de cortes y servicios realizados para liquidación de caja."
+    },
+    "/expenses/{expenseId}": {
+      "schema": "ExpenseRecord",
+      "description": "Gastos y egresos de caja menor."
+    },
+    "/cash_closes/{closeId}": {
+      "schema": "CashRegisterClose",
+      "description": "Historial de arqueos y cierres de caja por fecha."
+    }
+  }
+}

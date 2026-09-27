@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isValidAppointment(data) {
+      return data.clientName is string &&
+             data.clientName.size() > 0 &&
+             data.serviceName is string &&
+             data.totalPrice is number &&
+             data.status in ['confirmada', 'en_preparacion', 'completada', 'cancelada'];
+    }
+
+    function isValidCut(data) {
+      return data.clienteNombre is string &&
+             data.servicioNombre is string &&
+             data.servicioPrecio is number &&
+             data.metodoPago is string;
+    }
+
+    function isValidExpense(data) {
+      return data.concepto is string &&
+             data.monto is number &&
+             data.monto >= 0;
+    }
+
+    function isValidCashClose(data) {
+      return data.fecha is string &&
+             data.baseInicial is number &&
+             data.efectivoEsperado is number &&
+             data.efectivoContado is number;
+    }
+
+    // Appointments collection: Public reservation & staff management
+    match /appointments/{appointmentId} {
+      allow read: if true;
+      allow create: if isValidAppointment(request.resource.data);
+      allow update: if isValidAppointment(request.resource.data);
+      allow delete: if true;
+    }
+
+    // Salon cuts / services ledger: Caja & liquidación
+    match /salon_cuts/{cutId} {
+      allow read: if true;
+      allow create: if isValidCut(request.resource.data);
+      allow update: if isValidCut(request.resource.data);
+      allow delete: if true;
+    }
+
+    // Operational expenses: Caja menor
+    match /expenses/{expenseId} {
+      allow read: if true;
+      allow create: if isValidExpense(request.resource.data);
+      allow update: if isValidExpense(request.resource.data);
+      allow delete: if true;
+    }
+
+    // Cash register closures: Arqueos
+    match /cash_closes/{closeId} {
+      allow read: if true;
+      allow create: if isValidCashClose(request.resource.data);
+      allow update: if isValidCashClose(request.resource.data);
+      allow delete: if true;
+    }
+
+    // Default deny for unmapped paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
