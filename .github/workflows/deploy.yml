@@ -7,13 +7,11 @@ on:
       - master
   workflow_dispatch:
 
-# Permissions needed to deploy to GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 concurrency:
   group: 'pages'
   cancel-in-progress: true
@@ -29,15 +27,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci || npm install
+        run: npm install --legacy-peer-deps
 
-      - name: Build project for GitHub Pages
+      - name: Build project
         run: npm run build
 
-      - name: Copy index.html to 404.html for SPA Routing
+      - name: Create 404.html for SPA Fallback
         run: cp dist/index.html dist/404.html
 
       - name: Upload Pages artifact
