@@ -9,7 +9,7 @@ export const COOKIE_CONSENT_KEY = 'aura_cookie_consent';
 export const CURRENT_COOKIE_POLICY_VERSION = '2026.1';
 
 /**
- * Technical registry of all cookies and storage elements used in Aura Nails & Spa
+ * Technical registry of all cookies and storage elements used in La Pelu SPA
  */
 export const COOKIE_CATALOG: CookieInfo[] = [
   // 1. Necesarias
@@ -17,7 +17,7 @@ export const COOKIE_CATALOG: CookieInfo[] = [
     name: 'aura_cookie_consent',
     category: 'necessary',
     purpose: 'Almacena tus preferencias de consentimiento de cookies y políticas de privacidad para no volver a preguntar en cada visita.',
-    provider: 'Aura Nails & Spa (Propia)',
+    provider: 'La Pelu SPA (Propia)',
     duration: '12 meses',
     type: 'HTTP Cookie'
   },
@@ -25,7 +25,7 @@ export const COOKIE_CATALOG: CookieInfo[] = [
     name: 'aura_session_token',
     category: 'necessary',
     purpose: 'Identificador seguro de sesión para autenticación de administradores, especialistas y confirmación de citas.',
-    provider: 'Aura Nails & Spa (Propia)',
+    provider: 'La Pelu SPA (Propia)',
     duration: 'Sesión',
     type: 'HTTP Cookie'
   },
@@ -33,7 +33,7 @@ export const COOKIE_CATALOG: CookieInfo[] = [
     name: 'aura_csrf_protect',
     category: 'necessary',
     purpose: 'Protección contra ataques de falsificación de peticiones en sitios cruzados (Cross-Site Request Forgery) en reservas y pagos.',
-    provider: 'Aura Nails & Spa (Seguridad)',
+    provider: 'La Pelu SPA (Seguridad)',
     duration: 'Sesión',
     type: 'HTTP Cookie'
   },
@@ -41,7 +41,7 @@ export const COOKIE_CATALOG: CookieInfo[] = [
     name: 'aura_current_user',
     category: 'necessary',
     purpose: 'Mantiene el perfil y rol de usuario activo autenticado en el panel de control y caja.',
-    provider: 'Aura Nails & Spa (Local)',
+    provider: 'La Pelu SPA (Local)',
     duration: 'Persistente (30 días)',
     type: 'LocalStorage'
   },
@@ -51,7 +51,7 @@ export const COOKIE_CATALOG: CookieInfo[] = [
     name: 'aura_branch_pref',
     category: 'preferences',
     purpose: 'Recuerda tu sucursal favorita seleccionada (Chicó, Usaquén o Chapinero) para agilizar tus futuras reservas.',
-    provider: 'Aura Nails & Spa (Propia)',
+    provider: 'La Pelu SPA (Propia)',
     duration: '6 meses',
     type: 'HTTP Cookie'
   },
@@ -59,7 +59,7 @@ export const COOKIE_CATALOG: CookieInfo[] = [
     name: 'aura_currency_display',
     category: 'preferences',
     purpose: 'Guarda la moneda de cotización predeterminada (Pesos Colombianos - COP) y formato de separador de miles.',
-    provider: 'Aura Nails & Spa (Propia)',
+    provider: 'La Pelu SPA (Propia)',
     duration: '6 meses',
     type: 'HTTP Cookie'
   },
@@ -67,7 +67,7 @@ export const COOKIE_CATALOG: CookieInfo[] = [
     name: 'aura_theme_mode',
     category: 'preferences',
     purpose: 'Preserva la preferencia de modo visual, animaciones y contraste del santuario digital.',
-    provider: 'Aura Nails & Spa (Propia)',
+    provider: 'La Pelu SPA (Propia)',
     duration: '12 meses',
     type: 'HTTP Cookie'
   },
@@ -75,7 +75,7 @@ export const COOKIE_CATALOG: CookieInfo[] = [
     name: 'aura_ultramsg_pref',
     category: 'preferences',
     purpose: 'Guarda las preferencias de disparos automáticos de WhatsApp e UltraMsg Gateway.',
-    provider: 'Aura Nails & Spa (Propia)',
+    provider: 'La Pelu SPA (Propia)',
     duration: '3 meses',
     type: 'LocalStorage'
   },
@@ -85,7 +85,7 @@ export const COOKIE_CATALOG: CookieInfo[] = [
     name: 'aura_analytics_uid',
     category: 'analytics',
     purpose: 'Identificador anónimo y cifrado para medir tiempos de carga de imágenes, servicios más consultados y errores de navegación.',
-    provider: 'Aura Nails & Spa (Análisis Interno)',
+    provider: 'La Pelu SPA (Análisis Interno)',
     duration: '3 meses',
     type: 'HTTP Cookie'
   },
@@ -93,7 +93,7 @@ export const COOKIE_CATALOG: CookieInfo[] = [
     name: 'aura_perf_metrics',
     category: 'analytics',
     purpose: 'Registra métricas Core Web Vitals (LCP, FID, CLS) para optimizar la velocidad en dispositivos móviles.',
-    provider: 'Aura Nails & Spa (Diagnóstico)',
+    provider: 'La Pelu SPA (Diagnóstico)',
     duration: '30 días',
     type: 'LocalStorage'
   },
@@ -103,7 +103,7 @@ export const COOKIE_CATALOG: CookieInfo[] = [
     name: 'aura_promo_seen',
     category: 'marketing',
     purpose: 'Controla la frecuencia de visualización del bono 15% OFF para no interrumpir tu experiencia de navegación.',
-    provider: 'Aura Nails & Spa (Promociones)',
+    provider: 'La Pelu SPA (Promociones)',
     duration: '7 días',
     type: 'HTTP Cookie'
   },
@@ -111,7 +111,7 @@ export const COOKIE_CATALOG: CookieInfo[] = [
     name: 'aura_wa_channel_ref',
     category: 'marketing',
     purpose: 'Registra el origen de consulta de WhatsApp Business para ofrecerte asesoría directa sobre diseños de uñas.',
-    provider: 'Aura Nails & Spa / WhatsApp',
+    provider: 'La Pelu SPA / WhatsApp',
     duration: '30 días',
     type: 'LocalStorage'
   }

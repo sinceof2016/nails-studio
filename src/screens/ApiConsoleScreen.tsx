@@ -57,7 +57,7 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
 
   // WhatsApp Gateway
   const [testPhone, setTestPhone] = useState('+57 312 849 2011');
-  const [testMessage, setTestMessage] = useState('Hola! Tu turno en Aura Nails & Spa ha sido confirmado exitosamente.');
+  const [testMessage, setTestMessage] = useState('Hola! Tu turno en La Pelu SPA ha sido confirmado exitosamente.');
   const [sendingTest, setSendingTest] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
   const [history, setHistory] = useState<WhatsAppDispatchRecord[]>(getWhatsAppHistory());

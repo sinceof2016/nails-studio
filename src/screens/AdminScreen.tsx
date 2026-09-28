@@ -233,7 +233,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 
   // 1-CLIC FAST DISPATCHES FOR AGENDA
   const handleQuickReminder = async (apt: Appointment) => {
-    const msg = `✨ *Aura Nails & Spa - Recordatorio de Cita* ✨\n\nHola ${apt.clientName}, te recordamos tu cita de *${apt.serviceName}* agendada para hoy a las *${apt.time}* con ${apt.specialistName}.\n\n📍 Sede Chicó Calle 85, Bogotá.\n🎫 Código: ${apt.bookingCode}\n\n¡Te esperamos con una copa de cortesía! 💅🥂`;
+    const msg = `✨ *La Pelu SPA - Recordatorio de Cita* ✨\n\nHola ${apt.clientName}, te recordamos tu cita de *${apt.serviceName}* agendada para hoy a las *${apt.time}* con ${apt.specialistName}.\n\n📍 Sede Chicó Calle 85, Bogotá.\n🎫 Código: ${apt.bookingCode}\n\n¡Te esperamos con una copa de cortesía! 💅🥂`;
     
     await sendUltraMsgWhatsApp({
       phone: apt.clientPhone,
@@ -245,7 +245,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
   };
 
   const handleTableReady = async (apt: Appointment) => {
-    const msg = `💅 *¡Tu mesa está lista en Aura Nails & Spa!* 💅\n\nHola ${apt.clientName}, tu manicurista *${apt.specialistName}* ya tiene tu mesa esterilizada y lista en cabina para tu servicio *${apt.serviceName}*.\n\n¡Puedes pasar a tomar asiento! ✨`;
+    const msg = `💅 *¡Tu mesa está lista en La Pelu SPA!* 💅\n\nHola ${apt.clientName}, tu manicurista *${apt.specialistName}* ya tiene tu mesa esterilizada y lista en cabina para tu servicio *${apt.serviceName}*.\n\n¡Puedes pasar a tomar asiento! ✨`;
     
     await sendUltraMsgWhatsApp({
       phone: apt.clientPhone,
@@ -259,7 +259,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
   // SEND SPECIALIST LIQUIDATION VIA WHATSAPP
   const handleSendSpecialistLiquidation = async (spec: typeof specialistsLiquidation[0]) => {
     const todayStr = new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'short' });
-    const msg = `✨ *AURA NAILS & SPA - LIQUIDACIÓN DEL DÍA* ✨\n\n` +
+    const msg = `✨ *LA PELU SPA - LIQUIDACIÓN DEL DÍA* ✨\n\n` +
       `👤 *Especialista:* ${spec.name}\n` +
       `📅 *Fecha:* ${todayStr}\n` +
       `🏢 *Sede:* Santuario Chicó Calle 85\n\n` +
@@ -330,7 +330,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
     }
 
     if (expressSendWhatsApp) {
-      const msg = `✨ *Aura Nails & Spa - Turno Express Confirmado* ✨\n\nHola ${expressClientName}, bienvenida a nuestro Santuario Chicó Calle 85.\n\n💅 *Servicio:* ${selectedServ.name}\n👩‍🎨 *Especialista:* ${selectedSpec.name}\n⏰ *Hora:* ${currentTimeStr}\n🎫 *Turno:* ${bookingCode}\n💵 *Valor:* ${formatCOP(selectedServ.price)}\n\n¡Tu momento de relajación y belleza comienza ahora! ✨`;
+      const msg = `✨ *La Pelu SPA - Turno Express Confirmado* ✨\n\nHola ${expressClientName}, bienvenida a nuestro Santuario Chicó Calle 85.\n\n💅 *Servicio:* ${selectedServ.name}\n👩‍🎨 *Especialista:* ${selectedSpec.name}\n⏰ *Hora:* ${currentTimeStr}\n🎫 *Turno:* ${bookingCode}\n💵 *Valor:* ${formatCOP(selectedServ.price)}\n\n¡Tu momento de relajación y belleza comienza ahora! ✨`;
       
       await sendUltraMsgWhatsApp({
         phone: expressClientPhone,

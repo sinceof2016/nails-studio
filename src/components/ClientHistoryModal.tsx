@@ -46,7 +46,7 @@ export const ClientHistoryModal: React.FC<ClientHistoryModalProps> = ({
 
   const waUrl = buildWaMeUrl(
     client.telefono,
-    `Hola ${client.nombre}, te saludamos desde Aura Nails & Spa. Queremos darte seguimiento a tus citas y consentirte en tu próxima visita.`
+    `Hola ${client.nombre}, te saludamos desde La Pelu SPA. Queremos darte seguimiento a tus citas y consentirte en tu próxima visita.`
   );
 
   return (

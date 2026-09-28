@@ -78,7 +78,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 Acceso al Sistema
               </h3>
               <p className="text-xs text-[#6F5A4B] mt-0.5">
-                Panel de gestión y administración de Aura Nails &amp; Spa
+                Panel de gestión y administración de La Pelu SPA
               </p>
             </div>
           </div>

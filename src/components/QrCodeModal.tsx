@@ -43,7 +43,7 @@ export const QrCodeModal: React.FC<QrCodeModalProps> = ({
         {/* Ticket card */}
         <div className="bg-white rounded-2xl p-5 border border-[#e8b4b8]/40 shadow-sm text-center relative overflow-hidden">
           <div className="text-xs uppercase tracking-widest text-[#7c5357] font-semibold mb-1">
-            Aura Nails &amp; Spa Sanctuary
+            La Pelu SPA Sanctuary
           </div>
           <h4 className="text-base font-bold text-[#1c1c18] font-['Plus_Jakarta_Sans',sans-serif]">
             {appointment.serviceName}

@@ -317,7 +317,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <span className="text-[#827474]">Sede Chicó · Bogotá D.C.</span>
         </div>
         <p className="text-[11px] text-[#827474]">
-          © {new Date().getFullYear()} Aura Nails &amp; Spa. Todos los derechos reservados.
+          © {new Date().getFullYear()} La Pelu SPA. Todos los derechos reservados.
         </p>
       </footer>
     </div>

@@ -24,7 +24,7 @@ export const UltraMsgConfigModal: React.FC<UltraMsgConfigModalProps> = ({
   const [config, setConfig] = useState<UltraMsgConfig>(() => getUltraMsgConfig());
   const [activeTab, setActiveTab] = useState<'disparos' | 'credenciales' | 'plantillas' | 'historial'>('disparos');
   const [testPhone, setTestPhone] = useState('3104428890');
-  const [testMessage, setTestMessage] = useState('Prueba de integración UltraMsg Gateway - Aura Nails & Spa');
+  const [testMessage, setTestMessage] = useState('Prueba de integración UltraMsg Gateway - La Pelu SPA');
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; msg: string } | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);

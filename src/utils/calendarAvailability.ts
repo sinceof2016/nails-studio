@@ -22,7 +22,7 @@ export interface SlotAvailability {
   status: 'available' | 'booked' | 'passed';
 }
 
-// Fixed 1-hour interval slots for Aura Nails & Spa
+// Fixed 1-hour interval slots for La Pelu SPA
 export const HOURLY_TIME_SLOTS: string[] = [
   '08:00 AM',
   '09:00 AM',

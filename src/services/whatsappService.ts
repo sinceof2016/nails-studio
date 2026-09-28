@@ -24,9 +24,9 @@ export const DEFAULT_ULTRAMSG_CONFIG: UltraMsgConfig = {
   autoConfirmOnBooking: true,
   autoNotifyStatusChange: true,
   autoNotifyPayment: true,
-  confirmationTemplate: `✨ *AURA NAILS & SPA* - Confirmación de Reserva ✨\n\nHola *{cliente}*, tu cita para *{servicio}* ha sido agendada con éxito.\n\n📌 *Código de Turno:* {codigo}\n📅 *Fecha:* {fecha}\n⏰ *Hora:* {hora}\n📍 *Sede:* {sede}\n\n¡Te esperamos para consentirte en nuestro santuario de belleza! 💅✨`,
-  statusChangeTemplate: `🔔 *AURA NAILS & SPA* - Actualización de Turno 🔔\n\nHola *{cliente}*, tu cita *{codigo}* ha cambiado de estado a: *{estado}*.\n\n📍 *Sede:* {sede}\n💅 *Servicio:* {servicio}\n\nGracias por confiar en Aura Nails & Spa.`,
-  paymentTemplate: `💳 *AURA NAILS & SPA* - Recibo de Pago 💳\n\nHola *{cliente}*, confirmamos la recepción del pago por tu servicio *{servicio}* por un valor de *$ {monto} COP*.\n\n📌 *Código de Cita:* {codigo}\n\n¡Muchas gracias por tu visita!`
+  confirmationTemplate: `✨ *LA PELU SPA* - Confirmación de Reserva ✨\n\nHola *{cliente}*, tu cita para *{servicio}* ha sido agendada con éxito.\n\n📌 *Código de Turno:* {codigo}\n📅 *Fecha:* {fecha}\n⏰ *Hora:* {hora}\n📍 *Sede:* {sede}\n\n¡Te esperamos para consentirte en nuestro santuario de belleza! 💅✨`,
+  statusChangeTemplate: `🔔 *LA PELU SPA* - Actualización de Turno 🔔\n\nHola *{cliente}*, tu cita *{codigo}* ha cambiado de estado a: *{estado}*.\n\n📍 *Sede:* {sede}\n💅 *Servicio:* {servicio}\n\nGracias por confiar en La Pelu SPA.`,
+  paymentTemplate: `💳 *LA PELU SPA* - Recibo de Pago 💳\n\nHola *{cliente}*, confirmamos la recepción del pago por tu servicio *{servicio}* por un valor de *$ {monto} COP*.\n\n📌 *Código de Cita:* {codigo}\n\n¡Muchas gracias por tu visita!`
 };
 
 export function getUltraMsgConfig(): UltraMsgConfig {

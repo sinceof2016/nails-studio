@@ -222,7 +222,7 @@ export const NotFoundScreen: React.FC<NotFoundScreenProps> = ({
               </h3>
 
               <p className="text-xs sm:text-sm text-[#6F5A4B] max-w-md mx-auto mt-3 leading-relaxed">
-                La dirección que buscas no existe o fue trasladada. En Aura Nails &amp; Spa cuidamos cada detalle: te ayudamos a regresar al santuario para que disfrutes de tu momento de cuidado personal.
+                La dirección que buscas no existe o fue trasladada. En La Pelu SPA cuidamos cada detalle: te ayudamos a regresar al santuario para que disfrutes de tu momento de cuidado personal.
               </p>
 
               {/* Primary Action Buttons */}
@@ -390,7 +390,7 @@ export const NotFoundScreen: React.FC<NotFoundScreenProps> = ({
             </div>
 
             <a
-              href="https://wa.me/573128492011?text=Hola%20Aura%20Nails%20%26%20Spa,%20estoy%20navegando%20en%20su%20web%20y%20deseo%20asistencia%20con%20una%20reserva"
+              href="https://wa.me/573128492011?text=Hola%20La%20Pelu%20SPA,%20estoy%20navegando%20en%20su%20web%20y%20deseo%20asistencia%20con%20una%20reserva"
               target="_blank"
               rel="noreferrer"
               className="px-4 py-2.5 rounded-full bg-[#25D366] hover:bg-[#1EBE5D] text-[#0b421a] font-bold text-xs shadow-2xs transition-all flex items-center justify-center gap-1.5 shrink-0"

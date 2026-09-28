@@ -1,6 +1,6 @@
 import { Service, Specialist, PolishSwatch, NailShape, AddOnOption, Appointment, AppNotification, SavedDesign, AdminUser, SystemUser } from '../types';
 
-export const LOGO_URL = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBYfnyPriEZp5_fqH6CZLgoZH0wyCsIu1K-mIRHWO1j6v0JIUjK8Kq48jjZB4p97vYnpNOxKM9oKMgE75s-MKqvk7Ub0ejGk5vonLxYBY6yh8jHKF14UuNfXqTS35pUY26pzcs51BKkpRXj2Zz7URJCYzHPlZ99jqNRzEhRwVdK4-vE2QaqER1NHAW8CDjIdPAIxmopk8abbho8QU7Ftb-FUC5lAcDTKy9Wuv4Z29dAzrsKFy-1YNcUow';
+export const LOGO_URL = './lumina-logo.svg';
 export const USER_AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBUrZkdIRr4pUE-9QkKlA4YJH4tk8ug4t8ss19lF-xaHuFXDZMHSMNsT9k9zTg0PDXjyE1XBLqv7-3TJMIW1ZrMHrdyvA7EONm345vpZM9IpVzKV952FeAoCg5uRj8ASWjkLrJBn8hl9dZ4nYWpvmFHjrZnDCGuwztm7sv__1kQfaJmUHLZDjmyxmWSv0wSvmVqEKDlZRTrx921qdt6d1vfQiI8yKxjqllB1oBt-7Gy_etZi5Dt7p8vVQ';
 
 export const DAVID_USER: SystemUser = {
@@ -247,7 +247,7 @@ export const POLISH_SWATCHES: PolishSwatch[] = [
   { id: 'peach-sorbet', name: 'Melocotón Velouté', hex: '#fad4c0', accentHex: '#eab89e', finish: 'pastel' },
   { id: 'matcha-latte', name: 'Matcha Calm Cream', hex: '#dce8dc', accentHex: '#b8ccb8', finish: 'pastel' },
   { id: 'chrome-champagne', name: 'Champaña Cromo', hex: '#ede6db', accentHex: '#d8cdbe', finish: 'chrome' },
-  { id: 'deep-plum', name: 'Aura Plum Velvet', hex: '#583c4b', accentHex: '#3e2733', finish: 'creamy' }
+  { id: 'deep-plum', name: 'La Pelu Plum Velvet', hex: '#583c4b', accentHex: '#3e2733', finish: 'creamy' }
 ];
 
 export const NAIL_SHAPES: NailShape[] = [
@@ -405,7 +405,7 @@ export const NOTIFICATIONS: AppNotification[] = [
   },
   {
     id: 'notif-3',
-    title: '+45 Puntos Aura Bloom acreditados',
+    title: '+45 Puntos La Pelu Bloom acreditados',
     message: 'Has alcanzado el estatus VIP Platinum en nuestro programa de fidelidad.',
     timeAgo: 'Ayer',
     isUnread: false,

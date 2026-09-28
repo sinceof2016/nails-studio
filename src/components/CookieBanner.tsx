@@ -36,7 +36,7 @@ export const CookieBanner: React.FC<CookieBannerProps> = ({
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-sm sm:text-base font-bold text-[#1c1c18] font-['Plus_Jakarta_Sans',sans-serif]">
-                Uso de Cookies en Aura Nails &amp; Spa
+                Uso de Cookies en La Pelu SPA
               </h3>
               <span className="px-2 py-0.5 rounded-full bg-[#fdf9f3] text-[10px] font-semibold text-[#7c5357] border border-[#e8b4b8]/40">
                 Privacidad &amp; Transparencia

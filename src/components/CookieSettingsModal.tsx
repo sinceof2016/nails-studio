@@ -74,7 +74,7 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
                 Centro de Preferencias de Cookies
               </h2>
               <p className="text-xs text-[#504444]">
-                Aura Nails &amp; Spa · Transparencia y Control de tus Datos
+                La Pelu SPA · Transparencia y Control de tus Datos
               </p>
             </div>
           </div>

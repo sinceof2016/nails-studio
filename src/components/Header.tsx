@@ -85,7 +85,7 @@ export const Header: React.FC<HeaderProps> = ({
       case '404':
         return 'Página No Encontrada (404)';
       default:
-        return 'Aura Nails & Spa';
+        return 'La Pelu SPA';
     }
   };
 
@@ -101,13 +101,13 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => onNavigate('reservar')}
             >
               <img
-                alt="Aura Nails Boutique Logo"
+                alt="La Pelu SPA Logo"
                 className="h-9 sm:h-10 w-auto object-contain shrink-0 group-hover:scale-105 transition-transform"
                 src={LOGO_URL}
               />
               <div className="flex flex-col min-w-0">
                 <span className="text-[10px] sm:text-[11px] tracking-widest uppercase font-bold text-[#7C571C] truncate font-['Plus_Jakarta_Sans',sans-serif]">
-                  Aura Nails &amp; Spa
+                  La Pelu SPA
                 </span>
                 <h1 className="text-sm sm:text-base text-[#221A14] font-bold leading-tight font-['Plus_Jakarta_Sans',sans-serif] truncate">
                   {getSectionTitle()}

@@ -204,7 +204,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       specialistAvatar: assignedSpecialist.avatar,
       date: selectedDateOption.full,
       time: selectedTime,
-      clientName: clientName || 'Clienta Aura',
+      clientName: clientName || 'Clienta La Pelu',
       clientPhone: clientPhone || '+57 300 000 0000',
       clientEmail,
       notes: clientNotes,
@@ -225,7 +225,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
     const ultraConfig = getUltraMsgConfig();
     if (ultraConfig.autoConfirmOnBooking) {
       setIsSendingWhatsApp(true);
-      const effectiveClient = clientName && clientName.trim() ? clientName.trim() : 'Clienta Aura';
+      const effectiveClient = clientName && clientName.trim() ? clientName.trim() : 'Clienta La Pelu';
       const effectivePhone = clientPhone && clientPhone.trim() ? clientPhone.trim() : '+57 312 849 2011';
 
       const waText = renderTemplate(ultraConfig.confirmationTemplate, {
@@ -254,7 +254,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   if (bookingConfirmed) {
     const waUrl = buildWaMeUrl(
       bookingConfirmed.clientPhone,
-      `Hola! Tengo mi reserva ${bookingConfirmed.bookingCode} confirmada para el ${bookingConfirmed.date} a las ${bookingConfirmed.time} con ${bookingConfirmed.specialistName} en Aura Nails & Spa.`
+      `Hola! Tengo mi reserva ${bookingConfirmed.bookingCode} confirmada para el ${bookingConfirmed.date} a las ${bookingConfirmed.time} con ${bookingConfirmed.specialistName} en La Pelu SPA.`
     );
 
     return (
@@ -1000,7 +1000,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
             <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2.5">
               <span className="material-symbols-outlined text-emerald-600 text-[20px] shrink-0">mark_chat_read</span>
               <span>
-                Al confirmar, se enviará una notificación instantánea a tu WhatsApp con el código de turno oficial de Aura Nails &amp; Spa.
+                Al confirmar, se enviará una notificación instantánea a tu WhatsApp con el código de turno oficial de La Pelu SPA.
               </span>
             </div>
           </div>

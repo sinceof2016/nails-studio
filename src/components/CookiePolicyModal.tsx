@@ -38,7 +38,7 @@ export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({
                 Política de Tratamiento y Uso de Cookies
               </h2>
               <p className="text-xs text-[#504444]">
-                Aura Nails &amp; Spa · Actualizado Septiembre 2026 · Conforme Ley 1581 / RGPD
+                La Pelu SPA · Actualizado Septiembre 2026 · Conforme Ley 1581 / RGPD
               </p>
             </div>
           </div>
@@ -60,7 +60,7 @@ export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({
               1. ¿Qué es una Cookie y para qué se utiliza?
             </h3>
             <p>
-              Una <strong>cookie</strong> es un pequeño archivo de texto que un sitio web descarga en tu ordenador, smartphone o tableta cuando accedes a él. Las cookies permiten a <strong>Aura Nails &amp; Spa</strong> almacenar y recuperar información sobre tus hábitos de navegación, recordar tu sesión activa, agilizar tus reservas de manicura rusa y personalizar la visualización de precios en <strong>Pesos Colombianos (COP)</strong>.
+              Una <strong>cookie</strong> es un pequeño archivo de texto que un sitio web descarga en tu ordenador, smartphone o tableta cuando accedes a él. Las cookies permiten a <strong>La Pelu SPA</strong> almacenar y recuperar información sobre tus hábitos de navegación, recordar tu sesión activa, agilizar tus reservas de manicura rusa y personalizar la visualización de precios en <strong>Pesos Colombianos (COP)</strong>.
             </p>
           </section>
 
@@ -168,8 +168,8 @@ export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({
               Si tienes dudas o deseas ejercer tus derechos de acceso, rectificación o supresión de datos, puedes escribir a nuestro equipo de privacidad en:
             </p>
             <div className="p-3.5 rounded-2xl bg-white border border-[#e8b4b8]/30 text-xs space-y-1">
-              <p><strong>Aura Nails &amp; Spa Bogotá</strong> · Carrera 11 # 93-40, Barrio Chicó, Bogotá D.C., Colombia.</p>
-              <p><strong>Correo electrónico:</strong> <a href="mailto:privacidad@auranailsspa.com" className="text-[#7c5357] underline">privacidad@auranailsspa.com</a></p>
+              <p><strong>La Pelu SPA Bogotá</strong> · Carrera 11 # 93-40, Barrio Chicó, Bogotá D.C., Colombia.</p>
+              <p><strong>Correo electrónico:</strong> <a href="mailto:privacidad@lapeluspa.com" className="text-[#7c5357] underline">privacidad@lapeluspa.com</a></p>
               <p><strong>WhatsApp Oficial:</strong> +57 312 849 2011</p>
             </div>
           </section>

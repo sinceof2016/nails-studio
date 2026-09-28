@@ -581,7 +581,7 @@ export default function App() {
           </button>
         </div>
         <p className="text-[11px] text-[#827474]">
-          © {new Date().getFullYear()} Aura Nails &amp; Spa · Santuario de Belleza · Chicó Calle 85, Bogotá · WhatsApp (+57) 312 849 2011
+          © {new Date().getFullYear()} La Pelu SPA · Santuario de Belleza · Chicó Calle 85, Bogotá · WhatsApp (+57) 312 849 2011
         </p>
       </footer>
 
