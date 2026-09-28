@@ -34,8 +34,8 @@ export const Header: React.FC<HeaderProps> = ({
   const isCaja = currentUser?.rol === 'Caja';
 
   const allTabs: { id: AppTab; label: string; icon: string; badge?: number; minRole: 'public' | 'caja' | 'admin' | 'david' }[] = [
-    { id: 'servicios', label: 'Servicios & Carta', icon: 'spa', minRole: 'public' },
     { id: 'reservar', label: 'Reservar Turno', icon: 'calendar_month', minRole: 'public' },
+    { id: 'servicios', label: 'Servicios & Carta', icon: 'spa', minRole: 'public' },
     {
       id: 'agenda',
       label: 'Libro de Citas',
