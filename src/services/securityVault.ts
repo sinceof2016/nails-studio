@@ -19,7 +19,7 @@ interface VaultEntry {
 const VAULT_CREDENTIALS: VaultEntry[] = [
   {
     userId: 'USR-DAVID-01',
-    email: 'orjueladavid32@gmail.com',
+    email: 'david.orjuela@auranailsspa.com',
     // Hash SHA-256 de la contraseña del usuario David Orjuela
     sha256Hash: 'c8b318bc1c2dd5f31b7494a98e2a32e2797dc8215286120e9f38f42cd2a27549',
     role: 'SuperAdmin'
@@ -73,6 +73,20 @@ export async function authenticateWithVault(
         const data = await response.json();
         if (data.success && data.user) {
           return { success: true, user: data.user };
+        }
+      } else {
+        const errorData = await response.json().catch(() => null);
+        if (response.status === 429) {
+          return {
+            success: false,
+            error: errorData?.error || 'Demasiados intentos de acceso. Por favor espera antes de reintentar.'
+          };
+        }
+        if (response.status === 401) {
+          return {
+            success: false,
+            error: errorData?.error || 'Credenciales inválidas en el Vault.'
+          };
         }
       }
     } catch {

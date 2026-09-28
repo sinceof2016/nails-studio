@@ -6,7 +6,7 @@ export const USER_AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXu
 export const DAVID_USER: SystemUser = {
   id: 'USR-DAVID-01',
   nombre: 'David Orjuela',
-  email: 'orjueladavid32@gmail.com',
+  email: 'david.orjuela@auranailsspa.com',
   rol: 'SuperAdmin',
   sucursalAsignada: 'todas',
   avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
@@ -46,7 +46,7 @@ export const ADMIN_USER: AdminUser = {
   name: 'David Orjuela',
   role: 'SuperAdmin',
   title: 'Director de Operaciones & Santuario',
-  email: 'orjueladavid32@gmail.com',
+  email: 'david.orjuela@auranailsspa.com',
   phone: '+57 310 442 8890',
   branch: 'Santuario Central Chicó · Bogotá',
   branchId: 'chico',
@@ -57,7 +57,7 @@ export const ADMIN_USER: AdminUser = {
     'Gestión integral de citas y agenda en tiempo real',
     'Caja rápida y libro maestro de liquidación a especialistas',
     'Arqueo de caja y gaveta física diaria',
-    'Sincronización con Google Calendar',
+    'Disparos automáticos de WhatsApp con UltraMsg',
     'Base y reporte de clientes con historial de visitas'
   ]
 };

@@ -51,7 +51,7 @@ export interface AddOnOption {
   description: string;
 }
 
-export type PaymentMethod = 'efectivo' | 'nequi_daviplata' | 'tarjeta_datafono';
+export type PaymentMethod = 'efectivo' | 'nequi_daviplata' | 'tarjeta_datafono' | 'mixto';
 
 export interface Appointment {
   id: string;
@@ -75,11 +75,14 @@ export interface Appointment {
   selectedAddOns: string[];
   totalPrice: number;
   paymentMethod?: PaymentMethod;
+  montoEfectivo?: number;
+  montoDigital?: number;
+  digitalMethod?: 'nequi_daviplata' | 'tarjeta_datafono';
   tipAmount?: number;
   status: 'confirmada' | 'en_preparacion' | 'completada' | 'cancelada';
   bookingCode: string;
   createdAt: string;
-  syncedToGoogleCalendar?: boolean;
+  notifiedViaWhatsApp?: boolean;
   branchId?: 'chico' | 'usaquen' | 'chapinero';
   isGroupBooking?: boolean;
   groupGuestsCount?: number;
@@ -100,6 +103,9 @@ export interface SalonCutRecord {
   recaudoSalon: number;
   propina: number;
   metodoPago: PaymentMethod;
+  montoEfectivo?: number;
+  montoDigital?: number;
+  digitalMethod?: 'nequi_daviplata' | 'tarjeta_datafono';
   sucursalId: 'chico' | 'usaquen' | 'chapinero';
   nota?: string;
   appointmentId?: string;
@@ -190,7 +196,8 @@ export type AppTab =
   | 'caja'
   | 'clientes'
   | 'usuarios'
-  | 'api';
+  | 'api'
+  | '404';
 
 export interface SavedDesign {
   id: string;
@@ -198,4 +205,23 @@ export interface SavedDesign {
   artist: string;
   image: string;
   tag: string;
+}
+
+export interface CookiePreferences {
+  accepted: boolean;
+  necessary: boolean;
+  preferences: boolean;
+  analytics: boolean;
+  marketing: boolean;
+  timestamp: string;
+  version: string;
+}
+
+export interface CookieInfo {
+  name: string;
+  category: 'necessary' | 'preferences' | 'analytics' | 'marketing';
+  purpose: string;
+  provider: string;
+  duration: string;
+  type: 'HTTP Cookie' | 'LocalStorage' | 'Session';
 }

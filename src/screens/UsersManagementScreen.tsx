@@ -62,25 +62,25 @@ export const UsersManagementScreen: React.FC<UsersManagementScreenProps> = ({
   return (
     <div className="w-full space-y-6 pb-12 animate-in fade-in duration-200">
       {/* Banner */}
-      <div className="rounded-3xl bg-gradient-to-r from-[#221A14] via-[#3a2b20] to-[#7C571C] p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute -right-8 -bottom-8 w-44 h-44 rounded-full bg-white/10 blur-xl pointer-events-none" />
+      <div className="rounded-3xl bg-gradient-to-r from-[#FFF8F5] via-[#FBEBE1] to-[#F7E5DE] p-6 sm:p-8 text-[#221A14] border border-[#DFCBB5]/80 shadow-xs relative overflow-hidden">
+        <div className="absolute -right-8 -bottom-8 w-44 h-44 rounded-full bg-[#E8B4B8]/20 blur-2xl pointer-events-none" />
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-[#DFCBB5] text-xs font-semibold mb-2">
-              <span className="material-symbols-outlined text-[15px] text-[#C49756] fill">stars</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#7C571C]/10 text-[#7C571C] text-xs font-semibold mb-2 border border-[#7C571C]/20">
+              <span className="material-symbols-outlined text-[15px] text-[#7C571C] fill">stars</span>
               Panel Exclusivo de Control Maestro · David Orjuela
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold font-['Plus_Jakarta_Sans',sans-serif] text-white">
+            <h2 className="text-2xl sm:text-3xl font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#221A14]">
               Gestión de Usuarios del Sistema
             </h2>
-            <p className="text-xs sm:text-sm text-white/80 mt-1 max-w-xl">
+            <p className="text-xs sm:text-sm text-[#6F5A4B] mt-1 max-w-xl">
               Solo tu perfil tiene privilegios para crear usuarios, autorizar roles y controlar el acceso a la plataforma y la API REST.
             </p>
           </div>
 
           <button
             onClick={() => setShowAddModal(true)}
-            className="py-2.5 px-5 rounded-full bg-[#C49756] hover:bg-[#b08443] text-[#221A14] font-bold text-xs shadow-md transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer shrink-0"
+            className="py-2.5 px-5 rounded-full bg-[#7C571C] hover:bg-[#684714] text-white font-bold text-xs shadow-xs transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer shrink-0"
           >
             <span className="material-symbols-outlined text-[18px]">person_add</span>
             <span>+ Nuevo Usuario</span>

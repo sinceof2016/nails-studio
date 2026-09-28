@@ -10,12 +10,16 @@ import { LoginModal } from './components/LoginModal';
 import { SpecialistModal } from './components/SpecialistModal';
 import { ServiceDetailModal } from './components/ServiceDetailModal';
 import { PromoModal } from './components/PromoModal';
+import { CookieBanner } from './components/CookieBanner';
+import { CookieSettingsModal } from './components/CookieSettingsModal';
+import { CookiePolicyModal } from './components/CookiePolicyModal';
 import { HomeScreen } from './screens/HomeScreen';
 import { BookingScreen } from './screens/BookingScreen';
 import { SpecialistsScreen } from './screens/SpecialistsScreen';
 import { AdminScreen } from './screens/AdminScreen';
 import { UsersManagementScreen } from './screens/UsersManagementScreen';
 import { ApiConsoleScreen } from './screens/ApiConsoleScreen';
+import { NotFoundScreen } from './screens/NotFoundScreen';
 import {
   Service,
   Specialist,
@@ -25,8 +29,24 @@ import {
   ExpenseRecord,
   CashRegisterClose,
   SystemUser,
-  AppTab
+  AppTab,
+  CookiePreferences
 } from './types';
+import {
+  getCookieConsent,
+  saveCookieConsent,
+  acceptAllCookies,
+  rejectNonEssentialCookies,
+  revokeConsent,
+  hasConsentAnswered
+} from './services/cookieService';
+import {
+  getActiveUser,
+  createSession,
+  clearSession,
+  touchSession,
+  getActiveSession
+} from './services/sessionManager';
 import {
   INITIAL_APPOINTMENTS,
   NOTIFICATIONS,
@@ -48,18 +68,65 @@ import {
 } from './services/firestoreService';
 
 export default function App() {
-  // Current active tab
-  const [currentTab, setCurrentTab] = useState<AppTab>('servicios');
+  // Current active tab: Defaults to 'reservar' as the primary home screen
+  const [currentTab, setCurrentTab] = useState<AppTab>('reservar');
 
-  // Active authenticated user: defaults to David Orjuela, or saved in localStorage
-  const [currentUser, setCurrentUser] = useState<SystemUser | null>(() => {
-    try {
-      const saved = localStorage.getItem('aura_current_user');
-      return saved ? JSON.parse(saved) : DAVID_USER;
-    } catch {
-      return DAVID_USER;
+  // Active authenticated user: defaults to sessionManager validation (auto-expires on inactivity)
+  const [currentUser, setCurrentUser] = useState<SystemUser | null>(() => getActiveUser());
+
+  // Auto-expiration watcher and user activity listener
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // Check expiration every 30 seconds
+    const interval = setInterval(() => {
+      const activeSession = getActiveSession();
+      if (!activeSession) {
+        setCurrentUser(null);
+        setCurrentTab('reservar');
+        showToast('Tu sesión ha expirado por inactividad. Por favor ingresa nuevamente.');
+      }
+    }, 30 * 1000);
+
+    // Event listeners to refresh user activity
+    const onUserAction = () => {
+      touchSession();
+    };
+
+    window.addEventListener('click', onUserAction);
+    window.addEventListener('keydown', onUserAction);
+    window.addEventListener('touchstart', onUserAction);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('click', onUserAction);
+      window.removeEventListener('keydown', onUserAction);
+      window.removeEventListener('touchstart', onUserAction);
+    };
+  }, [currentUser]);
+
+  const handleNavigateTab = (tab: AppTab) => {
+    setCurrentTab(tab);
+    if (tab === 'reservar' || tab === 'servicios') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  });
+  };
+
+  // Listen for hash / path changes to route to 404 or specific tabs
+  useEffect(() => {
+    const handleUrlRoute = () => {
+      const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
+      if (hash === '404' || hash === 'notfound' || hash === 'error') {
+        setCurrentTab('404');
+      }
+    };
+
+    handleUrlRoute();
+    window.addEventListener('hashchange', handleUrlRoute);
+    return () => {
+      window.removeEventListener('hashchange', handleUrlRoute);
+    };
+  }, []);
 
   // System users list
   const [systemUsers, setSystemUsers] = useState<SystemUser[]>(() => {
@@ -149,10 +216,49 @@ export default function App() {
   const [selectedServiceDetail, setSelectedServiceDetail] = useState<Service | null>(null);
   const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
 
+  // Cookie Management State
+  const [cookieConsent, setCookieConsent] = useState<CookiePreferences | null>(() => getCookieConsent());
+  const [isCookieBannerOpen, setIsCookieBannerOpen] = useState<boolean>(() => !hasConsentAnswered());
+  const [isCookieSettingsOpen, setIsCookieSettingsOpen] = useState<boolean>(false);
+  const [isCookiePolicyOpen, setIsCookiePolicyOpen] = useState<boolean>(false);
+
   // Booking pre-fills
   const [bookingService, setBookingService] = useState<Service | null>(null);
   const [bookingSpecialist, setBookingSpecialist] = useState<Specialist | null>(null);
   const [promoDiscount, setPromoDiscount] = useState<number>(0);
+
+  // Cookie Handlers
+  const handleAcceptAllCookies = () => {
+    const prefs = acceptAllCookies();
+    setCookieConsent(prefs);
+    setIsCookieBannerOpen(false);
+    showToast('Preferencias guardadas: Todas las cookies han sido autorizadas.');
+  };
+
+  const handleRejectOptionalCookies = () => {
+    const prefs = rejectNonEssentialCookies();
+    setCookieConsent(prefs);
+    setIsCookieBannerOpen(false);
+    showToast('Preferencias guardadas: Solo cookies técnicas necesarias activas.');
+  };
+
+  const handleSaveCookiePreferences = (customPrefs: {
+    preferences: boolean;
+    analytics: boolean;
+    marketing: boolean;
+  }) => {
+    const prefs = saveCookieConsent(customPrefs);
+    setCookieConsent(prefs);
+    setIsCookieBannerOpen(false);
+    showToast('Tus preferencias de cookies han sido actualizadas.');
+  };
+
+  const handleRevokeCookies = () => {
+    revokeConsent();
+    setCookieConsent(null);
+    setIsCookieBannerOpen(true);
+    showToast('Consentimiento de cookies revocado. Puedes volver a configurar.');
+  };
 
   // Subscribe to Firestore collections in real-time
   useEffect(() => {
@@ -292,11 +398,13 @@ export default function App() {
   };
 
   const handleLogin = (user: SystemUser) => {
+    createSession(user);
     setCurrentUser(user);
     showToast(`Sesión iniciada como: ${user.nombre} (${user.rol})`);
   };
 
   const handleLogout = () => {
+    clearSession();
     setCurrentUser(null);
     setCurrentTab('servicios');
     showToast('Sesión cerrada. Ahora estás en Modo Público.');
@@ -336,13 +444,12 @@ export default function App() {
       {/* Unified Header with exact user pill */}
       <Header
         currentTab={currentTab}
-        onNavigate={setCurrentTab}
+        onNavigate={handleNavigateTab}
         currentUser={currentUser}
         onOpenLogin={() => setIsLoginModalOpen(true)}
         notifications={notifications}
         onMarkNotificationAsRead={handleMarkNotificationAsRead}
         activeAppointmentsCount={activeAppointmentsCount}
-        onSyncGoogleCalendar={() => showToast('Calendario sincronizado con Google Calendar')}
       />
 
       {/* Main Responsive Container */}
@@ -354,17 +461,21 @@ export default function App() {
             onOpenSpecialist={setSelectedSpecialist}
             onOpenPromo={() => setIsPromoModalOpen(true)}
             onOpenServiceDetail={setSelectedServiceDetail}
+            onOpenCookieSettings={() => setIsCookieSettingsOpen(true)}
+            onOpenCookiePolicy={() => setIsCookiePolicyOpen(true)}
           />
         )}
 
-        {/* RESERVAR CITA */}
+        {/* RESERVAR CITA (PÁGINA PRINCIPAL) */}
         {currentTab === 'reservar' && (
           <BookingScreen
             initialService={bookingService}
             initialSpecialist={bookingSpecialist}
             promoDiscountPercent={promoDiscount}
+            appointments={appointments}
             onBookingSuccess={handleBookingSuccess}
             onNavigateToAppointments={() => setCurrentTab('agenda')}
+            onNavigateToServices={() => setCurrentTab('servicios')}
             isPublicView={!currentUser}
           />
         )}
@@ -395,6 +506,8 @@ export default function App() {
             onRegisterCut={handleRegisterCut}
             onAddExpense={handleAddExpense}
             onSaveCashClose={handleSaveCashClose}
+            onAddAppointment={handleBookingSuccess}
+            onToast={showToast}
             initialTab={getAdminInitialTab(currentTab)}
             onTabChange={(adminTab) => {
               if (adminTab === 'agenda') setCurrentTab('agenda');
@@ -422,7 +535,55 @@ export default function App() {
             onSendFeedback={showToast}
           />
         )}
+
+        {/* PANTALLA 404 PERSONALIZADA */}
+        {currentTab === '404' && (
+          <NotFoundScreen
+            onNavigateHome={() => setCurrentTab('servicios')}
+            onNavigateToBooking={() => setCurrentTab('reservar')}
+            onNavigateToSpecialists={() => setCurrentTab('especialistas')}
+            onSelectService={(service) => {
+              setBookingService(service);
+              setCurrentTab('reservar');
+            }}
+          />
+        )}
       </main>
+
+      {/* Footer del Santuario con acceso a políticas y prueba de 404 */}
+      <footer className="mt-12 border-t border-[#DFCBB5]/50 bg-[#FFF8F5]/80 py-7 px-4 text-center text-xs text-[#6F5A4B] space-y-2">
+        <div className="flex flex-wrap items-center justify-center gap-3 text-xs font-semibold">
+          <button onClick={() => setCurrentTab('servicios')} className="hover:text-[#221A14] cursor-pointer">
+            Servicios &amp; Carta
+          </button>
+          <span>·</span>
+          <button onClick={() => setCurrentTab('reservar')} className="hover:text-[#221A14] cursor-pointer">
+            Reservas Online
+          </button>
+          <span>·</span>
+          <button onClick={() => setCurrentTab('especialistas')} className="hover:text-[#221A14] cursor-pointer">
+            Especialistas
+          </button>
+          <span>·</span>
+          <button onClick={() => setIsCookiePolicyOpen(true)} className="hover:text-[#221A14] cursor-pointer">
+            Políticas &amp; Cookies
+          </button>
+          <span>·</span>
+          <button
+            onClick={() => setCurrentTab('404')}
+            className={`cursor-pointer flex items-center gap-1 transition-colors ${
+              currentTab === '404' ? 'text-[#7C571C] font-bold underline' : 'text-[#827474] hover:text-[#7C571C]'
+            }`}
+            title="Ver pantalla de error 404 personalizada"
+          >
+            <span className="material-symbols-outlined text-[14px]">link_off</span>
+            <span>Vista 404</span>
+          </button>
+        </div>
+        <p className="text-[11px] text-[#827474]">
+          © {new Date().getFullYear()} Aura Nails &amp; Spa · Santuario de Belleza · Chicó Calle 85, Bogotá · WhatsApp (+57) 312 849 2011
+        </p>
+      </footer>
 
       {/* Login & User Switcher Modal */}
       <LoginModal
@@ -465,6 +626,51 @@ export default function App() {
         onClose={() => setIsPromoModalOpen(false)}
         onApplyPromo={handleApplyPromo}
       />
+
+      {/* Cookie Consent Banner */}
+      <CookieBanner
+        isOpen={isCookieBannerOpen}
+        onAcceptAll={handleAcceptAllCookies}
+        onRejectOptional={handleRejectOptionalCookies}
+        onOpenSettings={() => setIsCookieSettingsOpen(true)}
+        onOpenPolicy={() => setIsCookiePolicyOpen(true)}
+      />
+
+      {/* Cookie Granular Settings Modal */}
+      <CookieSettingsModal
+        isOpen={isCookieSettingsOpen}
+        onClose={() => setIsCookieSettingsOpen(false)}
+        currentPreferences={cookieConsent}
+        onSavePreferences={handleSaveCookiePreferences}
+        onAcceptAll={handleAcceptAllCookies}
+        onRejectOptional={handleRejectOptionalCookies}
+        onRevokeAll={handleRevokeCookies}
+        onOpenPolicy={() => {
+          setIsCookieSettingsOpen(false);
+          setIsCookiePolicyOpen(true);
+        }}
+      />
+
+      {/* Cookie & Privacy Policy Modal */}
+      <CookiePolicyModal
+        isOpen={isCookiePolicyOpen}
+        onClose={() => setIsCookiePolicyOpen(false)}
+        onOpenSettings={() => {
+          setIsCookiePolicyOpen(false);
+          setIsCookieSettingsOpen(true);
+        }}
+      />
+
+      {/* Floating Cookie Settings Trigger (Persistent) */}
+      <button
+        type="button"
+        onClick={() => setIsCookieSettingsOpen(true)}
+        title="Centro de Preferencias de Cookies"
+        className="fixed bottom-4 left-4 z-40 w-10 h-10 rounded-full bg-white/95 hover:bg-white text-[#7c5357] shadow-[0_4px_16px_rgba(28,28,24,0.18)] border border-[#e8b4b8]/60 flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer backdrop-blur-xs group"
+        aria-label="Abrir centro de preferencias de cookies"
+      >
+        <span className="material-symbols-outlined text-[20px] group-hover:rotate-12 transition-transform">cookie</span>
+      </button>
     </div>
   );
 }

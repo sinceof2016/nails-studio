@@ -8,13 +8,17 @@ interface HomeScreenProps {
   onOpenSpecialist: (specialist: Specialist) => void;
   onOpenPromo: () => void;
   onOpenServiceDetail: (service: Service) => void;
+  onOpenCookieSettings?: () => void;
+  onOpenCookiePolicy?: () => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
   onQuickBook,
   onOpenSpecialist,
   onOpenPromo,
-  onOpenServiceDetail
+  onOpenServiceDetail,
+  onOpenCookieSettings,
+  onOpenCookiePolicy
 }) => {
   const [activeCategory, setActiveCategory] = useState<string>('todos');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -42,85 +46,38 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   return (
     <div className="w-full space-y-6 pb-12 animate-in fade-in duration-200">
-      {/* Top Banner: Welcome & Special Offer */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Welcome Card */}
-        <div className="lg:col-span-2 relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#e8b4b8]/70 via-[#f5d0ff]/60 to-[#fdf9f3] p-6 sm:p-8 shadow-[0_8px_24px_-4px_rgba(232,180,184,0.3)] border border-[#e8b4b8]/30 flex flex-col justify-between">
-          <div className="absolute -right-8 -bottom-8 w-44 h-44 rounded-full bg-white/40 blur-xl pointer-events-none" />
-          <div className="relative z-10 space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 text-[#6b4448] text-xs font-semibold backdrop-blur-md shadow-2xs font-['Plus_Jakarta_Sans',sans-serif]">
-              <span className="material-symbols-outlined text-[15px] text-[#7c5357] fill">
-                auto_awesome
-              </span>
-              Santuario de Manicura Rusa &amp; Spa · Chicó Bogotá
-            </div>
-
-            <h2 className="text-2xl sm:text-3xl text-[#1c1c18] font-bold tracking-tight font-['Plus_Jakarta_Sans',sans-serif] leading-tight">
-              15% OFF en Manicura Rusa &amp; Spa Deluxe
-            </h2>
-
-            <p className="text-sm text-[#504444] leading-relaxed max-w-xl">
-              Disfruta de exfoliación de cuarzo rosa, nivelación rubber con colágeno y acabado aperlado glazed donut con esmaltado semipermanente de máxima durabilidad.
-            </p>
-          </div>
-
-          <div className="relative z-10 pt-4 flex flex-wrap items-center gap-3">
-            <button
-              onClick={onOpenPromo}
-              className="inline-flex items-center justify-center px-5 py-2.5 rounded-full bg-[#7c5357] text-white text-xs sm:text-sm font-semibold shadow-[0_4px_16px_rgba(124,83,87,0.25)] hover:bg-[#674246] active:scale-95 transition-all cursor-pointer"
-            >
-              <span>Aprovechar 15% OFF</span>
-              <span className="material-symbols-outlined text-[16px] ml-1.5">local_florist</span>
-            </button>
-            <span className="text-xs text-[#504444] font-medium">
-              Válido en sede Chicó y reserva online en COP
+      {/* Top Banner: Welcome & Special Offer (Full Width) */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#e8b4b8]/70 via-[#f5d0ff]/60 to-[#fdf9f3] p-6 sm:p-8 md:p-10 shadow-[0_8px_24px_-4px_rgba(232,180,184,0.3)] border border-[#e8b4b8]/30 flex flex-col justify-between">
+        <div className="absolute -right-10 -bottom-10 w-60 h-60 rounded-full bg-white/40 blur-2xl pointer-events-none" />
+        <div className="relative z-10 space-y-3 max-w-3xl">
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/90 text-[#6b4448] text-xs font-semibold backdrop-blur-md shadow-2xs font-['Plus_Jakarta_Sans',sans-serif]">
+            <span className="material-symbols-outlined text-[15px] text-[#7c5357] fill">
+              auto_awesome
             </span>
+            Santuario de Manicura Rusa &amp; Spa · Chicó Bogotá
           </div>
+
+          <h2 className="text-2xl sm:text-4xl text-[#1c1c18] font-bold tracking-tight font-['Plus_Jakarta_Sans',sans-serif] leading-tight">
+            15% OFF en Manicura Rusa &amp; Spa Deluxe
+          </h2>
+
+          <p className="text-sm sm:text-base text-[#504444] leading-relaxed">
+            Disfruta de exfoliación de cuarzo rosa, nivelación rubber con colágeno y acabado aperlado glazed donut con esmaltado semipermanente de máxima durabilidad y cuidado clínico de cutículas.
+          </p>
         </div>
 
-        {/* Quick Highlights: Google Calendar & Medical Hygiene */}
-        <div className="flex flex-col gap-4">
-          <div className="p-4 rounded-3xl bg-white border border-[#e8b4b8]/40 shadow-xs flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-[#dce8dc] flex items-center justify-center text-[#2d6a4f] shrink-0">
-              <span className="material-symbols-outlined text-[22px]">event_available</span>
-            </div>
-            <div className="min-w-0">
-              <strong className="text-sm text-[#1c1c18] block leading-tight font-['Plus_Jakarta_Sans',sans-serif]">
-                Sincronización Google Calendar
-              </strong>
-              <span className="text-xs text-[#504444]">
-                Confirmación instantánea y recordatorios
-              </span>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-3xl bg-white border border-[#e8b4b8]/40 shadow-xs flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-[#f8d8ff] flex items-center justify-center text-[#71547c] shrink-0">
-              <span className="material-symbols-outlined text-[22px]">verified_user</span>
-            </div>
-            <div className="min-w-0">
-              <strong className="text-sm text-[#1c1c18] block leading-tight font-['Plus_Jakarta_Sans',sans-serif]">
-                Esterilización Grado Médico
-              </strong>
-              <span className="text-xs text-[#504444]">
-                Autoclave hospitalario y kits individuales
-              </span>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-3xl bg-white border border-[#e8b4b8]/40 shadow-xs flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-[#ffdbc9] flex items-center justify-center text-[#745849] shrink-0">
-              <span className="material-symbols-outlined text-[22px]">payments</span>
-            </div>
-            <div className="min-w-0">
-              <strong className="text-sm text-[#1c1c18] block leading-tight font-['Plus_Jakarta_Sans',sans-serif]">
-                Precios Transparentes en COP
-              </strong>
-              <span className="text-xs text-[#504444]">
-                Sin costos ocultos ni recargos en cabina
-              </span>
-            </div>
-          </div>
+        <div className="relative z-10 pt-6 flex flex-wrap items-center gap-4">
+          <button
+            onClick={onOpenPromo}
+            className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-[#7c5357] text-white text-xs sm:text-sm font-semibold shadow-[0_4px_16px_rgba(124,83,87,0.25)] hover:bg-[#674246] active:scale-95 transition-all cursor-pointer"
+          >
+            <span>Aprovechar 15% OFF</span>
+            <span className="material-symbols-outlined text-[17px] ml-1.5">local_florist</span>
+          </button>
+          <span className="text-xs sm:text-sm text-[#504444] font-medium flex items-center gap-1.5">
+            <span className="material-symbols-outlined text-[18px] text-[#7c5357]">location_on</span>
+            Sede Chicó · Carrera 11 # 93-40 · Reserva online en COP
+          </span>
         </div>
       </div>
 
@@ -335,6 +292,34 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           ))}
         </div>
       </div>
+
+      {/* Spa Footer & Privacy / Cookie Links */}
+      <footer className="pt-6 pb-2 text-center text-xs text-[#827474] space-y-3">
+        <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-[#504444]">
+          <button
+            type="button"
+            onClick={onOpenCookieSettings}
+            className="hover:text-[#7c5357] transition-colors flex items-center gap-1 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[16px] text-[#7c5357]">cookie</span>
+            <span>Configuración de Cookies</span>
+          </button>
+          <span>•</span>
+          <button
+            type="button"
+            onClick={onOpenCookiePolicy}
+            className="hover:text-[#7c5357] transition-colors flex items-center gap-1 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[16px] text-[#7c5357]">policy</span>
+            <span>Política de Cookies &amp; Privacidad</span>
+          </button>
+          <span>•</span>
+          <span className="text-[#827474]">Sede Chicó · Bogotá D.C.</span>
+        </div>
+        <p className="text-[11px] text-[#827474]">
+          © {new Date().getFullYear()} Aura Nails &amp; Spa. Todos los derechos reservados.
+        </p>
+      </footer>
     </div>
   );
 };

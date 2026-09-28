@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { SystemUser } from '../types';
 import { authenticateWithVault } from '../services/securityVault';
+import { checkRateLimit } from '../utils/security';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -28,6 +29,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+
+    // Rate Limiter: Máximo 5 intentos por minuto
+    const rateCheck = checkRateLimit('login_attempt');
+    if (!rateCheck.allowed) {
+      setErrorMessage(
+        `Demasiados intentos de acceso fallidos. Por seguridad, espera ${rateCheck.retryAfterSeconds || 60} segundos.`
+      );
+      return;
+    }
+
     setIsValidating(true);
 
     const result = await authenticateWithVault(emailInput, passwordInput);
@@ -56,23 +67,18 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         onClick={onClose}
       />
       <div className="relative w-full max-w-md bg-[#FFF8F5] rounded-3xl p-6 sm:p-7 shadow-2xl border border-[#DFCBB5] z-10 space-y-5 animate-in zoom-in-95 duration-200">
-        {/* Header with Vault Badge */}
+        {/* Header */}
         <div className="flex items-start justify-between border-b border-[#DFCBB5]/50 pb-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-[#7C571C]/15 border border-[#7C571C]/30 flex items-center justify-center text-[#7C571C] shrink-0">
-              <span className="material-symbols-outlined text-[22px]">shield_person</span>
+              <span className="material-symbols-outlined text-[22px]">lock</span>
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif] leading-tight">
-                  Security Vault &amp; Acceso
-                </h3>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[9px] font-bold border border-emerald-200">
-                  SHA-256
-                </span>
-              </div>
+              <h3 className="text-base font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif] leading-tight">
+                Acceso al Sistema
+              </h3>
               <p className="text-xs text-[#6F5A4B] mt-0.5">
-                Bóveda de credenciales criptográficas protegidas
+                Panel de gestión y administración de Aura Nails &amp; Spa
               </p>
             </div>
           </div>

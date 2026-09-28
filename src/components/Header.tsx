@@ -10,7 +10,6 @@ interface HeaderProps {
   notifications: AppNotification[];
   onMarkNotificationAsRead: (id: string) => void;
   activeAppointmentsCount?: number;
-  onSyncGoogleCalendar?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -20,8 +19,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenLogin,
   notifications,
   onMarkNotificationAsRead,
-  activeAppointmentsCount = 0,
-  onSyncGoogleCalendar
+  activeAppointmentsCount = 0
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const unreadCount = notifications.filter((n) => n.isUnread).length;
@@ -84,6 +82,8 @@ export const Header: React.FC<HeaderProps> = ({
         return 'Gestión de Usuarios del Sistema';
       case 'api':
         return 'Consola de API REST';
+      case '404':
+        return 'Página No Encontrada (404)';
       default:
         return 'Aura Nails & Spa';
     }
@@ -98,7 +98,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Logo & Dynamic Brand Header */}
             <div
               className="flex items-center gap-2.5 sm:gap-3 cursor-pointer min-w-0 group select-none"
-              onClick={() => onNavigate('servicios')}
+              onClick={() => onNavigate('reservar')}
             >
               <img
                 alt="Aura Nails Boutique Logo"
@@ -117,16 +117,6 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Right Status Controls */}
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              {/* Google Calendar Quick Icon Button */}
-              <button
-                type="button"
-                onClick={onSyncGoogleCalendar}
-                className="w-10 h-10 rounded-full bg-[#FBEBE1] hover:bg-[#F4DCC7] text-[#6F5A4B] hover:text-[#221A14] border border-[#DFCBB5] transition-all flex items-center justify-center cursor-pointer shadow-2xs"
-                title="Sincronizar con Google Calendar"
-              >
-                <span className="material-symbols-outlined text-[20px]">calendar_month</span>
-              </button>
-
               {/* Exact User Profile Pill matching uploaded image */}
               {currentUser ? (
                 <div

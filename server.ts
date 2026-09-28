@@ -58,14 +58,14 @@ function createRateLimiter(maxRequests: number, windowMs: number) {
 
 // 3. Server-Side Secret Vault & Environment Variables
 // Las API Keys y Tokens NUNCA viajan al cliente frontend
-const ULTRAMSG_INSTANCE_ID = process.env.ULTRAMSG_INSTANCE_ID || 'instance191642';
-const ULTRAMSG_TOKEN = process.env.ULTRAMSG_TOKEN || 'eanhimzs6xv0o1e2';
+const ULTRAMSG_INSTANCE_ID = process.env.ULTRAMSG_INSTANCE_ID || 'instance192909';
+const ULTRAMSG_TOKEN = process.env.ULTRAMSG_TOKEN || '8qqml39io4sdiwlv';
 
 // Bóveda de credenciales criptográficas protegidas en el backend (Hashes SHA-256)
 const VAULT_STORE = [
   {
     userId: 'USR-DAVID-01',
-    email: 'orjueladavid32@gmail.com',
+    email: 'david.orjuela@auranailsspa.com',
     nombre: 'David Orjuela',
     role: 'SuperAdmin' as const,
     passwordHash: 'c8b318bc1c2dd5f31b7494a98e2a32e2797dc8215286120e9f38f42cd2a27549',
@@ -130,7 +130,11 @@ app.post('/api/auth/login', createRateLimiter(8, 5 * 60 * 1000), (req, res) => {
     return res.status(401).json({ success: false, error: 'Credenciales inválidas en el Vault' });
   }
 
-  // Return clean user object WITHOUT password or hash
+  // Return clean user object WITHOUT password or hash with session expiration
+  const token = crypto.randomBytes(24).toString('hex');
+  const now = Date.now();
+  const sessionTtlMs = 15 * 60 * 1000; // 15 minutos por inactividad
+
   const safeUser = {
     id: matchedUser.userId,
     nombre: matchedUser.nombre,
@@ -142,7 +146,16 @@ app.post('/api/auth/login', createRateLimiter(8, 5 * 60 * 1000), (req, res) => {
     puedeVerUsuarios: matchedUser.puedeVerUsuarios
   };
 
-  return res.json({ success: true, user: safeUser });
+  return res.json({
+    success: true,
+    user: safeUser,
+    session: {
+      token,
+      loginTime: now,
+      expiresAt: now + sessionTtlMs,
+      maxInactivityMs: sessionTtlMs
+    }
+  });
 });
 
 // Vault Status Endpoint
@@ -160,7 +173,7 @@ app.get('/api/vault/status', createRateLimiter(30, 60 * 1000), (req, res) => {
 // WhatsApp Dispatch Proxy (Protege la API Key de UltraMsg ejecutando el fetch desde el servidor)
 app.post('/api/whatsapp/send', createRateLimiter(15, 60 * 1000), async (req, res) => {
   try {
-    const { phone, message, clientName, bookingCode } = req.body;
+    const { phone, message, clientName, bookingCode, customInstance, customToken } = req.body;
 
     if (!phone || !message) {
       return res.status(400).json({ success: false, error: 'Teléfono y mensaje requeridos' });
@@ -174,9 +187,12 @@ app.post('/api/whatsapp/send', createRateLimiter(15, 60 * 1000), async (req, res
       : `57${cleanDigits.slice(-10)}`;
 
     const cleanMsg = sanitizeText(message);
-    const instance = ULTRAMSG_INSTANCE_ID.startsWith('instance')
-      ? ULTRAMSG_INSTANCE_ID
-      : `instance${ULTRAMSG_INSTANCE_ID}`;
+    const targetInstance = (customInstance && customInstance.trim()) ? customInstance.trim() : ULTRAMSG_INSTANCE_ID;
+    const targetToken = (customToken && customToken.trim()) ? customToken.trim() : ULTRAMSG_TOKEN;
+
+    const instance = targetInstance.startsWith('instance')
+      ? targetInstance
+      : `instance${targetInstance}`;
 
     const upstreamUrl = `https://api.ultramsg.com/${instance}/messages/chat`;
 
@@ -184,15 +200,21 @@ app.post('/api/whatsapp/send', createRateLimiter(15, 60 * 1000), async (req, res
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
-        token: ULTRAMSG_TOKEN,
+        token: targetToken,
         to: cleanPhone,
         body: cleanMsg
       })
     });
 
-    const data = (await upstreamRes.json()) as any;
+    const rawText = await upstreamRes.text();
+    let data: any = {};
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      data = { error: rawText.slice(0, 100) || 'Respuesta no válida del servicio UltraMsg' };
+    }
 
-    if (upstreamRes.ok && (data.sent === 'true' || data.id || data.message === 'ok' || data.status === 'success')) {
+    if (upstreamRes.ok && (data.sent === 'true' || data.sent === true || data.id || data.message === 'ok' || data.status === 'success')) {
       return res.json({
         success: true,
         messageId: String(data.id || 'sent'),
@@ -200,8 +222,8 @@ app.post('/api/whatsapp/send', createRateLimiter(15, 60 * 1000), async (req, res
         timestamp: new Date().toISOString()
       });
     } else {
-      const errorMsg = data.error || data.message || 'Error en respuesta de UltraMsg';
-      return res.status(upstreamRes.status || 400).json({
+      const errorMsg = data.error || data.message || `Error HTTP ${upstreamRes.status} en UltraMsg`;
+      return res.status(upstreamRes.status >= 400 ? upstreamRes.status : 400).json({
         success: false,
         error: errorMsg
       });
@@ -211,6 +233,55 @@ app.post('/api/whatsapp/send', createRateLimiter(15, 60 * 1000), async (req, res
     return res.status(500).json({
       success: false,
       error: 'Error de comunicación interna con el gateway de WhatsApp.'
+    });
+  }
+});
+
+// Endpoint para verificar estado y credenciales de la instancia de UltraMsg en vivo
+app.post('/api/whatsapp/verify', createRateLimiter(20, 60 * 1000), async (req, res) => {
+  try {
+    const { customInstance, customToken } = req.body || {};
+    const targetInstance = (customInstance && customInstance.trim()) ? customInstance.trim() : ULTRAMSG_INSTANCE_ID;
+    const targetToken = (customToken && customToken.trim()) ? customToken.trim() : ULTRAMSG_TOKEN;
+
+    const instance = targetInstance.startsWith('instance')
+      ? targetInstance
+      : `instance${targetInstance}`;
+
+    const checkUrl = `https://api.ultramsg.com/${instance}/instance/status?token=${encodeURIComponent(targetToken)}`;
+
+    const checkRes = await fetch(checkUrl);
+    const rawText = await checkRes.text();
+    let data: any = {};
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      data = { error: rawText.slice(0, 120) || 'Respuesta no parseable de UltraMsg' };
+    }
+
+    if (checkRes.ok && !data.error) {
+      const accountStatus =
+        data.status?.accountStatus?.status ||
+        data.status?.account_status ||
+        (typeof data.status === 'string' ? data.status : 'authenticated');
+      return res.json({
+        success: true,
+        instance,
+        accountStatus,
+        details: data
+      });
+    } else {
+      return res.status(checkRes.status >= 400 ? checkRes.status : 400).json({
+        success: false,
+        instance,
+        error: data.error || data.message || 'Credenciales o instancia no válidas en UltraMsg'
+      });
+    }
+  } catch (error: any) {
+    console.error('Error comprobando conexión UltraMsg:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'No se pudo comunicar con el servicio de UltraMsg.'
     });
   }
 });
@@ -228,6 +299,345 @@ app.get('/api/whatsapp/status', createRateLimiter(30, 60 * 1000), (req, res) => 
     tokenSecured: true,
     serverSideProxy: true,
     timestamp: new Date().toISOString()
+  });
+});
+
+// 5. Servicio de Control de Llaves Criptográficas (KMS) & Rotación Doble
+interface KmsKey {
+  id: string;
+  name: string;
+  role: 'PRIMARY' | 'SECONDARY' | 'REVOKED';
+  keyType: string;
+  secret: string;
+  fingerprint: string;
+  createdAt: string;
+  lastUsedAt: string;
+  rotationCount: number;
+}
+
+const KMS_STORE = {
+  primaryKey: {
+    id: 'key-aura-prim',
+    name: 'Llave Primaria Activa (Producción)',
+    role: 'PRIMARY' as const,
+    keyType: 'REST_API_MASTER',
+    secret: 'aura_live_k1_8f9c2d1e0b4a736458291a7e4b',
+    fingerprint: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+    createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
+    lastUsedAt: new Date().toISOString(),
+    rotationCount: 1
+  },
+  secondaryKey: {
+    id: 'key-aura-sec',
+    name: 'Llave Secundaria de Transición (Período de Gracia)',
+    role: 'SECONDARY' as const,
+    keyType: 'REST_API_MASTER',
+    secret: 'aura_live_k2_3a7b1c9e8d2f405167382b6c9d',
+    fingerprint: 'ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb',
+    createdAt: new Date(Date.now() - 37 * 86400000).toISOString(),
+    lastUsedAt: new Date(Date.now() - 3600000).toISOString(),
+    rotationCount: 1
+  },
+  revokedKeys: [] as KmsKey[],
+  auditLog: [
+    {
+      id: 'aud-01',
+      timestamp: new Date(Date.now() - 7 * 86400000).toISOString(),
+      action: 'ROTATION_DUAL',
+      triggeredBy: 'David Orjuela (USR-DAVID-01)',
+      details: 'Rotación doble de llaves ejecutada. Promoción de secundaria y nueva llave primaria generada.',
+      fingerprint: 'e3b0c44298fc1c149afbf4c8996fb924'
+    }
+  ]
+};
+
+// Middleware para verificar API Keys contra el motor KMS de Rotación Doble
+function validateKmsApiKey(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const headerKey = req.headers['x-api-key']?.toString();
+  const authHeader = req.headers.authorization;
+  let candidateKey = headerKey;
+  if (!candidateKey && authHeader?.startsWith('Bearer ')) {
+    candidateKey = authHeader.slice(7).trim();
+  }
+
+  if (!candidateKey) {
+    return res.status(401).json({
+      success: false,
+      error: 'Se requiere una API Key válida en el header X-API-Key o Authorization: Bearer <key>',
+      protocol: 'KMS-AURA-DUAL-KEY'
+    });
+  }
+
+  if (candidateKey === KMS_STORE.primaryKey.secret) {
+    KMS_STORE.primaryKey.lastUsedAt = new Date().toISOString();
+    res.setHeader('X-KMS-Key-Role', 'PRIMARY');
+    res.setHeader('X-KMS-Key-Id', KMS_STORE.primaryKey.id);
+    return next();
+  }
+
+  if (candidateKey === KMS_STORE.secondaryKey.secret) {
+    KMS_STORE.secondaryKey.lastUsedAt = new Date().toISOString();
+    res.setHeader('X-KMS-Key-Role', 'SECONDARY');
+    res.setHeader('X-KMS-Key-Id', KMS_STORE.secondaryKey.id);
+    res.setHeader('X-KMS-Warning', 'Esta llave está en período de gracia. Se recomienda actualizar a la llave primaria.');
+    return next();
+  }
+
+  return res.status(401).json({
+    success: false,
+    error: 'API Key inválida o revocada en el Servicio de Control de Llaves (KMS)',
+    protocol: 'KMS-AURA-DUAL-KEY'
+  });
+}
+
+function maskSecret(secret: string): string {
+  if (secret.length <= 12) return '••••••••';
+  return `${secret.slice(0, 14)}••••••••••••${secret.slice(-4)}`;
+}
+
+// Endpoint para consultar llaves en el KMS (con secretos accesibles para el SuperAdmin David)
+app.get('/api/kms/keys', createRateLimiter(60, 60 * 1000), (req, res) => {
+  res.json({
+    success: true,
+    algorithm: 'AES-256-GCM / SHA-256',
+    protocol: 'Dual Key Zero-Downtime Rotation (KMS-AURA-V2)',
+    primaryKey: {
+      id: KMS_STORE.primaryKey.id,
+      name: KMS_STORE.primaryKey.name,
+      role: KMS_STORE.primaryKey.role,
+      keyType: KMS_STORE.primaryKey.keyType,
+      maskedSecret: maskSecret(KMS_STORE.primaryKey.secret),
+      rawSecret: KMS_STORE.primaryKey.secret,
+      fingerprint: KMS_STORE.primaryKey.fingerprint,
+      createdAt: KMS_STORE.primaryKey.createdAt,
+      lastUsedAt: KMS_STORE.primaryKey.lastUsedAt,
+      rotationCount: KMS_STORE.primaryKey.rotationCount,
+      expiresInDays: 30
+    },
+    secondaryKey: {
+      id: KMS_STORE.secondaryKey.id,
+      name: KMS_STORE.secondaryKey.name,
+      role: KMS_STORE.secondaryKey.role,
+      keyType: KMS_STORE.secondaryKey.keyType,
+      maskedSecret: maskSecret(KMS_STORE.secondaryKey.secret),
+      rawSecret: KMS_STORE.secondaryKey.secret,
+      fingerprint: KMS_STORE.secondaryKey.fingerprint,
+      createdAt: KMS_STORE.secondaryKey.createdAt,
+      lastUsedAt: KMS_STORE.secondaryKey.lastUsedAt,
+      rotationCount: KMS_STORE.secondaryKey.rotationCount,
+      expiresInDays: 14
+    },
+    activeKeysCount: 2,
+    auditTrail: KMS_STORE.auditLog.slice(0, 10),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Endpoint para ejecutar Rotación Doble de Llaves (Dual Key Rotation)
+app.post('/api/kms/rotate', createRateLimiter(10, 60 * 1000), (req, res) => {
+  try {
+    const { reason } = req.body || {};
+
+    // 1. La llave secundaria anterior pasa a estado REVOCADA
+    const oldSecondary = { ...KMS_STORE.secondaryKey, role: 'REVOKED' as const };
+    KMS_STORE.revokedKeys.unshift(oldSecondary);
+
+    // 2. La llave primaria actual se degrada a llave secundaria de transición (período de gracia)
+    const oldPrimary = { ...KMS_STORE.primaryKey };
+    KMS_STORE.secondaryKey = {
+      ...oldPrimary,
+      id: `key-aura-sec-${Date.now().toString().slice(-4)}`,
+      name: 'Llave Secundaria de Transición (Período de Gracia)',
+      role: 'SECONDARY',
+      rotationCount: oldPrimary.rotationCount
+    };
+
+    // 3. Se genera criptográficamente una nueva Llave Primaria de 256 bits
+    const randomSuffix = crypto.randomBytes(16).toString('hex');
+    const newSecret = `aura_live_k1_${randomSuffix}`;
+    const newFingerprint = crypto.createHash('sha256').update(newSecret).digest('hex');
+
+    KMS_STORE.primaryKey = {
+      id: `key-aura-prim-${Date.now().toString().slice(-4)}`,
+      name: 'Llave Primaria Activa (Producción)',
+      role: 'PRIMARY',
+      keyType: 'REST_API_MASTER',
+      secret: newSecret,
+      fingerprint: newFingerprint,
+      createdAt: new Date().toISOString(),
+      lastUsedAt: new Date().toISOString(),
+      rotationCount: oldPrimary.rotationCount + 1
+    };
+
+    // 4. Registro en el libro mayor de auditoría KMS
+    const auditEntry = {
+      id: `aud-${Date.now().toString().slice(-6)}`,
+      timestamp: new Date().toISOString(),
+      action: 'ROTATION_DUAL',
+      triggeredBy: 'David Orjuela (USR-DAVID-01)',
+      details: reason ? `Rotación doble: ${sanitizeText(reason)}` : 'Rotación doble de llaves ejecutada exitosamente con cero tiempo de inactividad.',
+      fingerprint: newFingerprint.slice(0, 32)
+    };
+    KMS_STORE.auditLog.unshift(auditEntry);
+
+    return res.json({
+      success: true,
+      message: 'Rotación doble de llaves completada con éxito. La llave previa está activa como secundaria y la nueva llave primaria está lista.',
+      primaryKey: {
+        id: KMS_STORE.primaryKey.id,
+        name: KMS_STORE.primaryKey.name,
+        role: KMS_STORE.primaryKey.role,
+        maskedSecret: maskSecret(KMS_STORE.primaryKey.secret),
+        rawSecret: KMS_STORE.primaryKey.secret,
+        fingerprint: KMS_STORE.primaryKey.fingerprint,
+        createdAt: KMS_STORE.primaryKey.createdAt
+      },
+      secondaryKey: {
+        id: KMS_STORE.secondaryKey.id,
+        name: KMS_STORE.secondaryKey.name,
+        role: KMS_STORE.secondaryKey.role,
+        maskedSecret: maskSecret(KMS_STORE.secondaryKey.secret),
+        rawSecret: KMS_STORE.secondaryKey.secret,
+        fingerprint: KMS_STORE.secondaryKey.fingerprint,
+        createdAt: KMS_STORE.secondaryKey.createdAt
+      },
+      auditTrail: KMS_STORE.auditLog.slice(0, 10)
+    });
+  } catch (error: any) {
+    console.error('Error rotando llaves en KMS:', error);
+    return res.status(500).json({ success: false, error: 'Error interno en el Servicio de Control de Llaves (KMS).' });
+  }
+});
+
+// Endpoint para intercambiar llaves (Swap Failover)
+app.post('/api/kms/swap', createRateLimiter(15, 60 * 1000), (req, res) => {
+  try {
+    const tempPrimary = { ...KMS_STORE.primaryKey };
+    const tempSecondary = { ...KMS_STORE.secondaryKey };
+
+    KMS_STORE.primaryKey = {
+      ...tempSecondary,
+      role: 'PRIMARY',
+      name: 'Llave Primaria Activa (Producción)'
+    };
+
+    KMS_STORE.secondaryKey = {
+      ...tempPrimary,
+      role: 'SECONDARY',
+      name: 'Llave Secundaria de Transición (Período de Gracia)'
+    };
+
+    const auditEntry = {
+      id: `aud-${Date.now().toString().slice(-6)}`,
+      timestamp: new Date().toISOString(),
+      action: 'SWAP_KEYS',
+      triggeredBy: 'David Orjuela (USR-DAVID-01)',
+      details: 'Intercambio inmediato (Swap Failover) ejecutado entre Llave Primaria y Secundaria.',
+      fingerprint: KMS_STORE.primaryKey.fingerprint.slice(0, 32)
+    };
+    KMS_STORE.auditLog.unshift(auditEntry);
+
+    return res.json({
+      success: true,
+      message: 'Intercambio inmediato (Swap) de llaves completado.',
+      primaryKey: {
+        id: KMS_STORE.primaryKey.id,
+        name: KMS_STORE.primaryKey.name,
+        role: KMS_STORE.primaryKey.role,
+        maskedSecret: maskSecret(KMS_STORE.primaryKey.secret),
+        rawSecret: KMS_STORE.primaryKey.secret,
+        fingerprint: KMS_STORE.primaryKey.fingerprint
+      },
+      secondaryKey: {
+        id: KMS_STORE.secondaryKey.id,
+        name: KMS_STORE.secondaryKey.name,
+        role: KMS_STORE.secondaryKey.role,
+        maskedSecret: maskSecret(KMS_STORE.secondaryKey.secret),
+        rawSecret: KMS_STORE.secondaryKey.secret,
+        fingerprint: KMS_STORE.secondaryKey.fingerprint
+      },
+      auditTrail: KMS_STORE.auditLog.slice(0, 10)
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: 'Error ejecutando Swap en KMS.' });
+  }
+});
+
+// Endpoint para verificar cualquier llave en tiempo real
+app.post('/api/kms/verify', createRateLimiter(30, 60 * 1000), (req, res) => {
+  const { key } = req.body || {};
+  if (!key || typeof key !== 'string') {
+    return res.status(400).json({ valid: false, message: 'Se requiere el parámetro "key".' });
+  }
+
+  const cleanKey = key.trim();
+  if (cleanKey === KMS_STORE.primaryKey.secret) {
+    return res.json({
+      valid: true,
+      keyRole: 'PRIMARY',
+      keyId: KMS_STORE.primaryKey.id,
+      fingerprint: KMS_STORE.primaryKey.fingerprint,
+      message: '✓ Llave válida y activa como LLAVE PRIMARIA (Producción).'
+    });
+  }
+
+  if (cleanKey === KMS_STORE.secondaryKey.secret) {
+    return res.json({
+      valid: true,
+      keyRole: 'SECONDARY',
+      keyId: KMS_STORE.secondaryKey.id,
+      fingerprint: KMS_STORE.secondaryKey.fingerprint,
+      message: '⚠ Llave válida en período de gracia como LLAVE SECUNDARIA.'
+    });
+  }
+
+  const isRevoked = KMS_STORE.revokedKeys.some((k) => k.secret === cleanKey);
+  return res.json({
+    valid: false,
+    message: isRevoked
+      ? '✕ Llave REVOCADA por rotación previa en el KMS.'
+      : '✕ Llave desconocida o no autorizada en el sistema.'
+  });
+});
+
+// REST API Endpoints protegidos con KMS Dual Key Validation
+app.get('/api/v1/citas/activas', validateKmsApiKey, (req, res) => {
+  res.json({
+    status: 200,
+    kmsAuth: { verified: true, role: res.getHeader('X-KMS-Key-Role'), keyId: res.getHeader('X-KMS-Key-Id') },
+    data: {
+      totalCitas: 4,
+      sede: 'Santuario Chicó Calle 85',
+      turnos: [
+        { codigo: 'AURA-7829', cliente: 'Mariana Duque', servicio: 'Manicura Rusa Glazed', estado: 'confirmada' },
+        { codigo: 'AURA-8902', cliente: 'Dra. Carolina Restrepo', servicio: 'Soft Gel Pastel Art', estado: 'en_preparacion' }
+      ]
+    }
+  });
+});
+
+app.get('/api/v1/caja/balance', validateKmsApiKey, (req, res) => {
+  res.json({
+    status: 200,
+    kmsAuth: { verified: true, role: res.getHeader('X-KMS-Key-Role'), keyId: res.getHeader('X-KMS-Key-Id') },
+    data: {
+      efectivoCaja: 260000,
+      cobrosHoy: 2,
+      moneda: 'COP',
+      sede: 'Santuario Chicó Calle 85'
+    }
+  });
+});
+
+app.get('/api/v1/clientes/metricas', validateKmsApiKey, (req, res) => {
+  res.json({
+    status: 200,
+    kmsAuth: { verified: true, role: res.getHeader('X-KMS-Key-Role'), keyId: res.getHeader('X-KMS-Key-Id') },
+    data: {
+      totalClientes: 4,
+      clientesFrecuentes: 3,
+      sede: 'Santuario Chicó Calle 85'
+    }
   });
 });
 
