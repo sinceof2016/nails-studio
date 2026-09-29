@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx server.ts",
     "start": "tsx server.ts",
-    "build": "vite build && touch dist/.nojekyll && cp dist/index.html dist/404.html",
+    "build": "vite build && touch dist/.nojekyll .nojekyll && cp dist/index.html dist/404.html && cp dist/index.html 404.html && rm -rf assets && cp -r dist/assets .",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist --dotfiles",
     "preview": "vite preview",
