@@ -62,7 +62,7 @@ export const SpecialistsScreen: React.FC<SpecialistsScreenProps> = ({
                       <span className="material-symbols-outlined text-[15px] fill">star</span>
                       <span className="font-bold ml-0.5 text-[#1c1c18]">{specialist.rating}</span>
                     </div>
-                    <span className="text-[#827474]">({specialist.reviewsCount} reseñas)</span>
+                    <span className="text-[#7D676B]">({specialist.reviewsCount} reseñas)</span>
                   </div>
                 </div>
               </div>
@@ -74,7 +74,7 @@ export const SpecialistsScreen: React.FC<SpecialistsScreenProps> = ({
 
               {/* Specialties tags */}
               <div className="mb-4">
-                <span className="text-[11px] font-semibold text-[#827474] block mb-1.5 uppercase tracking-wider">
+                <span className="text-[11px] font-semibold text-[#7D676B] block mb-1.5 uppercase tracking-wider">
                   Especialidades:
                 </span>
                 <div className="flex flex-wrap gap-1.5">

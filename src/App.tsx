@@ -435,10 +435,10 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFF8F5] text-[#221A14] flex flex-col font-sans selection:bg-[#C49756] selection:text-[#FFFFFF]">
+    <div className="min-h-screen bg-[#FAF4F5] text-[#1F1417] flex flex-col font-sans selection:bg-[#F4D9DC] selection:text-[#5E3D44]">
       {/* Background Subtle Accent Pattern */}
-      <div className="fixed inset-0 pointer-events-none -z-10 bg-[#FFF8F5]" aria-hidden="true">
-        <div className="absolute inset-0 bg-[radial-gradient(#DFCBB5_1px,transparent_1px)] [background-size:24px_24px] opacity-25" />
+      <div className="fixed inset-0 pointer-events-none -z-10 bg-[#FAF4F5]" aria-hidden="true">
+        <div className="absolute inset-0 bg-[radial-gradient(#EAD6D9_1px,transparent_1px)] [background-size:24px_24px] opacity-35" />
       </div>
 
       {/* Unified Header with exact user pill */}
@@ -551,28 +551,28 @@ export default function App() {
       </main>
 
       {/* Footer del Santuario con acceso a políticas y prueba de 404 */}
-      <footer className="mt-12 border-t border-[#DFCBB5]/50 bg-[#FFF8F5]/80 py-7 px-4 text-center text-xs text-[#6F5A4B] space-y-2">
+      <footer className="mt-12 border-t border-[#EAD6D9]/70 bg-[#FAF4F5]/90 py-7 px-4 text-center text-xs text-[#644E53] space-y-2">
         <div className="flex flex-wrap items-center justify-center gap-3 text-xs font-semibold">
-          <button onClick={() => setCurrentTab('servicios')} className="hover:text-[#221A14] cursor-pointer">
+          <button onClick={() => setCurrentTab('servicios')} className="hover:text-[#1F1417] cursor-pointer">
             Servicios &amp; Carta
           </button>
           <span>·</span>
-          <button onClick={() => setCurrentTab('reservar')} className="hover:text-[#221A14] cursor-pointer">
+          <button onClick={() => setCurrentTab('reservar')} className="hover:text-[#1F1417] cursor-pointer">
             Reservas Online
           </button>
           <span>·</span>
-          <button onClick={() => setCurrentTab('especialistas')} className="hover:text-[#221A14] cursor-pointer">
+          <button onClick={() => setCurrentTab('especialistas')} className="hover:text-[#1F1417] cursor-pointer">
             Especialistas
           </button>
           <span>·</span>
-          <button onClick={() => setIsCookiePolicyOpen(true)} className="hover:text-[#221A14] cursor-pointer">
+          <button onClick={() => setIsCookiePolicyOpen(true)} className="hover:text-[#1F1417] cursor-pointer">
             Políticas &amp; Cookies
           </button>
           <span>·</span>
           <button
             onClick={() => setCurrentTab('404')}
             className={`cursor-pointer flex items-center gap-1 transition-colors ${
-              currentTab === '404' ? 'text-[#7C571C] font-bold underline' : 'text-[#827474] hover:text-[#7C571C]'
+              currentTab === '404' ? 'text-[#64444B] font-bold underline' : 'text-[#7D676B] hover:text-[#64444B]'
             }`}
             title="Ver pantalla de error 404 personalizada"
           >
@@ -580,7 +580,7 @@ export default function App() {
             <span>Vista 404</span>
           </button>
         </div>
-        <p className="text-[11px] text-[#827474]">
+        <p className="text-[11px] text-[#7D676B]">
           © {new Date().getFullYear()} La Pelu SPA · Santuario de Belleza · Chicó Calle 85, Bogotá · WhatsApp (+57) 312 849 2011
         </p>
       </footer>

@@ -94,7 +94,7 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
             className={`pb-2.5 border-b-2 transition-all cursor-pointer ${
               activeTab === 'categories'
                 ? 'border-[#7c5357] text-[#7c5357]'
-                : 'border-transparent text-[#827474] hover:text-[#1c1c18]'
+                : 'border-transparent text-[#7D676B] hover:text-[#1c1c18]'
             }`}
           >
             Configuración por Categoría
@@ -107,7 +107,7 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
             className={`pb-2.5 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'inspector'
                 ? 'border-[#7c5357] text-[#7c5357]'
-                : 'border-transparent text-[#827474] hover:text-[#1c1c18]'
+                : 'border-transparent text-[#7D676B] hover:text-[#1c1c18]'
             }`}
           >
             <span>Inspector en Vivo</span>
@@ -141,7 +141,7 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
                 <p className="text-xs text-[#504444] leading-relaxed">
                   Indispensables para navegar, autenticar tu sesión, sincronizar citas con Firestore en tiempo real y proteger contra ataques CSRF. No pueden desactivarse.
                 </p>
-                <div className="pt-1 text-[11px] text-[#827474] font-mono">
+                <div className="pt-1 text-[11px] text-[#7D676B] font-mono">
                   Cookies: aura_cookie_consent, aura_session_token, aura_csrf_protect
                 </div>
               </div>
@@ -170,7 +170,7 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
                 <p className="text-xs text-[#504444] leading-relaxed">
                   Permiten recordar tu sucursal favorita (Chicó / Usaquén / Chapinero), tu moneda predeterminada (COP) y tus filtros de búsqueda en el catálogo.
                 </p>
-                <div className="pt-1 text-[11px] text-[#827474] font-mono">
+                <div className="pt-1 text-[11px] text-[#7D676B] font-mono">
                   Cookies: aura_branch_pref, aura_currency_display, aura_theme_mode
                 </div>
               </div>
@@ -199,7 +199,7 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
                 <p className="text-xs text-[#504444] leading-relaxed">
                   Nos ayudan a entender de forma completamente anónima qué servicios de uñas son los más populares y qué páginas tardan en cargar para optimizarlas.
                 </p>
-                <div className="pt-1 text-[11px] text-[#827474] font-mono">
+                <div className="pt-1 text-[11px] text-[#7D676B] font-mono">
                   Cookies: aura_analytics_uid, aura_perf_metrics
                 </div>
               </div>
@@ -228,7 +228,7 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
                 <p className="text-xs text-[#504444] leading-relaxed">
                   Controlan la frecuencia del bono del 15% OFF y facilitan el contacto directo con tu especialista a través de WhatsApp Business.
                 </p>
-                <div className="pt-1 text-[11px] text-[#827474] font-mono">
+                <div className="pt-1 text-[11px] text-[#7D676B] font-mono">
                   Cookies: aura_promo_seen, aura_wa_channel_ref
                 </div>
               </div>
@@ -251,7 +251,7 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
 
               <div className="space-y-2">
                 {Object.keys(liveCookies).length === 0 ? (
-                  <div className="p-8 text-center text-xs text-[#827474] bg-white rounded-2xl border border-dashed border-[#e8b4b8]/60">
+                  <div className="p-8 text-center text-xs text-[#7D676B] bg-white rounded-2xl border border-dashed border-[#e8b4b8]/60">
                     No hay cookies activas en este momento o el almacenamiento está limpio.
                   </div>
                 ) : (

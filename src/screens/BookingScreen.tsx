@@ -15,6 +15,7 @@ import {
   CalendarDayOption,
   SlotAvailability
 } from '../utils/calendarAvailability';
+import { validateOnlyPlainText, sanitizeToPlainText, validateColombianPhone } from '../utils/security';
 
 interface BookingScreenProps {
   initialService?: Service | null;
@@ -73,6 +74,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   const [clientPhone, setClientPhone] = useState<string>('+57 312 849 2011');
   const [clientEmail, setClientEmail] = useState<string>('');
   const [clientNotes, setClientNotes] = useState<string>('');
+  const [formError, setFormError] = useState<string | null>(null);
   const [bookingConfirmed, setBookingConfirmed] = useState<Appointment | null>(null);
   const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
 
@@ -179,6 +181,48 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
 
   const handleConfirmBooking = async () => {
     if (!selectedService) return;
+    setFormError(null);
+
+    // 1. Validar estrictamente que nombres, comentarios y campos sean ÚNICAMENTE texto plano
+    if (clientName && clientName.trim()) {
+      const nameVal = validateOnlyPlainText(clientName, 'Nombre', 100);
+      if (!nameVal.isValid) {
+        setFormError(nameVal.reason || 'El nombre solo admite texto plano.');
+        return;
+      }
+    }
+
+    if (clientNotes && clientNotes.trim()) {
+      const notesVal = validateOnlyPlainText(clientNotes, 'Observaciones / Comentarios', 500);
+      if (!notesVal.isValid) {
+        setFormError(notesVal.reason || 'Los comentarios solo admiten texto plano sin scripts ni código ejecutable.');
+        return;
+      }
+    }
+
+    if (clientEmail && clientEmail.trim()) {
+      const emailVal = validateOnlyPlainText(clientEmail, 'Correo', 100);
+      if (!emailVal.isValid) {
+        setFormError(emailVal.reason || 'El correo solo admite texto plano.');
+        return;
+      }
+    }
+
+    if (clientPhone && clientPhone.trim()) {
+      const phoneDigits = clientPhone.replace(/\D/g, '');
+      if (phoneDigits.length < 10) {
+        setFormError('Por favor ingresa un número de WhatsApp válido (mínimo 10 dígitos).');
+        return;
+      }
+    }
+
+    // 2. Sanitizar a texto plano puro
+    const cleanClientName = sanitizeToPlainText(clientName) || 'Clienta La Pelu';
+    const cleanClientPhone = sanitizeToPlainText(clientPhone) || '+57 300 000 0000';
+    const cleanClientEmail = sanitizeToPlainText(clientEmail);
+    const cleanClientNotes = sanitizeToPlainText(clientNotes);
+    const cleanPolish = sanitizeToPlainText(selectedPolish);
+    const cleanShape = sanitizeToPlainText(selectedShape);
 
     // Resolve assigned specialist
     let assignedSpecialist = currentSpecialist;
@@ -204,12 +248,12 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       specialistAvatar: assignedSpecialist.avatar,
       date: selectedDateOption.full,
       time: selectedTime,
-      clientName: clientName || 'Clienta La Pelu',
-      clientPhone: clientPhone || '+57 300 000 0000',
-      clientEmail,
-      notes: clientNotes,
-      polishColor: selectedPolish,
-      nailShape: selectedShape,
+      clientName: cleanClientName,
+      clientPhone: cleanClientPhone,
+      clientEmail: cleanClientEmail,
+      notes: cleanClientNotes,
+      polishColor: cleanPolish,
+      nailShape: cleanShape,
       selectedAddOns,
       totalPrice: finalPrice,
       status: 'confirmada',
@@ -225,8 +269,8 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
     const ultraConfig = getUltraMsgConfig();
     if (ultraConfig.autoConfirmOnBooking) {
       setIsSendingWhatsApp(true);
-      const effectiveClient = clientName && clientName.trim() ? clientName.trim() : 'Clienta La Pelu';
-      const effectivePhone = clientPhone && clientPhone.trim() ? clientPhone.trim() : '+57 312 849 2011';
+      const effectiveClient = cleanClientName;
+      const effectivePhone = cleanClientPhone;
 
       const waText = renderTemplate(ultraConfig.confirmationTemplate, {
         cliente: effectiveClient,
@@ -259,36 +303,36 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
 
     return (
       <div className="flex flex-col items-center px-4 py-8 max-w-lg mx-auto text-center animate-in zoom-in-95 duration-200">
-        <div className="w-20 h-20 rounded-full bg-[#E8B4B8]/40 border border-[#DFCBB5] flex items-center justify-center text-[#7C571C] mb-4 shadow-xs">
+        <div className="w-20 h-20 rounded-full bg-[#F4D9DC] border border-[#EAD6D9] flex items-center justify-center text-[#64444B] mb-4 shadow-xs">
           <span className="material-symbols-outlined text-[42px]">check_circle</span>
         </div>
 
-        <span className="text-xs uppercase font-bold tracking-widest text-[#7C571C]">
+        <span className="text-xs uppercase font-bold tracking-widest text-[#64444B]">
           ¡Reserva Confirmada Exitosamente!
         </span>
-        <h2 className="text-2xl font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#221A14] mt-1 mb-2">
+        <h2 className="text-2xl font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#1F1417] mt-1 mb-2">
           Te esperamos en el Santuario
         </h2>
-        <p className="text-xs text-[#6F5A4B] mb-6 max-w-xs">
+        <p className="text-xs text-[#644E53] mb-6 max-w-xs">
           Hemos sincronizado tu turno en nuestro libro de citas y bloqueado el horario con tu especialista.
         </p>
 
         {/* Appointment Card */}
-        <div className="w-full bg-white rounded-3xl p-6 border border-[#DFCBB5]/80 shadow-xs text-left space-y-4 mb-6">
-          <div className="flex items-center justify-between border-b border-[#DFCBB5]/50 pb-3">
+        <div className="w-full bg-white rounded-3xl p-6 border border-[#EAD6D9] shadow-xs text-left space-y-4 mb-6">
+          <div className="flex items-center justify-between border-b border-[#EAD6D9]/60 pb-3">
             <div>
-              <span className="text-[10px] text-[#6F5A4B] uppercase tracking-wider block">
+              <span className="text-[10px] text-[#644E53] uppercase tracking-wider block">
                 Código de Turno
               </span>
-              <strong className="text-base font-mono text-[#7C571C]">
+              <strong className="text-base font-mono text-[#64444B]">
                 {bookingConfirmed.bookingCode}
               </strong>
             </div>
             <div className="text-right">
-              <span className="text-[10px] text-[#6F5A4B] uppercase tracking-wider block">
+              <span className="text-[10px] text-[#644E53] uppercase tracking-wider block">
                 Total a Pagar en Sede
               </span>
-              <strong className="text-base font-mono text-[#221A14]">
+              <strong className="text-base font-mono text-[#1F1417]">
                 {formatCOP(bookingConfirmed.totalPrice)}
               </strong>
             </div>
@@ -296,20 +340,20 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
 
           <div className="space-y-2 text-xs">
             <div className="flex justify-between">
-              <span className="text-[#6F5A4B]">Servicio:</span>
-              <strong className="text-[#221A14]">{bookingConfirmed.serviceName}</strong>
+              <span className="text-[#644E53]">Servicio:</span>
+              <strong className="text-[#1F1417]">{bookingConfirmed.serviceName}</strong>
             </div>
             <div className="flex justify-between">
-              <span className="text-[#6F5A4B]">Fecha &amp; Hora:</span>
-              <strong className="text-[#221A14]">{bookingConfirmed.date} · {bookingConfirmed.time}</strong>
+              <span className="text-[#644E53]">Fecha &amp; Hora:</span>
+              <strong className="text-[#1F1417]">{bookingConfirmed.date} · {bookingConfirmed.time}</strong>
             </div>
             <div className="flex justify-between">
-              <span className="text-[#6F5A4B]">Especialista Asignada:</span>
-              <strong className="text-[#7C571C]">{bookingConfirmed.specialistName}</strong>
+              <span className="text-[#644E53]">Especialista Asignada:</span>
+              <strong className="text-[#64444B]">{bookingConfirmed.specialistName}</strong>
             </div>
             <div className="flex justify-between">
-              <span className="text-[#6F5A4B]">Sede:</span>
-              <strong className="text-[#221A14]">Santuario Chicó Calle 85, Bogotá</strong>
+              <span className="text-[#644E53]">Sede:</span>
+              <strong className="text-[#1F1417]">Santuario Chicó Calle 85, Bogotá</strong>
             </div>
           </div>
 
@@ -336,7 +380,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
           {!isPublicView && (
             <button
               onClick={onNavigateToAppointments}
-              className="w-full py-3.5 rounded-full bg-[#7C571C] hover:bg-[#684714] text-white font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-3.5 rounded-full bg-[#64444B] hover:bg-[#52363C] text-white font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[18px]">calendar_today</span>
               <span>Ver Cita en el Libro Maestro</span>
@@ -348,7 +392,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
               setBookingConfirmed(null);
               setStep(1);
             }}
-            className="w-full py-3 rounded-full bg-white hover:bg-[#FBEBE1] border border-[#DFCBB5] text-[#6F5A4B] font-semibold text-xs transition-colors cursor-pointer"
+            className="w-full py-3 rounded-full bg-white hover:bg-[#F6E3E6] border border-[#EAD6D9] text-[#644E53] font-semibold text-xs transition-colors cursor-pointer"
           >
             Reservar Otra Cita
           </button>
@@ -360,19 +404,19 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12 animate-in fade-in duration-200">
       
-      {/* Header Banner */}
-      <div className="rounded-3xl bg-gradient-to-r from-[#FFF8F5] via-[#FBEBE1] to-[#F7E5DE] p-6 sm:p-7 border border-[#DFCBB5]/80 shadow-xs relative overflow-hidden">
-        <div className="absolute -right-8 -bottom-8 w-40 h-40 rounded-full bg-[#E8B4B8]/20 blur-2xl pointer-events-none" />
+      {/* Header Banner - Matching Photo Gradient and Badges */}
+      <div className="rounded-3xl bg-gradient-to-r from-[#F4D9DC] via-[#F8E7E9] to-[#FFFBFB] p-6 sm:p-7 border border-[#E8CFD3] shadow-xs relative overflow-hidden">
+        <div className="absolute -right-8 -bottom-8 w-40 h-40 rounded-full bg-white/50 blur-2xl pointer-events-none" />
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#7C571C]/10 text-[#7C571C] text-xs font-semibold mb-2 border border-[#7C571C]/20">
-              <span className="material-symbols-outlined text-[15px] text-[#7C571C]">event_available</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/95 text-[#5E3D44] text-xs font-semibold mb-2 border border-[#E8CFD3]">
+              <span className="material-symbols-outlined text-[15px] text-[#64444B]">event_available</span>
               Santuario Chicó Calle 85 · Calendario en Tiempo Real
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#221A14]">
+            <h1 className="text-2xl sm:text-3xl font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#1F1417]">
               Reserva de Turno
             </h1>
-            <p className="text-xs sm:text-sm text-[#6F5A4B] mt-1 max-w-xl">
+            <p className="text-xs sm:text-sm text-[#644E53] mt-1 max-w-xl">
               Selecciona tu ritual de belleza, tu especialista favorita y un horario disponible en nuestro calendario local sincronizado.
             </p>
           </div>
@@ -380,7 +424,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
           {onNavigateToServices && (
             <button
               onClick={onNavigateToServices}
-              className="px-4 py-2 rounded-full bg-white hover:bg-[#FBEBE1] text-[#7C571C] border border-[#DFCBB5] text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 shrink-0 cursor-pointer"
+              className="px-4 py-2 rounded-full bg-white hover:bg-[#F6E3E6] text-[#64444B] border border-[#EAD6D9] text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 shrink-0 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[16px]">spa</span>
               <span>Explorar Servicios</span>
@@ -390,7 +434,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       </div>
 
       {/* Booking Stepper */}
-      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-[#DFCBB5]/80 shadow-xs">
+      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-[#EAD6D9] shadow-xs">
         <div className="grid grid-cols-4 gap-2 text-center text-xs">
           {[
             { num: 1, title: 'Servicio' },
@@ -410,19 +454,19 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                 disabled={s.num > step}
                 className={`p-2.5 rounded-2xl flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${
                   isCurrent
-                    ? 'bg-[#7C571C] text-white shadow-xs font-bold'
+                    ? 'bg-[#64444B] text-white shadow-xs font-bold'
                     : isDone
-                    ? 'bg-[#FBEBE1] text-[#7C571C] font-semibold hover:bg-[#f3dfd2]'
-                    : 'bg-[#FFF8F5] text-[#827474] opacity-60 cursor-not-allowed'
+                    ? 'bg-[#F6E3E6] text-[#64444B] font-semibold hover:bg-[#EED5D9]'
+                    : 'bg-[#FAF4F5] text-[#7D676B] opacity-60 cursor-not-allowed'
                 }`}
               >
                 <span
                   className={`w-5 h-5 rounded-full text-[11px] flex items-center justify-center font-bold ${
                     isCurrent
-                      ? 'bg-white text-[#7C571C]'
+                      ? 'bg-white text-[#64444B]'
                       : isDone
-                      ? 'bg-[#7C571C] text-white'
-                      : 'bg-black/10 text-[#827474]'
+                      ? 'bg-[#64444B] text-white'
+                      : 'bg-black/10 text-[#7D676B]'
                   }`}
                 >
                   {isDone ? '✓' : s.num}
@@ -438,10 +482,10 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       {step === 1 && (
         <div className="space-y-4 animate-in fade-in duration-150">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif]">
+            <h3 className="text-base font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
               1. Selecciona tu Servicio de Uñas o Spa
             </h3>
-            <span className="text-xs text-[#6F5A4B]">{SERVICES.length} disponibles</span>
+            <span className="text-xs text-[#644E53]">{SERVICES.length} disponibles</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -454,8 +498,8 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                   onClick={() => setSelectedService(service)}
                   className={`p-4 rounded-3xl border transition-all cursor-pointer flex flex-col justify-between ${
                     isSelected
-                      ? 'bg-[#FFF8F5] border-[#7C571C] ring-2 ring-[#7C571C]/20 shadow-xs'
-                      : 'bg-white border-[#DFCBB5]/70 hover:border-[#7C571C]/50 hover:bg-[#FFF8F5]/40'
+                      ? 'bg-[#FAF4F5] border-[#64444B] ring-2 ring-[#64444B]/20 shadow-xs'
+                      : 'bg-white border-[#EAD6D9] hover:border-[#64444B]/50 hover:bg-[#FAF4F5]/50'
                   }`}
                 >
                   <div className="flex gap-3.5 items-start">
@@ -466,26 +510,26 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between">
-                        <h4 className="text-sm font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif] leading-tight">
+                        <h4 className="text-sm font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif] leading-tight">
                           {service.name}
                         </h4>
                       </div>
-                      <div className="text-sm font-bold text-[#7C571C] font-mono mt-1">
+                      <div className="text-sm font-bold text-[#64444B] font-mono mt-1">
                         {formatCOP(service.price)}
                       </div>
-                      <span className="text-[11px] text-[#6F5A4B] mt-0.5 block">
+                      <span className="text-[11px] text-[#644E53] mt-0.5 block">
                         {service.durationMinutes} minutos · {service.categoryLabel}
                       </span>
                     </div>
                   </div>
 
-                  <div className="mt-3 pt-2 border-t border-[#DFCBB5]/50 flex items-center justify-between text-xs">
-                    <span className="text-[#827474] text-[11px]">{service.tag}</span>
+                  <div className="mt-3 pt-2 border-t border-[#EAD6D9]/60 flex items-center justify-between text-xs">
+                    <span className="text-[#7D676B] text-[11px]">{service.tag}</span>
                     <span
                       className={`w-5 h-5 rounded-full border flex items-center justify-center ${
                         isSelected
-                          ? 'border-[#7C571C] bg-[#7C571C] text-white'
-                          : 'border-[#DFCBB5]'
+                          ? 'border-[#64444B] bg-[#64444B] text-white'
+                          : 'border-[#EAD6D9]'
                       }`}
                     >
                       {isSelected && (
@@ -501,7 +545,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
           <div className="pt-2 flex justify-end">
             <button
               onClick={() => setStep(2)}
-              className="px-6 py-3 rounded-full bg-[#7C571C] hover:bg-[#684714] text-white font-bold text-xs shadow-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
+              className="px-6 py-3 rounded-full bg-[#64444B] hover:bg-[#52363C] text-white font-bold text-xs shadow-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
             >
               <span>Continuar a Fecha &amp; Especialista</span>
               <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
@@ -515,13 +559,13 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
         <div className="space-y-5 animate-in fade-in duration-150">
           
           {/* 1. Day Selector (Next 7 Days) */}
-          <div className="bg-white rounded-3xl p-5 border border-[#DFCBB5]/80 shadow-xs space-y-3">
+          <div className="bg-white rounded-3xl p-5 border border-[#EAD6D9] shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif] flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#7C571C] text-[20px]">calendar_today</span>
+              <h3 className="text-base font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif] flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#64444B] text-[20px]">calendar_today</span>
                 <span>Selecciona el día de tu cita</span>
               </h3>
-              <span className="text-xs font-semibold text-[#7C571C]">
+              <span className="text-xs font-semibold text-[#64444B]">
                 {selectedDateOption.full}
               </span>
             </div>
@@ -539,8 +583,8 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                     }}
                     className={`flex flex-col items-center justify-center w-20 h-20 rounded-2xl transition-all shrink-0 cursor-pointer ${
                       isSelected
-                        ? 'bg-[#7C571C] text-white shadow-xs scale-102 font-bold'
-                        : 'bg-[#FFF8F5] text-[#6F5A4B] border border-[#DFCBB5]/80 hover:border-[#7C571C]/50 hover:bg-[#FBEBE1]'
+                        ? 'bg-[#64444B] text-white shadow-xs scale-102 font-bold'
+                        : 'bg-[#FAF4F5] text-[#644E53] border border-[#EAD6D9] hover:border-[#64444B]/50 hover:bg-[#F6E3E6]'
                     }`}
                   >
                     <span className="text-[10px] font-semibold uppercase opacity-80">
@@ -559,13 +603,13 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
           </div>
 
           {/* 2. Specialist Selector with Live Availability Badges */}
-          <div className="bg-white rounded-3xl p-5 border border-[#DFCBB5]/80 shadow-xs space-y-3">
+          <div className="bg-white rounded-3xl p-5 border border-[#EAD6D9] shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif] flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#7C571C] text-[20px]">face</span>
+              <h3 className="text-base font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif] flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#64444B] text-[20px]">face</span>
                 <span>Elige tu Especialista o Asignación Libre</span>
               </h3>
-              <span className="text-xs text-[#6F5A4B]">
+              <span className="text-xs text-[#644E53]">
                 {selectedDateOption.isToday ? 'Disponibilidad de Hoy' : `Para el ${selectedDateOption.dayName}`}
               </span>
             </div>
@@ -580,15 +624,15 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                 }}
                 className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-center gap-3 ${
                   selectedSpecialistId === 'any'
-                    ? 'bg-[#FFF8F5] border-[#7C571C] ring-2 ring-[#7C571C]/25 shadow-2xs'
-                    : 'bg-[#FFF8F5]/60 border-[#DFCBB5]/70 hover:border-[#7C571C]/40'
+                    ? 'bg-[#FAF4F5] border-[#64444B] ring-2 ring-[#64444B]/25 shadow-2xs'
+                    : 'bg-[#FAF4F5]/60 border-[#EAD6D9] hover:border-[#64444B]/40'
                 }`}
               >
-                <div className="w-10 h-10 rounded-full bg-[#7C571C]/15 border border-[#7C571C]/25 flex items-center justify-center text-[#7C571C] shrink-0 font-bold text-xs">
+                <div className="w-10 h-10 rounded-full bg-[#64444B]/15 border border-[#64444B]/25 flex items-center justify-center text-[#64444B] shrink-0 font-bold text-xs">
                   ✨
                 </div>
                 <div className="min-w-0">
-                  <span className="text-xs font-bold text-[#221A14] block truncate">
+                  <span className="text-xs font-bold text-[#1F1417] block truncate">
                     Cualquiera Libre
                   </span>
                   <span className="text-[10px] text-emerald-700 font-semibold block">
@@ -611,20 +655,20 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                     }}
                     className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
                       isSelected
-                        ? 'bg-[#FFF8F5] border-[#7C571C] ring-2 ring-[#7C571C]/25 shadow-2xs'
-                        : 'bg-white border-[#DFCBB5]/70 hover:border-[#7C571C]/40'
+                        ? 'bg-[#FAF4F5] border-[#64444B] ring-2 ring-[#64444B]/25 shadow-2xs'
+                        : 'bg-white border-[#EAD6D9] hover:border-[#64444B]/40'
                     }`}
                   >
                     <img
                       src={spec.avatar}
                       alt={spec.name}
-                      className="w-10 h-10 rounded-full object-cover shrink-0 ring-1 ring-[#DFCBB5]"
+                      className="w-10 h-10 rounded-full object-cover shrink-0 ring-1 ring-[#EAD6D9]"
                     />
                     <div className="min-w-0 flex-1">
-                      <span className="text-xs font-bold text-[#221A14] block truncate">
+                      <span className="text-xs font-bold text-[#1F1417] block truncate">
                         {spec.name}
                       </span>
-                      <span className="text-[10px] text-[#7C571C] block truncate">
+                      <span className="text-[10px] text-[#64444B] block truncate">
                         {spec.role}
                       </span>
                       <span
@@ -642,19 +686,19 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
           </div>
 
           {/* 3. Hourly Time Slots with Live Booking & Passed Hour Blocking */}
-          <div className="bg-white rounded-3xl p-5 border border-[#DFCBB5]/80 shadow-xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-[#DFCBB5]/50 pb-3">
+          <div className="bg-white rounded-3xl p-5 border border-[#EAD6D9] shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-[#EAD6D9]/60 pb-3">
               <div>
-                <h3 className="text-base font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif] flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#7C571C] text-[20px]">schedule</span>
+                <h3 className="text-base font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif] flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#64444B] text-[20px]">schedule</span>
                   <span>Horarios en Intervalos de 1 Hora</span>
                 </h3>
-                <p className="text-xs text-[#6F5A4B] mt-0.5">
+                <p className="text-xs text-[#644E53] mt-0.5">
                   Las citas ya reservadas y las horas ya transcurridas están deshabilitadas automáticamente.
                 </p>
               </div>
 
-              <div className="flex items-center gap-3 text-[11px] text-[#6F5A4B]">
+              <div className="flex items-center gap-3 text-[11px] text-[#644E53]">
                 <span className="flex items-center gap-1">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Disponible
                 </span>
@@ -717,8 +761,8 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                     onClick={() => handleSlotClick(slotInfo)}
                     className={`py-3 px-2 rounded-2xl text-center font-mono font-bold text-xs sm:text-sm transition-all cursor-pointer border flex flex-col items-center justify-center gap-0.5 ${
                       isSelected
-                        ? 'bg-[#7C571C] text-white border-[#7C571C] shadow-xs ring-2 ring-[#7C571C]/25 scale-102'
-                        : 'bg-[#FFF8F5] border-[#DFCBB5] text-[#221A14] hover:border-[#7C571C] hover:bg-white'
+                        ? 'bg-[#64444B] text-white border-[#64444B] shadow-xs ring-2 ring-[#64444B]/25 scale-102'
+                        : 'bg-[#FAF4F5] border-[#EAD6D9] text-[#1F1417] hover:border-[#64444B] hover:bg-white'
                     }`}
                   >
                     <span>{slotInfo.slot}</span>
@@ -783,13 +827,13 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
           <div className="flex items-center justify-between pt-2">
             <button
               onClick={() => setStep(1)}
-              className="px-5 py-2.5 rounded-full bg-white border border-[#DFCBB5] text-[#6F5A4B] text-xs font-semibold hover:bg-[#FBEBE1] cursor-pointer"
+              className="px-5 py-2.5 rounded-full bg-white border border-[#EAD6D9] text-[#644E53] text-xs font-semibold hover:bg-[#F6E3E6] cursor-pointer"
             >
               Atrás
             </button>
             <button
               onClick={() => setStep(3)}
-              className="px-6 py-3 rounded-full bg-[#7C571C] hover:bg-[#684714] text-white font-bold text-xs shadow-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
+              className="px-6 py-3 rounded-full bg-[#64444B] hover:bg-[#52363C] text-white font-bold text-xs shadow-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
             >
               <span>Continuar a Personalización</span>
               <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
@@ -802,8 +846,8 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       {step === 3 && (
         <div className="space-y-5 animate-in fade-in duration-150">
           {/* Polish color selection */}
-          <div className="bg-white rounded-3xl p-5 border border-[#DFCBB5]/80 shadow-xs space-y-3">
-            <h3 className="text-base font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif]">
+          <div className="bg-white rounded-3xl p-5 border border-[#EAD6D9] shadow-xs space-y-3">
+            <h3 className="text-base font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
               1. Tono de Esmalte Deseado
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -815,8 +859,8 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                     onClick={() => setSelectedPolish(swatch.name)}
                     className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
                       isSelected
-                        ? 'bg-[#FFF8F5] border-[#7C571C] shadow-2xs ring-1 ring-[#7C571C]'
-                        : 'bg-white border-[#DFCBB5]/60 hover:border-[#7C571C]/50'
+                        ? 'bg-[#FAF4F5] border-[#64444B] shadow-2xs ring-1 ring-[#64444B]'
+                        : 'bg-white border-[#EAD6D9] hover:border-[#64444B]/50'
                     }`}
                   >
                     <div
@@ -824,10 +868,10 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                       style={{ backgroundColor: swatch.hex }}
                     />
                     <div className="min-w-0">
-                      <span className="text-xs font-bold text-[#221A14] block truncate">
+                      <span className="text-xs font-bold text-[#1F1417] block truncate">
                         {swatch.name}
                       </span>
-                      <span className="text-[10px] text-[#827474] capitalize block">{swatch.finish}</span>
+                      <span className="text-[10px] text-[#7D676B] capitalize block">{swatch.finish}</span>
                     </div>
                   </button>
                 );
@@ -836,8 +880,8 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
           </div>
 
           {/* Nail Shape */}
-          <div className="bg-white rounded-3xl p-5 border border-[#DFCBB5]/80 shadow-xs space-y-3">
-            <h3 className="text-base font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif]">
+          <div className="bg-white rounded-3xl p-5 border border-[#EAD6D9] shadow-xs space-y-3">
+            <h3 className="text-base font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
               2. Forma de Uña
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -849,12 +893,12 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                     onClick={() => setSelectedShape(shape.name)}
                     className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-[#7C571C] text-white border-[#7C571C] shadow-xs'
-                        : 'bg-white border-[#DFCBB5]/60 text-[#221A14] hover:border-[#7C571C]/50'
+                        ? 'bg-[#64444B] text-white border-[#64444B] shadow-xs'
+                        : 'bg-white border-[#EAD6D9] text-[#1F1417] hover:border-[#64444B]/50'
                     }`}
                   >
                     <span className="text-xs font-bold block">{shape.name}</span>
-                    <span className={`text-[10px] line-clamp-2 mt-0.5 ${isSelected ? 'text-white/80' : 'text-[#827474]'}`}>
+                    <span className={`text-[10px] line-clamp-2 mt-0.5 ${isSelected ? 'text-white/80' : 'text-[#7D676B]'}`}>
                       {shape.description}
                     </span>
                   </button>
@@ -864,12 +908,12 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
           </div>
 
           {/* Add-ons in COP */}
-          <div className="bg-white rounded-3xl p-5 border border-[#DFCBB5]/80 shadow-xs space-y-3">
+          <div className="bg-white rounded-3xl p-5 border border-[#EAD6D9] shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif]">
+              <h3 className="text-base font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
                 3. Complementos &amp; Spa Opcionales
               </h3>
-              <span className="text-xs text-[#7C571C]">Valores en COP</span>
+              <span className="text-xs text-[#64444B] font-bold">Valores en COP</span>
             </div>
             <div className="space-y-2">
               {ADD_ON_OPTIONS.map((addon) => {
@@ -880,19 +924,19 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                     onClick={() => toggleAddOn(addon.name)}
                     className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
                       isSelected
-                        ? 'bg-[#FFF8F5] border-[#7C571C] shadow-2xs'
-                        : 'bg-white border-[#DFCBB5]/60 hover:border-[#7C571C]/50'
+                        ? 'bg-[#FAF4F5] border-[#64444B] shadow-2xs'
+                        : 'bg-white border-[#EAD6D9] hover:border-[#64444B]/50'
                     }`}
                   >
                     <div className="min-w-0 pr-2">
-                      <strong className="text-xs text-[#221A14] block">{addon.name}</strong>
-                      <span className="text-[11px] text-[#6F5A4B]">{addon.description}</span>
+                      <strong className="text-xs text-[#1F1417] block">{addon.name}</strong>
+                      <span className="text-[11px] text-[#644E53]">{addon.description}</span>
                     </div>
                     <div className="text-right shrink-0">
-                      <span className="text-xs font-bold text-[#7C571C] font-mono block">
+                      <span className="text-xs font-bold text-[#64444B] font-mono block">
                         +{formatCOP(addon.price)}
                       </span>
-                      <span className={`text-[10px] font-bold ${isSelected ? 'text-emerald-700' : 'text-[#827474]'}`}>
+                      <span className={`text-[10px] font-bold ${isSelected ? 'text-emerald-700' : 'text-[#7D676B]'}`}>
                         {isSelected ? '✓ Agregado' : '+ Agregar'}
                       </span>
                     </div>
@@ -905,13 +949,13 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
           <div className="flex items-center justify-between pt-2">
             <button
               onClick={() => setStep(2)}
-              className="px-5 py-2.5 rounded-full bg-white border border-[#DFCBB5] text-[#6F5A4B] text-xs font-semibold hover:bg-[#FBEBE1] cursor-pointer"
+              className="px-5 py-2.5 rounded-full bg-white border border-[#EAD6D9] text-[#644E53] text-xs font-semibold hover:bg-[#F6E3E6] cursor-pointer"
             >
               Atrás
             </button>
             <button
               onClick={() => setStep(4)}
-              className="px-6 py-3 rounded-full bg-[#7C571C] hover:bg-[#684714] text-white font-bold text-xs shadow-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
+              className="px-6 py-3 rounded-full bg-[#64444B] hover:bg-[#52363C] text-white font-bold text-xs shadow-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
             >
               <span>Continuar a Confirmación</span>
               <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
@@ -924,76 +968,105 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       {step === 4 && (
         <div className="space-y-5 animate-in fade-in duration-150">
           {/* Summary Box */}
-          <div className="bg-white rounded-3xl p-6 border border-[#DFCBB5]/80 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-[#DFCBB5]/50 pb-3">
-              <h3 className="text-base font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif]">
+          <div className="bg-white rounded-3xl p-6 border border-[#EAD6D9] shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-[#EAD6D9]/60 pb-3">
+              <h3 className="text-base font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
                 Resumen de tu Cita
               </h3>
-              <span className="text-lg font-bold text-[#7C571C] font-mono">
+              <span className="text-lg font-bold text-[#64444B] font-mono">
                 {formatCOP(finalPrice)}
               </span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
               <div>
-                <span className="text-[10px] text-[#827474] uppercase block">Servicio</span>
-                <strong className="text-[#221A14] block">{selectedService?.name}</strong>
+                <span className="text-[10px] text-[#7D676B] uppercase block">Servicio</span>
+                <strong className="text-[#1F1417] block">{selectedService?.name}</strong>
               </div>
               <div>
-                <span className="text-[10px] text-[#827474] uppercase block">Fecha &amp; Hora</span>
-                <strong className="text-[#221A14] block">{selectedDateOption.full} · {selectedTime}</strong>
+                <span className="text-[10px] text-[#7D676B] uppercase block">Fecha &amp; Hora</span>
+                <strong className="text-[#1F1417] block">{selectedDateOption.full} · {selectedTime}</strong>
               </div>
               <div>
-                <span className="text-[10px] text-[#827474] uppercase block">Especialista</span>
-                <strong className="text-[#7C571C] block">{currentSpecialist?.name || 'Asignación Libre'}</strong>
+                <span className="text-[10px] text-[#7D676B] uppercase block">Especialista</span>
+                <strong className="text-[#64444B] block">{currentSpecialist?.name || 'Asignación Libre'}</strong>
               </div>
               <div>
-                <span className="text-[10px] text-[#827474] uppercase block">Sede</span>
-                <strong className="text-[#221A14] block">Chicó Calle 85</strong>
+                <span className="text-[10px] text-[#7D676B] uppercase block">Sede</span>
+                <strong className="text-[#1F1417] block">Chicó Calle 85</strong>
               </div>
             </div>
           </div>
 
-          {/* Client Details Form */}
-          <div className="bg-white rounded-3xl p-6 border border-[#DFCBB5]/80 shadow-xs space-y-4">
-            <h3 className="text-base font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif]">
-              Datos para Confirmación de WhatsApp
-            </h3>
+          {/* Error Banner if any validation fails */}
+          {formError && (
+            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-300 text-xs text-rose-900 flex items-center gap-2.5 animate-in shake duration-150 shadow-xs">
+              <span className="material-symbols-outlined text-rose-600 text-[20px] shrink-0">shield_lock</span>
+              <span className="font-semibold">{formError}</span>
+            </div>
+          )}
+
+          {/* Client Details Form with Plain Text Enforcement */}
+          <div className="bg-white rounded-3xl p-6 border border-[#EAD6D9] shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
+                Datos para Confirmación de WhatsApp
+              </h3>
+              <span className="text-[11px] text-[#64444B] bg-[#F6E3E6] px-2.5 py-1 rounded-full font-semibold flex items-center gap-1">
+                <span className="material-symbols-outlined text-[13px]">lock</span>
+                Protección Texto Seguro
+              </span>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
-                <label className="block font-semibold text-[#6F5A4B] mb-1">Nombre Completo *</label>
+                <label className="block font-semibold text-[#644E53] mb-1">Nombre Completo *</label>
                 <input
                   type="text"
                   required
                   value={clientName}
-                  onChange={(e) => setClientName(e.target.value)}
+                  onChange={(e) => {
+                    setClientName(e.target.value);
+                    if (formError) setFormError(null);
+                  }}
                   placeholder="Ej. Mariana Duque"
-                  className="w-full h-10 px-3.5 rounded-xl bg-[#FFF8F5] border border-[#DFCBB5] text-xs text-[#221A14]"
+                  className="w-full h-10 px-3.5 rounded-xl bg-[#FAF4F5] border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/30"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-[#6F5A4B] mb-1">Número de WhatsApp (+57) *</label>
+                <label className="block font-semibold text-[#644E53] mb-1">Número de WhatsApp (+57) *</label>
                 <input
                   type="text"
                   required
                   value={clientPhone}
-                  onChange={(e) => setClientPhone(e.target.value)}
+                  onChange={(e) => {
+                    setClientPhone(e.target.value);
+                    if (formError) setFormError(null);
+                  }}
                   placeholder="+57 312 849 2011"
-                  className="w-full h-10 px-3.5 rounded-xl bg-[#FFF8F5] border border-[#DFCBB5] text-xs font-mono text-[#221A14]"
+                  className="w-full h-10 px-3.5 rounded-xl bg-[#FAF4F5] border border-[#EAD6D9] text-xs font-mono text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/30"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block font-semibold text-[#6F5A4B] mb-1">Observaciones o notas dermatológicas (Opcional)</label>
+                <label className="block font-semibold text-[#644E53] mb-1">
+                  Observaciones, notas o comentarios (Opcional - solo texto descriptivo)
+                </label>
                 <input
                   type="text"
                   value={clientNotes}
-                  onChange={(e) => setClientNotes(e.target.value)}
-                  placeholder="Ej. Cutículas delicadas, esmalte anterior a retirar..."
-                  className="w-full h-10 px-3.5 rounded-xl bg-[#FFF8F5] border border-[#DFCBB5] text-xs text-[#221A14]"
+                  onChange={(e) => {
+                    setClientNotes(e.target.value);
+                    if (formError) setFormError(null);
+                  }}
+                  placeholder="Ej. Cutículas delicadas, esmalte anterior a retirar, diseño francés..."
+                  className="w-full h-10 px-3.5 rounded-xl bg-[#FAF4F5] border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/30"
                 />
+                <p className="text-[11px] text-[#7D676B] mt-1.5 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[13px] text-[#64444B]">verified_user</span>
+                  <span>Toda información suministrada se procesa de forma estricta como texto plano para máxima seguridad.</span>
+                </p>
               </div>
             </div>
 
@@ -1009,14 +1082,14 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
           <div className="flex items-center justify-between pt-2">
             <button
               onClick={() => setStep(3)}
-              className="px-5 py-2.5 rounded-full bg-white border border-[#DFCBB5] text-[#6F5A4B] text-xs font-semibold hover:bg-[#FBEBE1] cursor-pointer"
+              className="px-5 py-2.5 rounded-full bg-white border border-[#EAD6D9] text-[#644E53] text-xs font-semibold hover:bg-[#F6E3E6] cursor-pointer"
             >
               Atrás
             </button>
             <button
               onClick={handleConfirmBooking}
               disabled={isSendingWhatsApp}
-              className="px-7 py-3.5 rounded-full bg-[#7C571C] hover:bg-[#684714] text-white font-bold text-xs sm:text-sm shadow-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
+              className="px-7 py-3.5 rounded-full bg-[#64444B] hover:bg-[#52363C] text-white font-bold text-xs sm:text-sm shadow-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
             >
               <span>{isSendingWhatsApp ? 'Enviando WhatsApp...' : 'Confirmar Reserva en COP'}</span>
               <span className="material-symbols-outlined text-[18px]">check_circle</span>

@@ -1,38 +1,38 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #7c5357;
-  --color-primary-hover: #674246;
-  --color-primary-container: #e8b4b8;
+  --color-primary: #64444b;
+  --color-primary-hover: #52363c;
+  --color-primary-container: #f4d9dc;
   --color-on-primary: #ffffff;
-  --color-on-primary-container: #6b4448;
+  --color-on-primary-container: #5e3d44;
   --color-primary-fixed: #ffdadc;
   --color-primary-fixed-dim: #eeb9bd;
-  --color-on-primary-fixed: #301216;
+  --color-on-primary-fixed: #231216;
 
-  --color-secondary: #71547c;
-  --color-secondary-container: #f5d0ff;
+  --color-secondary: #74525d;
+  --color-secondary-container: #f7e0e4;
   --color-on-secondary: #ffffff;
-  --color-on-secondary-container: #74567e;
-  --color-secondary-fixed: #f8d8ff;
-  --color-secondary-fixed-dim: #dfbae9;
+  --color-on-secondary-container: #5d3d47;
+  --color-secondary-fixed: #fae4e8;
+  --color-secondary-fixed-dim: #e4c4cb;
 
-  --color-tertiary: #745849;
-  --color-tertiary-container: #debaa7;
-  --color-tertiary-fixed: #ffdbc9;
+  --color-tertiary: #6b4e54;
+  --color-tertiary-container: #ecd1d6;
+  --color-tertiary-fixed: #fce7eb;
 
-  --color-surface: #fdf9f3;
-  --color-surface-dim: #dddad4;
+  --color-surface: #faf4f5;
+  --color-surface-dim: #e9dcde;
   --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f7f3ed;
-  --color-surface-container: #f1ede7;
-  --color-surface-container-high: #ebe8e2;
-  --color-surface-container-highest: #e6e2dc;
+  --color-surface-container-low: #fcf7f8;
+  --color-surface-container: #f6eced;
+  --color-surface-container-high: #f0e4e6;
+  --color-surface-container-highest: #ebdadd;
 
-  --color-on-surface: #1c1c18;
-  --color-on-surface-variant: #504444;
-  --color-outline: #827474;
-  --color-outline-variant: #d4c2c3;
+  --color-on-surface: #1f1417;
+  --color-on-surface-variant: #644e53;
+  --color-outline: #7d676b;
+  --color-outline-variant: #ead6d9;
 
   --font-display: 'Plus Jakarta Sans', sans-serif;
   --font-headline: 'Plus Jakarta Sans', sans-serif;

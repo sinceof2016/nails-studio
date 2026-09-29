@@ -102,8 +102,33 @@ function sha256(str: string): string {
   return crypto.createHash('sha256').update(str).digest('hex');
 }
 
+function containsExecutableCode(str: string): boolean {
+  if (!str || typeof str !== 'string') return false;
+  const patterns = [
+    /<\s*\/?\s*[a-zA-Z][^>]*>/i,
+    /<script[\s\S]*?>[\s\S]*?<\/script>/i,
+    /<iframe[\s\S]*?>/i,
+    /javascript\s*:/i,
+    /vbscript\s*:/i,
+    /data\s*:\s*text\/(html|javascript)/i,
+    /on[a-zA-Z]+\s*=/i,
+    /\b(eval|Function|execScript)\s*\(/i,
+    /\bdocument\.(location|cookie|write)\b/i,
+    /\bwindow\.(location|open)\b/i
+  ];
+  return patterns.some((p) => p.test(str));
+}
+
 function sanitizeText(str: string): string {
-  return String(str || '')
+  if (!str || typeof str !== 'string') return '';
+  return String(str)
+    .replace(/<[^>]*>?/gm, '')
+    .replace(/javascript\s*:/gi, '')
+    .replace(/vbscript\s*:/gi, '')
+    .replace(/data\s*:\s*text\/(html|javascript)/gi, '')
+    .replace(/on[a-zA-Z]+\s*=\s*['"]?[^'"]*['"]?/gi, '')
+    .replace(/\b(eval|exec|Function|alert)\s*\([^)]*\)/gi, '')
+    .replace(/\$\{([^}]*)\}/g, '$1')
     .replace(/[<>]/g, '')
     .trim();
 }
@@ -177,6 +202,13 @@ app.post('/api/whatsapp/send', createRateLimiter(15, 60 * 1000), async (req, res
 
     if (!phone || !message) {
       return res.status(400).json({ success: false, error: 'Teléfono y mensaje requeridos' });
+    }
+
+    if (containsExecutableCode(String(message)) || (clientName && containsExecutableCode(String(clientName)))) {
+      return res.status(400).json({
+        success: false,
+        error: 'El contenido contiene etiquetas o código ejecutable no permitido. Toda información debe suministrarse únicamente como texto plano.'
+      });
     }
 
     const cleanDigits = String(phone).replace(/\D/g, '');

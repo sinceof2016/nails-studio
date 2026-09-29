@@ -13,7 +13,7 @@ import { ClientHistoryModal } from '../components/ClientHistoryModal';
 import { UltraMsgConfigModal } from '../components/UltraMsgConfigModal';
 import { SPECIALISTS, SERVICES } from '../data/mockData';
 import { formatCOP } from '../utils/format';
-import { validateSafeText, validateColombianPhone, checkRateLimit } from '../utils/security';
+import { validateSafeText, validateOnlyPlainText, sanitizeToPlainText, validateColombianPhone, checkRateLimit } from '../utils/security';
 import { sendUltraMsgWhatsApp, getUltraMsgConfig, renderTemplate } from '../services/whatsappService';
 
 interface AdminScreenProps {
@@ -284,10 +284,18 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
     e.preventDefault();
     setExpressValidationError(null);
 
-    const nameVal = validateSafeText(expressClientName, 'Nombre de la Clienta');
+    const nameVal = validateOnlyPlainText(expressClientName, 'Nombre de la Clienta', 100);
     if (!nameVal.isValid) {
       setExpressValidationError(nameVal.reason || 'Nombre no válido.');
       return;
+    }
+
+    if (expressNotes && expressNotes.trim()) {
+      const noteVal = validateOnlyPlainText(expressNotes, 'Notas del Turno Express', 500);
+      if (!noteVal.isValid) {
+        setExpressValidationError(noteVal.reason || 'Las notas solo admiten texto plano sin scripts ni código.');
+        return;
+      }
     }
 
     const phoneVal = validateColombianPhone(expressClientPhone);
@@ -295,6 +303,10 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       setExpressValidationError(phoneVal.reason || 'Teléfono no válido.');
       return;
     }
+
+    const cleanClientName = sanitizeToPlainText(expressClientName) || 'Clienta Walk-in';
+    const cleanClientPhone = sanitizeToPlainText(expressClientPhone);
+    const cleanNotes = expressNotes ? `[Walk-in] ${sanitizeToPlainText(expressNotes)}` : '[Turno Express Walk-in en Salón]';
 
     const selectedServ = SERVICES.find((s) => s.id === expressServiceId) || SERVICES[0];
     const selectedSpec = SPECIALISTS.find((s) => s.id === expressSpecialistId) || SPECIALISTS[0];
@@ -314,9 +326,9 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       specialistAvatar: selectedSpec.avatar,
       date: 'Hoy (Walk-in)',
       time: currentTimeStr,
-      clientName: expressClientName,
-      clientPhone: expressClientPhone,
-      notes: expressNotes ? `[Walk-in] ${expressNotes}` : '[Turno Express Walk-in en Salón]',
+      clientName: cleanClientName,
+      clientPhone: cleanClientPhone,
+      notes: cleanNotes,
       selectedAddOns: [],
       totalPrice: selectedServ.price,
       status: expressStatus,
@@ -392,13 +404,13 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       return;
     }
 
-    const nameVal = validateSafeText(cutClientName, 'Nombre del Cliente');
+    const nameVal = validateOnlyPlainText(cutClientName, 'Nombre del Cliente', 100);
     if (!nameVal.isValid) {
       setCutValidationError(nameVal.reason || 'Nombre no válido.');
       return;
     }
 
-    const noteVal = validateSafeText(cutNote, 'Nota del Servicio');
+    const noteVal = validateOnlyPlainText(cutNote, 'Nota del Servicio', 500);
     if (!noteVal.isValid) {
       setCutValidationError(noteVal.reason || 'Nota no válida.');
       return;
@@ -409,6 +421,10 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       setCutValidationError(phoneVal.reason || 'Teléfono no válido.');
       return;
     }
+
+    const cleanCutClientName = sanitizeToPlainText(cutClientName) || 'Cliente en Salón';
+    const cleanCutClientPhone = sanitizeToPlainText(cutClientPhone) || '+57 300 000 0000';
+    const cleanCutNote = sanitizeToPlainText(cutNote);
 
     const spec = SPECIALISTS.find((s) => s.id === cutSpecialistId) || SPECIALISTS[0];
     const commissionPercent = spec.commissionRate || 50;
@@ -432,8 +448,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       id: `cut-${Date.now().toString().slice(-5)}`,
       fecha: 'Hoy, 27 Sept',
       hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      clienteNombre: cutClientName || 'Cliente en Salón',
-      clienteTelefono: cutClientPhone || '+57 300 000 0000',
+      clienteNombre: cleanCutClientName,
+      clienteTelefono: cleanCutClientPhone,
       servicioNombre: cutServiceName,
       servicioPrecio: priceNum,
       especialistaId: spec.id,
@@ -447,7 +463,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       montoDigital: finalMontoDigital,
       digitalMethod: finalDigitalMethod,
       sucursalId: admin.branchId || 'chico',
-      nota: cutNote
+      nota: cleanCutNote
     };
 
     onRegisterCut(newCut);
@@ -459,7 +475,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
     const ultraConfig = getUltraMsgConfig();
     if (ultraConfig.autoNotifyPayment) {
       const msg = renderTemplate(ultraConfig.paymentTemplate, {
-        cliente: cutClientName,
+        cliente: cleanCutClientName,
         codigo: `REC-${Date.now().toString().slice(-4)}`,
         servicio: cutServiceName,
         fecha: new Date().toLocaleDateString('es-CO'),
@@ -470,9 +486,9 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       });
 
       sendUltraMsgWhatsApp({
-        phone: cutClientPhone,
+        phone: cleanCutClientPhone,
         message: msg,
-        clientName: cutClientName,
+        clientName: cleanCutClientName,
         bookingCode: `REC-${Date.now().toString().slice(-4)}`
       });
     }
@@ -483,11 +499,13 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
     e.preventDefault();
     setExpenseValidationError(null);
 
-    const val = validateSafeText(expenseConcept, 'Concepto del Gasto');
+    const val = validateOnlyPlainText(expenseConcept, 'Concepto del Gasto', 200);
     if (!val.isValid) {
       setExpenseValidationError(val.reason || 'Concepto no válido.');
       return;
     }
+
+    const cleanConcept = sanitizeToPlainText(expenseConcept);
 
     const amountNum = Math.max(0, Number(expenseAmount) || 0);
     if (amountNum <= 0) {
@@ -498,7 +516,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
     const newExp: ExpenseRecord = {
       id: `exp-${Date.now().toString().slice(-5)}`,
       fecha: 'Hoy, 27 Sept',
-      concepto: expenseConcept,
+      concepto: cleanConcept,
       categoria: expenseCategory,
       monto: amountNum,
       sucursalId: admin.branchId || 'chico',
@@ -551,7 +569,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
     <div className="w-full space-y-6 pb-12 animate-in fade-in duration-200">
       
       {/* Admin Credentials & Quick Highlights Banner en Tonos Pasteles */}
-      <div className="rounded-3xl bg-gradient-to-r from-[#FFF8F5] via-[#FBEBE1] to-[#F7E5DE] p-6 sm:p-7 text-[#221A14] border border-[#DFCBB5]/80 shadow-xs relative overflow-hidden">
+      <div className="rounded-3xl bg-gradient-to-r from-[#FAF4F5] via-[#F6E3E6] to-[#F7E5DE] p-6 sm:p-7 text-[#1F1417] border border-[#EAD6D9]/80 shadow-xs relative overflow-hidden">
         <div className="absolute -right-8 -bottom-8 w-44 h-44 rounded-full bg-[#E8B4B8]/20 blur-2xl pointer-events-none" />
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 relative z-10">
@@ -559,18 +577,18 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
             <img
               src={admin.avatar}
               alt={admin.name}
-              className="w-14 h-14 rounded-full object-cover ring-2 ring-[#7C571C]/25 shadow-xs"
+              className="w-14 h-14 rounded-full object-cover ring-2 ring-[#64444B]/25 shadow-xs"
             />
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg sm:text-xl font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#221A14]">
+                <h2 className="text-lg sm:text-xl font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#1F1417]">
                   {admin.name}
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-[#7C571C]/10 text-[#7C571C] text-[10px] font-bold tracking-wider uppercase border border-[#7C571C]/20">
+                <span className="px-2.5 py-0.5 rounded-full bg-[#64444B]/10 text-[#64444B] text-[10px] font-bold tracking-wider uppercase border border-[#64444B]/20">
                   ★ {admin.role}
                 </span>
               </div>
-              <p className="text-xs text-[#6F5A4B]">{admin.title} · {admin.branch}</p>
+              <p className="text-xs text-[#644E53]">{admin.title} · {admin.branch}</p>
             </div>
           </div>
 
@@ -583,23 +601,23 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         </div>
 
         {/* Quick Metrics in COP */}
-        <div className="pt-4 border-t border-[#DFCBB5]/60 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center relative z-10">
-          <div className="p-2.5 rounded-2xl bg-white/80 border border-[#DFCBB5]/50 shadow-2xs">
-            <span className="text-[10px] text-[#6F5A4B] block uppercase tracking-wider font-semibold">Citas Hoy</span>
-            <strong className="text-base sm:text-lg font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#221A14]">{totalCount}</strong>
+        <div className="pt-4 border-t border-[#EAD6D9]/60 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center relative z-10">
+          <div className="p-2.5 rounded-2xl bg-white/80 border border-[#EAD6D9]/50 shadow-2xs">
+            <span className="text-[10px] text-[#644E53] block uppercase tracking-wider font-semibold">Citas Hoy</span>
+            <strong className="text-base sm:text-lg font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#1F1417]">{totalCount}</strong>
           </div>
-          <div className="p-2.5 rounded-2xl bg-white/80 border border-[#DFCBB5]/50 shadow-2xs">
-            <span className="text-[10px] text-[#6F5A4B] block uppercase tracking-wider font-semibold">Caja Efectivo</span>
-            <strong className="text-base sm:text-lg font-bold text-[#7C571C] font-mono">
+          <div className="p-2.5 rounded-2xl bg-white/80 border border-[#EAD6D9]/50 shadow-2xs">
+            <span className="text-[10px] text-[#644E53] block uppercase tracking-wider font-semibold">Caja Efectivo</span>
+            <strong className="text-base sm:text-lg font-bold text-[#64444B] font-mono">
               {formatCOP(expectedCashInHand)}
             </strong>
           </div>
-          <div className="p-2.5 rounded-2xl bg-white/80 border border-[#DFCBB5]/50 shadow-2xs">
-            <span className="text-[10px] text-[#6F5A4B] block uppercase tracking-wider font-semibold">Cortes / Cobros</span>
-            <strong className="text-base sm:text-lg font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#221A14]">{cuts.length}</strong>
+          <div className="p-2.5 rounded-2xl bg-white/80 border border-[#EAD6D9]/50 shadow-2xs">
+            <span className="text-[10px] text-[#644E53] block uppercase tracking-wider font-semibold">Cortes / Cobros</span>
+            <strong className="text-base sm:text-lg font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#1F1417]">{cuts.length}</strong>
           </div>
-          <div className="p-2.5 rounded-2xl bg-white/80 border border-[#DFCBB5]/50 shadow-2xs">
-            <span className="text-[10px] text-[#6F5A4B] block uppercase tracking-wider font-semibold">Directorio Clientes</span>
+          <div className="p-2.5 rounded-2xl bg-white/80 border border-[#EAD6D9]/50 shadow-2xs">
+            <span className="text-[10px] text-[#644E53] block uppercase tracking-wider font-semibold">Directorio Clientes</span>
             <strong className="text-base sm:text-lg font-bold text-emerald-700 font-['Plus_Jakarta_Sans',sans-serif]">
               {clientProfiles.length}
             </strong>
@@ -608,14 +626,14 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       </div>
 
       {/* Internal Sub-Navigation Tabs */}
-      <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar border-b border-[#DFCBB5]/70 pb-2">
+      <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar border-b border-[#EAD6D9]/70 pb-2">
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={() => handleSelectTab('agenda')}
             className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeAdminTab === 'agenda'
-                ? 'bg-[#7C571C] text-white shadow-xs'
-                : 'bg-white text-[#6F5A4B] hover:bg-[#FBEBE1] border border-[#DFCBB5]/70'
+                ? 'bg-[#64444B] text-white shadow-xs'
+                : 'bg-white text-[#644E53] hover:bg-[#F6E3E6] border border-[#EAD6D9]/70'
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">calendar_today</span>
@@ -626,8 +644,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
             onClick={() => handleSelectTab('caja')}
             className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeAdminTab === 'caja'
-                ? 'bg-[#7C571C] text-white shadow-xs'
-                : 'bg-white text-[#6F5A4B] hover:bg-[#FBEBE1] border border-[#DFCBB5]/70'
+                ? 'bg-[#64444B] text-white shadow-xs'
+                : 'bg-white text-[#644E53] hover:bg-[#F6E3E6] border border-[#EAD6D9]/70'
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">point_of_sale</span>
@@ -638,8 +656,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
             onClick={() => handleSelectTab('cortes')}
             className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeAdminTab === 'cortes'
-                ? 'bg-[#7C571C] text-white shadow-xs'
-                : 'bg-white text-[#6F5A4B] hover:bg-[#FBEBE1] border border-[#DFCBB5]/70'
+                ? 'bg-[#64444B] text-white shadow-xs'
+                : 'bg-white text-[#644E53] hover:bg-[#F6E3E6] border border-[#EAD6D9]/70'
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">receipt_long</span>
@@ -650,8 +668,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
             onClick={() => handleSelectTab('clientes')}
             className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeAdminTab === 'clientes'
-                ? 'bg-[#7C571C] text-white shadow-xs'
-                : 'bg-white text-[#6F5A4B] hover:bg-[#FBEBE1] border border-[#DFCBB5]/70'
+                ? 'bg-[#64444B] text-white shadow-xs'
+                : 'bg-white text-[#644E53] hover:bg-[#F6E3E6] border border-[#EAD6D9]/70'
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">group</span>
@@ -676,7 +694,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
           {/* Top Actions: Search + Fast Walk-in + Regular Booking */}
           <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
             <div className="relative flex-1">
-              <span className="material-symbols-outlined absolute left-3.5 top-2.5 text-[#827474] text-[18px]">
+              <span className="material-symbols-outlined absolute left-3.5 top-2.5 text-[#7D676B] text-[18px]">
                 search
               </span>
               <input
@@ -684,12 +702,12 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                 placeholder="Buscar por clienta, código AURA o manicurista..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-10 pl-10 pr-9 rounded-full bg-white border border-[#DFCBB5] text-xs text-[#221A14] placeholder-[#827474] focus:outline-none focus:ring-1 focus:ring-[#7C571C]"
+                className="w-full h-10 pl-10 pr-9 rounded-full bg-white border border-[#EAD6D9] text-xs text-[#1F1417] placeholder-[#7D676B] focus:outline-none focus:ring-1 focus:ring-[#64444B]"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-2.5 text-[#827474] hover:text-[#221A14]"
+                  className="absolute right-3 top-2.5 text-[#7D676B] hover:text-[#1F1417]"
                 >
                   <span className="material-symbols-outlined text-[16px]">close</span>
                 </button>
@@ -700,7 +718,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
               {/* BUTTON 1: WALK-IN / TURNO EXPRESS (SOLVES RECEPTION BOTTLENECK) */}
               <button
                 onClick={() => setShowExpressModal(true)}
-                className="h-10 px-4 rounded-full bg-gradient-to-r from-[#C49756] to-[#7C571C] hover:opacity-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs shrink-0 cursor-pointer active:scale-95 transition-all"
+                className="h-10 px-4 rounded-full bg-gradient-to-r from-[#C5838D] to-[#64444B] hover:opacity-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs shrink-0 cursor-pointer active:scale-95 transition-all"
                 title="Crear cita express para clientas que llegan sin reserva en 10 segundos"
               >
                 <span className="material-symbols-outlined text-[18px]">flash_on</span>
@@ -709,25 +727,25 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 
               <button
                 onClick={onNavigateToBooking}
-                className="h-10 px-4 rounded-full bg-white hover:bg-[#FBEBE1] border border-[#DFCBB5] text-[#221A14] text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs shrink-0 cursor-pointer active:scale-95 transition-all"
+                className="h-10 px-4 rounded-full bg-white hover:bg-[#F6E3E6] border border-[#EAD6D9] text-[#1F1417] text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs shrink-0 cursor-pointer active:scale-95 transition-all"
               >
-                <span className="material-symbols-outlined text-[16px] text-[#7C571C]">add</span>
+                <span className="material-symbols-outlined text-[16px] text-[#64444B]">add</span>
                 <span>Nueva Cita</span>
               </button>
             </div>
           </div>
 
           {/* Quick Specialist Filter Chips (SOLVES SPECIALIST SCHEDULE BOTTLENECK) */}
-          <div className="p-3 rounded-2xl bg-white border border-[#DFCBB5]/70 space-y-2 shadow-2xs">
+          <div className="p-3 rounded-2xl bg-white border border-[#EAD6D9]/70 space-y-2 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-[#6F5A4B] uppercase tracking-wider flex items-center gap-1">
-                <span className="material-symbols-outlined text-[15px] text-[#7C571C]">face</span>
+              <span className="text-[11px] font-bold text-[#644E53] uppercase tracking-wider flex items-center gap-1">
+                <span className="material-symbols-outlined text-[15px] text-[#64444B]">face</span>
                 <span>Ver Agenda por Especialista:</span>
               </span>
               {specialistFilter !== 'todos' && (
                 <button
                   onClick={() => setSpecialistFilter('todos')}
-                  className="text-[11px] font-bold text-[#7C571C] hover:underline cursor-pointer"
+                  className="text-[11px] font-bold text-[#64444B] hover:underline cursor-pointer"
                 >
                   Ver Todas
                 </button>
@@ -739,8 +757,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                 onClick={() => setSpecialistFilter('todos')}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
                   specialistFilter === 'todos'
-                    ? 'bg-[#7C571C] text-white shadow-xs'
-                    : 'bg-[#FFF8F5] text-[#6F5A4B] border border-[#DFCBB5]/60 hover:bg-[#FBEBE1]'
+                    ? 'bg-[#64444B] text-white shadow-xs'
+                    : 'bg-[#FAF4F5] text-[#644E53] border border-[#EAD6D9]/60 hover:bg-[#F6E3E6]'
                 }`}
               >
                 <span>Todas</span>
@@ -757,8 +775,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                     onClick={() => setSpecialistFilter(isSelected ? 'todos' : spec.id)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                       isSelected
-                        ? 'bg-[#7C571C] text-white shadow-xs'
-                        : 'bg-[#FFF8F5] text-[#221A14] border border-[#DFCBB5]/60 hover:bg-[#FBEBE1]'
+                        ? 'bg-[#64444B] text-white shadow-xs'
+                        : 'bg-[#FAF4F5] text-[#1F1417] border border-[#EAD6D9]/60 hover:bg-[#F6E3E6]'
                     }`}
                   >
                     <img
@@ -780,8 +798,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
               onClick={() => setFilterStatus('todos')}
               className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                 filterStatus === 'todos'
-                  ? 'bg-[#7C571C] text-white shadow-xs'
-                  : 'bg-white text-[#6F5A4B] border border-[#DFCBB5]/80 hover:bg-[#FBEBE1]'
+                  ? 'bg-[#64444B] text-white shadow-xs'
+                  : 'bg-white text-[#644E53] border border-[#EAD6D9]/80 hover:bg-[#F6E3E6]'
               }`}
             >
               Todas ({totalCount})
@@ -831,14 +849,14 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
           {/* Appointments Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredAppointments.length === 0 ? (
-              <div className="col-span-full text-center py-12 px-6 bg-white rounded-3xl border border-[#DFCBB5]/60">
-                <span className="material-symbols-outlined text-[#DFCBB5] text-[44px] mb-2">
+              <div className="col-span-full text-center py-12 px-6 bg-white rounded-3xl border border-[#EAD6D9]/60">
+                <span className="material-symbols-outlined text-[#EAD6D9] text-[44px] mb-2">
                   event_busy
                 </span>
-                <h4 className="text-sm font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif]">
+                <h4 className="text-sm font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
                   No se encontraron citas con estos filtros
                 </h4>
-                <p className="text-xs text-[#6F5A4B] mt-1">
+                <p className="text-xs text-[#644E53] mt-1">
                   Prueba cambiando el estado o la búsqueda para ver más registros de la agenda.
                 </p>
               </div>
@@ -849,16 +867,16 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                 return (
                   <div
                     key={apt.id}
-                    className="bg-white rounded-3xl p-5 shadow-xs border border-[#DFCBB5]/60 space-y-3 transition-all hover:border-[#7C571C]/40"
+                    className="bg-white rounded-3xl p-5 shadow-xs border border-[#EAD6D9]/60 space-y-3 transition-all hover:border-[#64444B]/40"
                   >
                     {/* Header row */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold text-[#7C571C] bg-[#FBEBE1] px-2.5 py-0.5 rounded-md">
+                        <span className="text-xs font-mono font-bold text-[#64444B] bg-[#F6E3E6] px-2.5 py-0.5 rounded-md">
                           {apt.bookingCode}
                         </span>
-                        <span className="text-xs text-[#6F5A4B] font-medium flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[14px] text-[#7C571C]">schedule</span>
+                        <span className="text-xs text-[#644E53] font-medium flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px] text-[#64444B]">schedule</span>
                           {apt.date} · {apt.time}
                         </span>
                       </div>
@@ -890,19 +908,19 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between">
-                          <h4 className="text-sm font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif] truncate">
+                          <h4 className="text-sm font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif] truncate">
                             {apt.clientName}
                           </h4>
-                          <span className="text-sm font-bold text-[#7C571C] font-mono shrink-0 ml-2">
+                          <span className="text-sm font-bold text-[#64444B] font-mono shrink-0 ml-2">
                             {formatCOP(apt.totalPrice)}
                           </span>
                         </div>
 
-                        <p className="text-xs text-[#6F5A4B] truncate mt-0.5 font-medium">
+                        <p className="text-xs text-[#644E53] truncate mt-0.5 font-medium">
                           {apt.serviceName} ({apt.serviceDuration} min)
                         </p>
 
-                        <div className="flex items-center gap-1.5 text-xs text-[#7C571C] mt-1">
+                        <div className="flex items-center gap-1.5 text-xs text-[#64444B] mt-1">
                           <img
                             src={apt.specialistAvatar}
                             alt={apt.specialistName}
@@ -916,8 +934,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                     </div>
 
                     {/* 1-CLIC FAST WHATSAPP ACTIONS (SOLVES DELAYS & NO-SHOW BOTTLENECK) */}
-                    <div className="p-2.5 rounded-2xl bg-[#FFF8F5] border border-[#DFCBB5]/50 text-xs flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 text-[#221A14] font-semibold">
+                    <div className="p-2.5 rounded-2xl bg-[#FAF4F5] border border-[#EAD6D9]/50 text-xs flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 text-[#1F1417] font-semibold">
                         <span className="material-symbols-outlined text-[15px] text-[#52b788]">call</span>
                         <span>{apt.clientPhone}</span>
                       </div>
@@ -934,7 +952,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 
                         <button
                           onClick={() => handleTableReady(apt)}
-                          className="px-2.5 py-1 rounded-full bg-white hover:bg-[#FBEBE1] text-[#7C571C] text-[10px] font-bold border border-[#DFCBB5] flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+                          className="px-2.5 py-1 rounded-full bg-white hover:bg-[#F6E3E6] text-[#64444B] text-[10px] font-bold border border-[#EAD6D9] flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
                           title="Avisar a la clienta que su mesa en cabina está lista"
                         >
                           <span className="material-symbols-outlined text-[13px]">chair</span>
@@ -956,12 +974,12 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                     {/* Action buttons */}
                     <div className="pt-2 border-t border-[#ebe8e2] flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 text-[11px] font-semibold text-[#6F5A4B]">
+                        <div className="flex items-center gap-1 text-[11px] font-semibold text-[#644E53]">
                           <span>Estado:</span>
                           <select
                             value={apt.status}
                             onChange={(e) => handleStatusChangeWithNotification(apt, e.target.value as any)}
-                            className="h-7 px-2 rounded-full bg-[#FBEBE1] border border-[#DFCBB5] text-[11px] font-bold text-[#221A14] focus:outline-none cursor-pointer"
+                            className="h-7 px-2 rounded-full bg-[#F6E3E6] border border-[#EAD6D9] text-[11px] font-bold text-[#1F1417] focus:outline-none cursor-pointer"
                           >
                             <option value="confirmada">Confirmada</option>
                             <option value="en_preparacion">En Cabina</option>
@@ -972,7 +990,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 
                         <button
                           onClick={() => setSelectedAppointmentForQr(apt)}
-                          className="h-7 px-2.5 rounded-full bg-white border border-[#DFCBB5] hover:bg-[#FBEBE1] text-[#7C571C] text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+                          className="h-7 px-2.5 rounded-full bg-white border border-[#EAD6D9] hover:bg-[#F6E3E6] text-[#64444B] text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
                         >
                           <span className="material-symbols-outlined text-[14px]">qr_code</span>
                           <span>Pase QR</span>
@@ -981,7 +999,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 
                       <button
                         onClick={() => setExpandedAptId(isExpanded ? null : apt.id)}
-                        className="text-xs font-semibold text-[#7C571C] hover:underline flex items-center gap-0.5 cursor-pointer ml-auto"
+                        className="text-xs font-semibold text-[#64444B] hover:underline flex items-center gap-0.5 cursor-pointer ml-auto"
                       >
                         <span>{isExpanded ? 'Menos' : 'Detalles'}</span>
                         <span className="material-symbols-outlined text-[16px]">
@@ -992,21 +1010,21 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 
                     {/* Expanded details */}
                     {isExpanded && (
-                      <div className="p-3 rounded-2xl bg-[#FFF8F5] border border-[#DFCBB5]/50 space-y-2 text-xs text-[#6F5A4B] animate-in fade-in duration-150">
+                      <div className="p-3 rounded-2xl bg-[#FAF4F5] border border-[#EAD6D9]/50 space-y-2 text-xs text-[#644E53] animate-in fade-in duration-150">
                         {apt.notes && (
                           <div>
-                            <strong className="text-[#221A14] block">Observaciones:</strong>
-                            <p className="italic text-[#7C571C] mt-0.5">{apt.notes}</p>
+                            <strong className="text-[#1F1417] block">Observaciones:</strong>
+                            <p className="italic text-[#64444B] mt-0.5">{apt.notes}</p>
                           </div>
                         )}
-                        <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#DFCBB5]/40">
+                        <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#EAD6D9]/40">
                           <div>
-                            <span className="text-[10px] text-[#827474]">Tono Solicitado:</span>
-                            <div className="font-semibold text-[#221A14]">{apt.polishColor || 'Por definir'}</div>
+                            <span className="text-[10px] text-[#7D676B]">Tono Solicitado:</span>
+                            <div className="font-semibold text-[#1F1417]">{apt.polishColor || 'Por definir'}</div>
                           </div>
                           <div>
-                            <span className="text-[10px] text-[#827474]">Forma de Uña:</span>
-                            <div className="font-semibold text-[#221A14]">{apt.nailShape || 'Por definir'}</div>
+                            <span className="text-[10px] text-[#7D676B]">Forma de Uña:</span>
+                            <div className="font-semibold text-[#1F1417]">{apt.nailShape || 'Por definir'}</div>
                           </div>
                         </div>
                       </div>
@@ -1025,7 +1043,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <button
               onClick={() => setShowNewCutModal(true)}
-              className="p-4 rounded-3xl bg-[#7C571C] text-white text-xs font-bold shadow-xs hover:bg-[#684714] transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="p-4 rounded-3xl bg-[#64444B] text-white text-xs font-bold shadow-xs hover:bg-[#52363C] transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[20px]">add_circle</span>
               <span>+ Registrar Cobro (Efectivo / Mixto)</span>
@@ -1052,10 +1070,10 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
           </div>
 
           {/* Arqueo de Canales Dashboard in COP */}
-          <div className="bg-white rounded-3xl p-6 border border-[#DFCBB5]/60 shadow-xs space-y-4">
+          <div className="bg-white rounded-3xl p-6 border border-[#EAD6D9]/60 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-[#ebe8e2] pb-3">
-              <h4 className="text-sm font-bold uppercase tracking-wider text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif] flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#7C571C] text-[20px]">account_balance_wallet</span>
+              <h4 className="text-sm font-bold uppercase tracking-wider text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif] flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#64444B] text-[20px]">account_balance_wallet</span>
                 Arqueo de Caja &amp; Gaveta Física (Pesos Colombianos)
               </h4>
               <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
@@ -1064,47 +1082,47 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-              <div className="p-3.5 rounded-2xl bg-[#FFF8F5] border border-[#DFCBB5]">
-                <span className="text-[10px] text-[#6F5A4B] block font-semibold">Base Inicial en Caja:</span>
-                <strong className="text-base text-[#221A14] font-bold font-mono">{formatCOP(cashBase)}</strong>
+              <div className="p-3.5 rounded-2xl bg-[#FAF4F5] border border-[#EAD6D9]">
+                <span className="text-[10px] text-[#644E53] block font-semibold">Base Inicial en Caja:</span>
+                <strong className="text-base text-[#1F1417] font-bold font-mono">{formatCOP(cashBase)}</strong>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-[#FFF8F5] border border-[#DFCBB5]">
-                <span className="text-[10px] text-[#6F5A4B] block font-semibold">(+) Entradas Efectivo:</span>
+              <div className="p-3.5 rounded-2xl bg-[#FAF4F5] border border-[#EAD6D9]">
+                <span className="text-[10px] text-[#644E53] block font-semibold">(+) Entradas Efectivo:</span>
                 <strong className="text-base text-emerald-700 font-bold font-mono">+{formatCOP(totalCashIncome)}</strong>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-[#FFF8F5] border border-[#DFCBB5]">
-                <span className="text-[10px] text-[#6F5A4B] block font-semibold">(-) Gastos Caja Menor:</span>
+              <div className="p-3.5 rounded-2xl bg-[#FAF4F5] border border-[#EAD6D9]">
+                <span className="text-[10px] text-[#644E53] block font-semibold">(-) Gastos Caja Menor:</span>
                 <strong className="text-base text-[#ba1a1a] font-bold font-mono">-{formatCOP(totalExpensesAmount)}</strong>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-[#FBEBE1] border border-[#C49756]">
-                <span className="text-[10px] text-[#7C571C] font-semibold block">Efectivo en Gaveta:</span>
-                <strong className="text-base text-[#7C571C] font-bold font-mono">{formatCOP(expectedCashInHand)}</strong>
+              <div className="p-3.5 rounded-2xl bg-[#F6E3E6] border border-[#C5838D]">
+                <span className="text-[10px] text-[#64444B] font-semibold block">Efectivo en Gaveta:</span>
+                <strong className="text-base text-[#64444B] font-bold font-mono">{formatCOP(expectedCashInHand)}</strong>
               </div>
             </div>
 
             <div className="pt-3 border-t border-[#ebe8e2] flex items-center justify-between text-xs">
-              <span className="text-[#6F5A4B] font-medium">Entradas Digitales (Nequi / Daviplata / Datáfono):</span>
+              <span className="text-[#644E53] font-medium">Entradas Digitales (Nequi / Daviplata / Datáfono):</span>
               <strong className="text-[#71547c] font-mono text-sm font-bold">{formatCOP(totalDigitalIncome)}</strong>
             </div>
           </div>
 
           {/* Historial de Cobros Registrados */}
-          <div className="bg-white rounded-3xl p-6 border border-[#DFCBB5]/60 shadow-xs space-y-3">
-            <h4 className="text-sm font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif]">
+          <div className="bg-white rounded-3xl p-6 border border-[#EAD6D9]/60 shadow-xs space-y-3">
+            <h4 className="text-sm font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
               Registro de Cobros de la Jornada ({cuts.length})
             </h4>
 
             {cuts.length === 0 ? (
-              <p className="text-xs text-[#827474] text-center py-6">
+              <p className="text-xs text-[#7D676B] text-center py-6">
                 No hay cobros registrados aún en este turno.
               </p>
             ) : (
-              <div className="overflow-x-auto rounded-2xl border border-[#DFCBB5]/60">
+              <div className="overflow-x-auto rounded-2xl border border-[#EAD6D9]/60">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#FFF8F5] text-[#6F5A4B] font-semibold border-b border-[#DFCBB5]/60">
+                  <thead className="bg-[#FAF4F5] text-[#644E53] font-semibold border-b border-[#EAD6D9]/60">
                     <tr>
                       <th className="p-3">Hora</th>
                       <th className="p-3">Clienta</th>
@@ -1114,20 +1132,20 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                       <th className="p-3 text-right">Total Cobrado</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#DFCBB5]/40 bg-white">
+                  <tbody className="divide-y divide-[#EAD6D9]/40 bg-white">
                     {cuts.map((cut) => (
-                      <tr key={cut.id} className="hover:bg-[#FFF8F5]/50 transition-colors">
-                        <td className="p-3 font-mono text-[11px] text-[#827474]">{cut.hora}</td>
-                        <td className="p-3 font-semibold text-[#221A14]">{cut.clienteNombre}</td>
-                        <td className="p-3 text-[#6F5A4B]">{cut.servicioNombre}</td>
-                        <td className="p-3 text-[#7C571C]">{cut.especialistaNombre}</td>
+                      <tr key={cut.id} className="hover:bg-[#FAF4F5]/50 transition-colors">
+                        <td className="p-3 font-mono text-[11px] text-[#7D676B]">{cut.hora}</td>
+                        <td className="p-3 font-semibold text-[#1F1417]">{cut.clienteNombre}</td>
+                        <td className="p-3 text-[#644E53]">{cut.servicioNombre}</td>
+                        <td className="p-3 text-[#64444B]">{cut.especialistaNombre}</td>
                         <td className="p-3">
                           <span
                             className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                               cut.metodoPago === 'efectivo'
                                 ? 'bg-emerald-100 text-emerald-800'
                                 : cut.metodoPago === 'mixto'
-                                ? 'bg-[#7C571C]/15 text-[#7C571C]'
+                                ? 'bg-[#64444B]/15 text-[#64444B]'
                                 : 'bg-[#f8d8ff] text-[#71547c]'
                             }`}
                           >
@@ -1137,7 +1155,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                             {cut.metodoPago === 'mixto' && 'Pago Mixto'}
                           </span>
                         </td>
-                        <td className="p-3 text-right font-mono font-bold text-[#221A14]">
+                        <td className="p-3 text-right font-mono font-bold text-[#1F1417]">
                           {formatCOP(cut.servicioPrecio + cut.propina)}
                         </td>
                       </tr>
@@ -1155,10 +1173,10 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-base font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif]">
+              <h3 className="text-base font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
                 Liquidación Diaria de Especialistas
               </h3>
-              <p className="text-xs text-[#6F5A4B]">
+              <p className="text-xs text-[#644E53]">
                 Comisiones calculadas automáticamente según el porcentaje pactado + propinas directas
               </p>
             </div>
@@ -1168,20 +1186,20 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
             {specialistsLiquidation.map((spec) => (
               <div
                 key={spec.id}
-                className="bg-white rounded-3xl p-5 border border-[#DFCBB5]/60 shadow-xs space-y-3 flex flex-col justify-between"
+                className="bg-white rounded-3xl p-5 border border-[#EAD6D9]/60 shadow-xs space-y-3 flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center gap-3">
                     <img
                       src={spec.avatar}
                       alt={spec.name}
-                      className="w-12 h-12 rounded-full object-cover ring-2 ring-[#7C571C]/30"
+                      className="w-12 h-12 rounded-full object-cover ring-2 ring-[#64444B]/30"
                     />
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif]">
+                      <h4 className="text-sm font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
                         {spec.name}
                       </h4>
-                      <p className="text-xs text-[#7C571C] font-medium">
+                      <p className="text-xs text-[#64444B] font-medium">
                         {spec.role} · {spec.commissionRate}% comisión
                       </p>
                     </div>
@@ -1189,21 +1207,21 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                       <span className="text-base font-bold text-emerald-700 font-mono">
                         {formatCOP(spec.payoutTotal)}
                       </span>
-                      <span className="block text-[10px] text-[#827474]">A Liquidar</span>
+                      <span className="block text-[10px] text-[#7D676B]">A Liquidar</span>
                     </div>
                   </div>
 
                   <div className="pt-3 mt-3 border-t border-[#ebe8e2] grid grid-cols-3 gap-1 text-center text-xs">
                     <div>
-                      <span className="text-[10px] text-[#827474] block">Servicios ({spec.cutsCount}):</span>
-                      <strong className="text-[#221A14] font-mono">{formatCOP(spec.totalServices)}</strong>
+                      <span className="text-[10px] text-[#7D676B] block">Servicios ({spec.cutsCount}):</span>
+                      <strong className="text-[#1F1417] font-mono">{formatCOP(spec.totalServices)}</strong>
                     </div>
                     <div className="border-x border-[#ebe8e2]">
-                      <span className="text-[10px] text-[#827474] block">Comisión:</span>
-                      <strong className="text-[#7C571C] font-mono">{formatCOP(spec.totalCommission)}</strong>
+                      <span className="text-[10px] text-[#7D676B] block">Comisión:</span>
+                      <strong className="text-[#64444B] font-mono">{formatCOP(spec.totalCommission)}</strong>
                     </div>
                     <div>
-                      <span className="text-[10px] text-[#827474] block">Propinas:</span>
+                      <span className="text-[10px] text-[#7D676B] block">Propinas:</span>
                       <strong className="text-emerald-700 font-mono">+{formatCOP(spec.totalTips)}</strong>
                     </div>
                   </div>
@@ -1229,7 +1247,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       {activeAdminTab === 'clientes' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif]">
+            <h3 className="text-base font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
               Directorio de Clientes ({clientProfiles.length})
             </h3>
             <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
@@ -1241,15 +1259,15 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
             {clientProfiles.map((client) => (
               <div
                 key={client.id}
-                className="bg-white rounded-3xl p-5 border border-[#DFCBB5]/60 shadow-xs space-y-3 flex flex-col justify-between hover:border-[#7C571C]/50 transition-all"
+                className="bg-white rounded-3xl p-5 border border-[#EAD6D9]/60 shadow-xs space-y-3 flex flex-col justify-between hover:border-[#64444B]/50 transition-all"
               >
                 <div>
                   <div className="flex items-start justify-between">
                     <div>
-                      <h4 className="text-sm font-bold text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif]">
+                      <h4 className="text-sm font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
                         {client.nombre}
                       </h4>
-                      <p className="text-xs text-[#6F5A4B] flex items-center gap-1 mt-0.5">
+                      <p className="text-xs text-[#644E53] flex items-center gap-1 mt-0.5">
                         <span className="material-symbols-outlined text-[13px] text-[#52b788]">call</span>
                         <span>{client.telefono}</span>
                       </p>
@@ -1267,12 +1285,12 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 
                   <div className="pt-2 border-t border-[#ebe8e2] grid grid-cols-2 gap-2 text-xs">
                     <div>
-                      <span className="text-[10px] text-[#827474]">Total Visitas:</span>
-                      <strong className="block text-[#221A14]">{client.totalCitas} citas</strong>
+                      <span className="text-[10px] text-[#7D676B]">Total Visitas:</span>
+                      <strong className="block text-[#1F1417]">{client.totalCitas} citas</strong>
                     </div>
                     <div>
-                      <span className="text-[10px] text-[#827474]">Inversión Total:</span>
-                      <strong className="block text-[#7C571C] font-mono">{formatCOP(client.gastoTotal)}</strong>
+                      <span className="text-[10px] text-[#7D676B]">Inversión Total:</span>
+                      <strong className="block text-[#64444B] font-mono">{formatCOP(client.gastoTotal)}</strong>
                     </div>
                   </div>
                 </div>
@@ -1280,7 +1298,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                 <div className="pt-3 border-t border-[#ebe8e2] flex items-center justify-between gap-2">
                   <button
                     onClick={() => setSelectedClientForHistory(client)}
-                    className="px-3.5 py-1.5 rounded-full bg-[#7C571C] hover:bg-[#684714] text-white text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                    className="px-3.5 py-1.5 rounded-full bg-[#64444B] hover:bg-[#52363C] text-white text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
                   >
                     <span className="material-symbols-outlined text-[15px]">history</span>
                     <span>Ver Citas</span>
@@ -1305,23 +1323,23 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       {/* MODAL 1: TURNO EXPRESS (WALK-IN) EN 10 SEGUNDOS */}
       {showExpressModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="relative w-full max-w-md bg-[#FFF8F5] rounded-3xl p-6 shadow-2xl border border-[#DFCBB5] space-y-3.5 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-[#DFCBB5]/50 pb-2.5">
+          <div className="relative w-full max-w-md bg-[#FAF4F5] rounded-3xl p-6 shadow-2xl border border-[#EAD6D9] space-y-3.5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#EAD6D9]/50 pb-2.5">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-[#7C571C] text-white flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-[#64444B] text-white flex items-center justify-center">
                   <span className="material-symbols-outlined text-[18px]">flash_on</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif]">
+                  <h3 className="font-bold text-sm text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
                     Turno Express (Walk-in en 10s)
                   </h3>
-                  <p className="text-[10px] text-[#6F5A4B]">Ingreso rápido para clientas que llegan directamente a recepción</p>
+                  <p className="text-[10px] text-[#644E53]">Ingreso rápido para clientas que llegan directamente a recepción</p>
                 </div>
               </div>
 
               <button
                 onClick={() => setShowExpressModal(false)}
-                className="w-7 h-7 rounded-full hover:bg-[#FBEBE1] flex items-center justify-center text-[#6F5A4B]"
+                className="w-7 h-7 rounded-full hover:bg-[#F6E3E6] flex items-center justify-center text-[#644E53]"
               >
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
@@ -1336,36 +1354,36 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
             <form onSubmit={handleCreateExpressAppointment} className="space-y-3 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block font-semibold text-[#6F5A4B] mb-1">Nombre de la Clienta</label>
+                  <label className="block font-semibold text-[#644E53] mb-1">Nombre de la Clienta</label>
                   <input
                     type="text"
                     required
                     value={expressClientName}
                     onChange={(e) => setExpressClientName(e.target.value)}
                     placeholder="Ej. Carolina Gómez"
-                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#DFCBB5] text-xs text-[#221A14]"
+                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417]"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-[#6F5A4B] mb-1">WhatsApp (+57)</label>
+                  <label className="block font-semibold text-[#644E53] mb-1">WhatsApp (+57)</label>
                   <input
                     type="text"
                     required
                     value={expressClientPhone}
                     onChange={(e) => setExpressClientPhone(e.target.value)}
                     placeholder="+57 312 849 2011"
-                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#DFCBB5] text-xs font-mono text-[#221A14]"
+                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs font-mono text-[#1F1417]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-[#6F5A4B] mb-1">Tratamiento / Servicio</label>
+                <label className="block font-semibold text-[#644E53] mb-1">Tratamiento / Servicio</label>
                 <select
                   value={expressServiceId}
                   onChange={(e) => setExpressServiceId(e.target.value)}
-                  className="w-full h-9 px-2.5 rounded-xl bg-white border border-[#DFCBB5] text-xs text-[#221A14]"
+                  className="w-full h-9 px-2.5 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417]"
                 >
                   {SERVICES.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -1377,11 +1395,11 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block font-semibold text-[#6F5A4B] mb-1">Manicurista Disponible</label>
+                  <label className="block font-semibold text-[#644E53] mb-1">Manicurista Disponible</label>
                   <select
                     value={expressSpecialistId}
                     onChange={(e) => setExpressSpecialistId(e.target.value)}
-                    className="w-full h-9 px-2.5 rounded-xl bg-white border border-[#DFCBB5] text-xs text-[#221A14]"
+                    className="w-full h-9 px-2.5 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417]"
                   >
                     {SPECIALISTS.map((s) => (
                       <option key={s.id} value={s.id}>
@@ -1392,11 +1410,11 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-[#6F5A4B] mb-1">Estado de Entrada</label>
+                  <label className="block font-semibold text-[#644E53] mb-1">Estado de Entrada</label>
                   <select
                     value={expressStatus}
                     onChange={(e) => setExpressStatus(e.target.value as any)}
-                    className="w-full h-9 px-2.5 rounded-xl bg-white border border-[#DFCBB5] text-xs text-[#221A14]"
+                    className="w-full h-9 px-2.5 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417]"
                   >
                     <option value="en_preparacion">En Cabina (Inmediato)</option>
                     <option value="confirmada">En Sala de Espera</option>
@@ -1405,29 +1423,29 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
               </div>
 
               <div>
-                <label className="block font-semibold text-[#6F5A4B] mb-1">Observación Rápida (Opcional)</label>
+                <label className="block font-semibold text-[#644E53] mb-1">Observación Rápida (Opcional)</label>
                 <input
                   type="text"
                   value={expressNotes}
                   onChange={(e) => setExpressNotes(e.target.value)}
                   placeholder="Ej. Tono Glazed, uña almendrada..."
-                  className="w-full h-8 px-3 rounded-xl bg-white border border-[#DFCBB5] text-xs text-[#221A14]"
+                  className="w-full h-8 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417]"
                 />
               </div>
 
-              <div className="p-2.5 rounded-xl bg-white border border-[#DFCBB5]/80 flex items-center justify-between">
-                <span className="text-[11px] text-[#6F5A4B]">Enviar Pase Digital por WhatsApp</span>
+              <div className="p-2.5 rounded-xl bg-white border border-[#EAD6D9]/80 flex items-center justify-between">
+                <span className="text-[11px] text-[#644E53]">Enviar Pase Digital por WhatsApp</span>
                 <input
                   type="checkbox"
                   checked={expressSendWhatsApp}
                   onChange={(e) => setExpressSendWhatsApp(e.target.checked)}
-                  className="h-4 w-4 accent-[#7C571C] cursor-pointer"
+                  className="h-4 w-4 accent-[#64444B] cursor-pointer"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl bg-[#7C571C] hover:bg-[#684714] text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
+                className="w-full py-3 rounded-xl bg-[#64444B] hover:bg-[#52363C] text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
               >
                 <span className="material-symbols-outlined text-[16px]">check_circle</span>
                 <span>Crear Turno Express &amp; Pasar a Cabina</span>
@@ -1440,14 +1458,14 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       {/* MODAL 2: REGISTRAR CORTE / COBRO CON PAGO MIXTO Y CALCULADORA DE DEVUELTAS */}
       {showNewCutModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="relative w-full max-w-md bg-[#FFF8F5] rounded-3xl p-6 shadow-2xl border border-[#DFCBB5] space-y-3.5 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-[#DFCBB5]/50 pb-2">
-              <h3 className="font-bold text-sm text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif]">
+          <div className="relative w-full max-w-md bg-[#FAF4F5] rounded-3xl p-6 shadow-2xl border border-[#EAD6D9] space-y-3.5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#EAD6D9]/50 pb-2">
+              <h3 className="font-bold text-sm text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
                 Registrar Servicio Realizado en Caja (COP)
               </h3>
               <button
                 onClick={() => setShowNewCutModal(false)}
-                className="w-7 h-7 rounded-full hover:bg-[#FBEBE1] flex items-center justify-center text-[#6F5A4B]"
+                className="w-7 h-7 rounded-full hover:bg-[#F6E3E6] flex items-center justify-center text-[#644E53]"
               >
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
@@ -1462,60 +1480,60 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
             <form onSubmit={handleSubmitCut} className="space-y-3 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-semibold text-[#6F5A4B] mb-1">Nombre de la Clienta</label>
+                  <label className="block font-semibold text-[#644E53] mb-1">Nombre de la Clienta</label>
                   <input
                     type="text"
                     required
                     value={cutClientName}
                     onChange={(e) => setCutClientName(e.target.value)}
                     placeholder="Ej. Mariana Duque"
-                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#DFCBB5] text-xs text-[#221A14]"
+                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417]"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-[#6F5A4B] mb-1">WhatsApp (+57)</label>
+                  <label className="block font-semibold text-[#644E53] mb-1">WhatsApp (+57)</label>
                   <input
                     type="text"
                     required
                     value={cutClientPhone}
                     onChange={(e) => setCutClientPhone(e.target.value)}
                     placeholder="+57 312 849 2011"
-                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#DFCBB5] text-xs font-mono text-[#221A14]"
+                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs font-mono text-[#1F1417]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-semibold text-[#6F5A4B] mb-1">Valor en COP ($)</label>
+                  <label className="block font-semibold text-[#644E53] mb-1">Valor en COP ($)</label>
                   <input
                     type="number"
                     step="1000"
                     required
                     value={cutServicePrice}
                     onChange={(e) => setCutServicePrice(Number(e.target.value))}
-                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#DFCBB5] text-xs font-mono font-bold text-[#7C571C]"
+                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs font-mono font-bold text-[#64444B]"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-[#6F5A4B] mb-1">Propina COP ($)</label>
+                  <label className="block font-semibold text-[#644E53] mb-1">Propina COP ($)</label>
                   <input
                     type="number"
                     step="1000"
                     value={cutTip}
                     onChange={(e) => setCutTip(Number(e.target.value))}
-                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#DFCBB5] text-xs font-mono text-emerald-700"
+                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs font-mono text-emerald-700"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-[#6F5A4B] mb-1">Manicurista Asignada</label>
+                <label className="block font-semibold text-[#644E53] mb-1">Manicurista Asignada</label>
                 <select
                   value={cutSpecialistId}
                   onChange={(e) => setCutSpecialistId(e.target.value)}
-                  className="w-full h-9 px-2 rounded-xl bg-white border border-[#DFCBB5] text-xs text-[#221A14]"
+                  className="w-full h-9 px-2 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417]"
                 >
                   {SPECIALISTS.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -1527,15 +1545,15 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 
               {/* PAYMENT METHOD SELECTOR WITH SPLIT PAYMENT SUPPORT */}
               <div>
-                <label className="block font-semibold text-[#6F5A4B] mb-1">Método de Pago</label>
+                <label className="block font-semibold text-[#644E53] mb-1">Método de Pago</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                   <button
                     type="button"
                     onClick={() => setCutPaymentMethod('efectivo')}
                     className={`p-2 rounded-xl text-center border font-bold text-[11px] cursor-pointer transition-all ${
                       cutPaymentMethod === 'efectivo'
-                        ? 'bg-[#7C571C] text-white border-[#7C571C]'
-                        : 'bg-white text-[#6F5A4B] border-[#DFCBB5]'
+                        ? 'bg-[#64444B] text-white border-[#64444B]'
+                        : 'bg-white text-[#644E53] border-[#EAD6D9]'
                     }`}
                   >
                     💵 Efectivo
@@ -1546,8 +1564,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                     onClick={() => setCutPaymentMethod('nequi_daviplata')}
                     className={`p-2 rounded-xl text-center border font-bold text-[11px] cursor-pointer transition-all ${
                       cutPaymentMethod === 'nequi_daviplata'
-                        ? 'bg-[#7C571C] text-white border-[#7C571C]'
-                        : 'bg-white text-[#6F5A4B] border-[#DFCBB5]'
+                        ? 'bg-[#64444B] text-white border-[#64444B]'
+                        : 'bg-white text-[#644E53] border-[#EAD6D9]'
                     }`}
                   >
                     📱 Nequi/Davi
@@ -1558,8 +1576,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                     onClick={() => setCutPaymentMethod('tarjeta_datafono')}
                     className={`p-2 rounded-xl text-center border font-bold text-[11px] cursor-pointer transition-all ${
                       cutPaymentMethod === 'tarjeta_datafono'
-                        ? 'bg-[#7C571C] text-white border-[#7C571C]'
-                        : 'bg-white text-[#6F5A4B] border-[#DFCBB5]'
+                        ? 'bg-[#64444B] text-white border-[#64444B]'
+                        : 'bg-white text-[#644E53] border-[#EAD6D9]'
                     }`}
                   >
                     💳 Datáfono
@@ -1570,8 +1588,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                     onClick={() => setCutPaymentMethod('mixto')}
                     className={`p-2 rounded-xl text-center border font-bold text-[11px] cursor-pointer transition-all ${
                       cutPaymentMethod === 'mixto'
-                        ? 'bg-[#7C571C] text-white border-[#7C571C]'
-                        : 'bg-white text-[#6F5A4B] border-[#DFCBB5]'
+                        ? 'bg-[#64444B] text-white border-[#64444B]'
+                        : 'bg-white text-[#644E53] border-[#EAD6D9]'
                     }`}
                   >
                     ⚡ Pago Mixto
@@ -1581,15 +1599,15 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 
               {/* SPLIT PAYMENT CONFIGURATION */}
               {cutPaymentMethod === 'mixto' && (
-                <div className="p-3.5 rounded-2xl bg-white border border-[#DFCBB5] space-y-2.5 animate-in fade-in">
-                  <div className="flex items-center justify-between text-[11px] font-bold text-[#7C571C]">
+                <div className="p-3.5 rounded-2xl bg-white border border-[#EAD6D9] space-y-2.5 animate-in fade-in">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-[#64444B]">
                     <span>Desglose de Pago Dividido:</span>
                     <span>Total: {formatCOP(cutServicePrice + cutTip)}</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[10px] font-semibold text-[#6F5A4B] mb-0.5">
+                      <label className="block text-[10px] font-semibold text-[#644E53] mb-0.5">
                         Monto Efectivo ($)
                       </label>
                       <input
@@ -1597,31 +1615,31 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                         step="1000"
                         value={cutMontoEfectivo}
                         onChange={(e) => setCutMontoEfectivo(Number(e.target.value))}
-                        className="w-full h-8 px-2.5 rounded-lg bg-[#FFF8F5] border border-[#DFCBB5] text-xs font-mono font-bold text-[#221A14]"
+                        className="w-full h-8 px-2.5 rounded-lg bg-[#FAF4F5] border border-[#EAD6D9] text-xs font-mono font-bold text-[#1F1417]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-semibold text-[#6F5A4B] mb-0.5">
+                      <label className="block text-[10px] font-semibold text-[#644E53] mb-0.5">
                         Monto Digital ($)
                       </label>
                       <input
                         type="number"
                         readOnly
                         value={cutMontoDigital}
-                        className="w-full h-8 px-2.5 rounded-lg bg-gray-50 border border-[#DFCBB5] text-xs font-mono font-bold text-[#71547c]"
+                        className="w-full h-8 px-2.5 rounded-lg bg-gray-50 border border-[#EAD6D9] text-xs font-mono font-bold text-[#71547c]"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-semibold text-[#6F5A4B] mb-0.5">
+                    <label className="block text-[10px] font-semibold text-[#644E53] mb-0.5">
                       Canal Digital del Restante
                     </label>
                     <select
                       value={cutDigitalMethod}
                       onChange={(e) => setCutDigitalMethod(e.target.value as any)}
-                      className="w-full h-8 px-2 rounded-lg bg-[#FFF8F5] border border-[#DFCBB5] text-xs text-[#221A14]"
+                      className="w-full h-8 px-2 rounded-lg bg-[#FAF4F5] border border-[#EAD6D9] text-xs text-[#1F1417]"
                     >
                       <option value="nequi_daviplata">Transferencia Nequi / Daviplata</option>
                       <option value="tarjeta_datafono">Tarjeta Débito/Crédito Datáfono</option>
@@ -1651,7 +1669,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                         step="1000"
                         value={cutCashReceived}
                         onChange={(e) => setCutCashReceived(Number(e.target.value))}
-                        className="w-full h-8 px-2.5 rounded-lg bg-white border border-emerald-300 text-xs font-mono font-bold text-[#221A14]"
+                        className="w-full h-8 px-2.5 rounded-lg bg-white border border-emerald-300 text-xs font-mono font-bold text-[#1F1417]"
                       />
                     </div>
 
@@ -1700,7 +1718,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl bg-[#7C571C] hover:bg-[#684714] text-white font-bold text-xs shadow-xs transition-all cursor-pointer active:scale-95"
+                className="w-full py-3 rounded-xl bg-[#64444B] hover:bg-[#52363C] text-white font-bold text-xs shadow-xs transition-all cursor-pointer active:scale-95"
               >
                 Guardar Cobro &amp; Enviar Recibo WhatsApp
               </button>
@@ -1712,12 +1730,12 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       {/* MODAL 3: GASTO DE CAJA MENOR */}
       {showExpenseModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="relative w-full max-w-sm bg-[#FFF8F5] rounded-3xl p-6 shadow-2xl border border-[#DFCBB5] space-y-3.5">
-            <div className="flex items-center justify-between border-b border-[#DFCBB5]/50 pb-2">
+          <div className="relative w-full max-w-sm bg-[#FAF4F5] rounded-3xl p-6 shadow-2xl border border-[#EAD6D9] space-y-3.5">
+            <div className="flex items-center justify-between border-b border-[#EAD6D9]/50 pb-2">
               <h3 className="font-bold text-sm text-[#ba1a1a]">Registrar Egreso / Gasto de Caja Menor</h3>
               <button
                 onClick={() => setShowExpenseModal(false)}
-                className="w-7 h-7 rounded-full hover:bg-[#FBEBE1] flex items-center justify-center text-[#6F5A4B]"
+                className="w-7 h-7 rounded-full hover:bg-[#F6E3E6] flex items-center justify-center text-[#644E53]"
               >
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
@@ -1731,19 +1749,19 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 
             <form onSubmit={handleSubmitExpense} className="space-y-3 text-xs">
               <div>
-                <label className="block font-semibold text-[#6F5A4B] mb-1">Concepto del Gasto</label>
+                <label className="block font-semibold text-[#644E53] mb-1">Concepto del Gasto</label>
                 <input
                   type="text"
                   required
                   value={expenseConcept}
                   onChange={(e) => setExpenseConcept(e.target.value)}
                   placeholder="Ej. Insumos desechables o esterilización"
-                  className="w-full h-9 px-3 rounded-xl bg-white border border-[#DFCBB5] text-xs text-[#221A14]"
+                  className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417]"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-[#6F5A4B] mb-1">Monto en COP ($)</label>
+                <label className="block font-semibold text-[#644E53] mb-1">Monto en COP ($)</label>
                 <input
                   type="number"
                   step="1000"
@@ -1768,33 +1786,33 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       {/* MODAL 4: ARQUEO CIEGO / CIERRE DE CAJA */}
       {showCloseModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="relative w-full max-w-sm bg-[#FFF8F5] rounded-3xl p-6 shadow-2xl border border-[#DFCBB5] space-y-4">
-            <div className="flex items-center justify-between border-b border-[#DFCBB5]/50 pb-2">
-              <h3 className="font-bold text-sm text-[#221A14] font-['Plus_Jakarta_Sans',sans-serif]">
+          <div className="relative w-full max-w-sm bg-[#FAF4F5] rounded-3xl p-6 shadow-2xl border border-[#EAD6D9] space-y-4">
+            <div className="flex items-center justify-between border-b border-[#EAD6D9]/50 pb-2">
+              <h3 className="font-bold text-sm text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
                 Arqueo &amp; Cierre de Caja del Día
               </h3>
               <button
                 onClick={() => setShowCloseModal(false)}
-                className="w-7 h-7 rounded-full hover:bg-[#FBEBE1] flex items-center justify-center text-[#6F5A4B]"
+                className="w-7 h-7 rounded-full hover:bg-[#F6E3E6] flex items-center justify-center text-[#644E53]"
               >
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>
 
             <div className="space-y-2 text-xs">
-              <div className="flex justify-between text-[#6F5A4B]">
+              <div className="flex justify-between text-[#644E53]">
                 <span>Efectivo Esperado en Gaveta:</span>
-                <strong className="font-mono text-[#221A14]">{formatCOP(expectedCashInHand)}</strong>
+                <strong className="font-mono text-[#1F1417]">{formatCOP(expectedCashInHand)}</strong>
               </div>
 
               <div>
-                <label className="block font-semibold text-[#6F5A4B] mb-1">Efectivo Físico Contado ($)</label>
+                <label className="block font-semibold text-[#644E53] mb-1">Efectivo Físico Contado ($)</label>
                 <input
                   type="number"
                   step="1000"
                   value={countedCash}
                   onChange={(e) => setCountedCash(Number(e.target.value))}
-                  className="w-full h-10 px-3 rounded-xl bg-white border border-[#DFCBB5] text-sm font-mono font-bold text-[#7C571C]"
+                  className="w-full h-10 px-3 rounded-xl bg-white border border-[#EAD6D9] text-sm font-mono font-bold text-[#64444B]"
                 />
               </div>
 
@@ -1816,7 +1834,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 
             <button
               onClick={handleSaveClose}
-              className="w-full py-3 rounded-xl bg-[#7C571C] hover:bg-[#684714] text-white font-bold text-xs shadow-xs transition-all cursor-pointer active:scale-95"
+              className="w-full py-3 rounded-xl bg-[#64444B] hover:bg-[#52363C] text-white font-bold text-xs shadow-xs transition-all cursor-pointer active:scale-95"
             >
               Confirmar Arqueo &amp; Firmar Cierre
             </button>

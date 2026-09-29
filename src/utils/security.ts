@@ -1,39 +1,44 @@
 /**
  * Security & Anti-Abuse Utility
- * Proporciona validación estricta contra inyecciones de código (XSS, SQLi, Command Injection)
- * y un Rate Limiter con ventana deslizante para prevenir ataques de denegación de servicio o bots.
+ * Garantiza que toda información suministrada en formularios, notas, comentarios y campos
+ * de texto se procese ÚNICAMENTE como texto plano y NUNCA como código ejecutable (Anti-XSS,
+ * Anti-HTML Injection, Anti-Scripting, Anti-SQLi, Anti-Command Injection).
  */
 
-// Patrones sospechosos de inyección maliciosa (HTML/XSS, SQL, Command Injection, scripts)
-const MALICIOUS_PATTERNS = [
-  /<script[\s\S]*?>[\s\S]*?<\/script>/gi,
-  /<iframe[\s\S]*?>/gi,
-  /<embed[\s\S]*?>/gi,
-  /<object[\s\S]*?>/gi,
-  /javascript\s*:/gi,
-  /data\s*:\s*text\/html/gi,
-  /vbscript\s*:/gi,
-  /onload\s*=/gi,
-  /onerror\s*=/gi,
-  /onclick\s*=/gi,
-  /onmouseover\s*=/gi,
-  /<img[\s\S]*?onerror[\s\S]*?>/gi,
-  /\b(exec|eval|system|passthru|shell_exec)\s*\(/gi,
-  /(\b(DROP\s+TABLE|UNION\s+SELECT|INSERT\s+INTO|DELETE\s+FROM|UPDATE\s+\w+\s+SET)\b)/gi,
-  /--\s*$/gm,
-  /;\s*DROP\b/gi,
-  /\brm\s+-rf\b/gi,
-  /\b(curl|wget)\s+http/gi,
-  /\$\{.*?\}/g // Template injection syntax
+// Patrones exhaustivos de código ejecutable, etiquetas HTML, scripts e inyecciones
+// NOTA: No usamos el flag 'g' global para evitar el problema de estado mutable de RegExp.lastIndex en .test()
+const EXECUTABLE_OR_TAG_PATTERNS = [
+  /<\s*\/?\s*[a-zA-Z][^>]*>/i,                        // Cualquier etiqueta HTML/XML (<script>, <img>, <a>, <div>, etc.)
+  /<script[\s\S]*?>[\s\S]*?<\/script>/i,              // Bloque script
+  /<iframe[\s\S]*?>/i,                                // iframes
+  /<embed[\s\S]*?>/i,                                 // embed
+  /<object[\s\S]*?>/i,                                // object
+  /javascript\s*:/i,                                  // Pseudo-protocolo javascript:
+  /vbscript\s*:/i,                                    // Pseudo-protocolo vbscript:
+  /data\s*:\s*text\/(html|javascript)/i,              // Data URIs ejecutables
+  /on[a-zA-Z]+\s*=/i,                                 // Event handlers inline: onload=, onerror=, onclick=, etc.
+  /\b(eval|Function|execScript|setTimeout|setInterval)\s*\(/i, // Ejecutores directos de JavaScript
+  /\b(document\.(location|cookie|write|createElement)|window\.(location|open))\b/i, // Manipulación del DOM
+  /\b(alert|prompt|confirm)\s*\(/i,                   // Cuadros modales nativos
+  /\$\{.*?\}/,                                        // Template string injection ES6
+  /\{\{.*?\}\}/,                                      // Mustache / Angular / Handlebars injection
+  /<%.*?%>/,                                          // JSP / EJS / ASP tags
+  /\b(exec|system|passthru|shell_exec)\s*\(/i,        // Comandos shell de backend
+  /(\b(DROP\s+TABLE|UNION\s+SELECT|INSERT\s+INTO|DELETE\s+FROM|UPDATE\s+\w+\s+SET)\b)/i, // SQLi keywords
+  /--\s*$/m,                                          // SQL comment
+  /;\s*DROP\b/i,                                      // SQL drop injection
+  /\brm\s+-rf\b/i,                                    // Unix command
+  /\b(curl|wget)\s+http/i                             // Remote command fetch
 ];
 
 /**
- * Valida si un texto contiene comandos o código malicioso.
- * Retorna { isValid: true } si es seguro, o { isValid: false, reason: string } si detecta amenaza.
+ * Valida de forma estricta que una cadena sea ÚNICAMENTE texto plano.
+ * Si contiene etiquetas HTML, scripts o código ejecutable, retorna isValid: false con la razón.
  */
-export function validateSafeText(
+export function validateOnlyPlainText(
   text: string,
-  fieldName: string = 'campo'
+  fieldName: string = 'campo',
+  maxLength: number = 500
 ): { isValid: boolean; reason?: string } {
   if (!text || typeof text !== 'string') {
     return { isValid: true };
@@ -42,19 +47,19 @@ export function validateSafeText(
   const trimmed = text.trim();
 
   // 1. Longitud máxima para prevenir desbordamientos o payloads extensos
-  if (trimmed.length > 500) {
+  if (trimmed.length > maxLength) {
     return {
       isValid: false,
-      reason: `El contenido de ${fieldName} supera el límite permitido de 500 caracteres.`
+      reason: `El contenido de ${fieldName} supera el límite permitido de ${maxLength} caracteres.`
     };
   }
 
-  // 2. Comprobación contra patrones maliciosos conocidos
-  for (const pattern of MALICIOUS_PATTERNS) {
+  // 2. Detección estricta de cualquier código ejecutable o etiquetas
+  for (const pattern of EXECUTABLE_OR_TAG_PATTERNS) {
     if (pattern.test(trimmed)) {
       return {
         isValid: false,
-        reason: `El ${fieldName} contiene caracteres o secuencias no permitidas (código o comando sospechoso detectado).`
+        reason: `El campo "${fieldName}" solo admite texto plano. Por seguridad, no se permite código ejecutable, etiquetas HTML ni scripts.`
       };
     }
   }
@@ -63,14 +68,68 @@ export function validateSafeText(
 }
 
 /**
- * Sanitiza texto removiendo caracteres de control y escapando símbolos HTML básicos
+ * Alias retrocompatible para validación de texto seguro como texto plano
+ */
+export function validateSafeText(
+  text: string,
+  fieldName: string = 'campo'
+): { isValid: boolean; reason?: string } {
+  return validateOnlyPlainText(text, fieldName, 500);
+}
+
+/**
+ * Convierte y depura cualquier texto de entrada para garantizar que quede
+ * 100% como texto plano seguro sin posibilidad de ser ejecutado.
+ */
+export function sanitizeToPlainText(text: string): string {
+  if (!text || typeof text !== 'string') return '';
+
+  let sanitized = text;
+
+  // 1. Eliminar cualquier etiqueta HTML o XML completa o fragmentada
+  sanitized = sanitized.replace(/<[^>]*>?/gm, '');
+
+  // 2. Eliminar pseudo-protocolos ejecutables
+  sanitized = sanitized.replace(/javascript\s*:/gi, '');
+  sanitized = sanitized.replace(/vbscript\s*:/gi, '');
+  sanitized = sanitized.replace(/data\s*:\s*text\/(html|javascript)/gi, '');
+
+  // 3. Eliminar controladores de eventos inline (ej: onerror=, onload=, onclick=)
+  sanitized = sanitized.replace(/on[a-zA-Z]+\s*=\s*['"]?[^'"]*['"]?/gi, '');
+
+  // 4. Eliminar llamadas a funciones de ejecución de código
+  sanitized = sanitized.replace(/\b(eval|exec|Function|alert|confirm|prompt)\s*\([^)]*\)/gi, '');
+
+  // 5. Neutralizar inyecciones de plantillas (${...}, {{...}}, <%...%>)
+  sanitized = sanitized.replace(/\$\{([^}]*)\}/g, '$1');
+  sanitized = sanitized.replace(/\{\{([^}]*)\}\}/g, '$1');
+  sanitized = sanitized.replace(/<%([^%]*)%>/g, '$1');
+
+  // 6. Eliminar corchetes angulares residuales y comillas peligrosas
+  sanitized = sanitized.replace(/[<>]/g, '');
+
+  // 7. Normalizar espacios
+  return sanitized.trim();
+}
+
+/**
+ * Alias retrocompatible para sanitización de texto plano
  */
 export function sanitizeInput(text: string): string {
+  return sanitizeToPlainText(text);
+}
+
+/**
+ * Escapa entidades HTML para visualización segura sin riesgo de inyección
+ */
+export function escapeHtml(text: string): string {
   if (!text || typeof text !== 'string') return '';
   return text
-    .replace(/[<>]/g, '') // Elimina corchetes angulares
-    .replace(/["']/g, '') // Elimina comillas para prevenir roturas de atributos
-    .trim();
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 /**

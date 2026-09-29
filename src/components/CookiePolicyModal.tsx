@@ -141,19 +141,19 @@ export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
               <div className="p-3 rounded-xl bg-white border border-[#e8b4b8]/30">
                 <strong className="block text-[#1c1c18] font-semibold text-xs">Google Chrome</strong>
-                <span className="text-[11px] text-[#827474]">Configuración &gt; Privacidad y seguridad &gt; Cookies y otros datos de sitios.</span>
+                <span className="text-[11px] text-[#7D676B]">Configuración &gt; Privacidad y seguridad &gt; Cookies y otros datos de sitios.</span>
               </div>
               <div className="p-3 rounded-xl bg-white border border-[#e8b4b8]/30">
                 <strong className="block text-[#1c1c18] font-semibold text-xs">Apple Safari (iOS / macOS)</strong>
-                <span className="text-[11px] text-[#827474]">Preferencias &gt; Privacidad &gt; Bloquear todas las cookies o gestionar datos del sitio.</span>
+                <span className="text-[11px] text-[#7D676B]">Preferencias &gt; Privacidad &gt; Bloquear todas las cookies o gestionar datos del sitio.</span>
               </div>
               <div className="p-3 rounded-xl bg-white border border-[#e8b4b8]/30">
                 <strong className="block text-[#1c1c18] font-semibold text-xs">Mozilla Firefox</strong>
-                <span className="text-[11px] text-[#827474]">Opciones &gt; Privacidad &amp; Seguridad &gt; Cookies y datos del sitio.</span>
+                <span className="text-[11px] text-[#7D676B]">Opciones &gt; Privacidad &amp; Seguridad &gt; Cookies y datos del sitio.</span>
               </div>
               <div className="p-3 rounded-xl bg-white border border-[#e8b4b8]/30">
                 <strong className="block text-[#1c1c18] font-semibold text-xs">Microsoft Edge</strong>
-                <span className="text-[11px] text-[#827474]">Configuración &gt; Permisos del sitio &gt; Cookies y datos almacenados.</span>
+                <span className="text-[11px] text-[#7D676B]">Configuración &gt; Permisos del sitio &gt; Cookies y datos almacenados.</span>
               </div>
             </div>
           </section>
@@ -177,7 +177,7 @@ export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({
 
         {/* Modal Footer */}
         <div className="p-4 sm:p-5 bg-white border-t border-[#e8b4b8]/30 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-          <p className="text-xs text-[#827474]">
+          <p className="text-xs text-[#7D676B]">
             Puedes modificar tus preferencias en cualquier momento.
           </p>
           <div className="flex items-center gap-2.5 w-full sm:w-auto">

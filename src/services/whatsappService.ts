@@ -4,6 +4,8 @@
  * para evitar exposición de tokens en el frontend o repositorios públicos (GitHub).
  */
 
+import { sanitizeToPlainText } from '../utils/security';
+
 const WHATSAPP_HISTORY_KEY = 'aura_whatsapp_history';
 const ULTRAMSG_CONFIG_KEY = 'aura_ultramsg_config';
 
@@ -118,13 +120,15 @@ export function buildWaMeUrl(phone: string, text: string): string {
 }
 
 /**
- * Reemplaza variables dinámicas en las plantillas de mensaje
+ * Reemplaza variables dinámicas en las plantillas de mensaje asegurando texto plano seguro
  */
 export function renderTemplate(template: string, vars: Record<string, string>): string {
   let result = template;
   Object.keys(vars).forEach((key) => {
+    const rawVal = vars[key] || '';
+    const safeVal = sanitizeToPlainText(rawVal);
     const regex = new RegExp(`\\{${key}\\}`, 'g');
-    result = result.replace(regex, vars[key] || '');
+    result = result.replace(regex, safeVal);
   });
   return result;
 }
