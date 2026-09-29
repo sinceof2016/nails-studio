@@ -6,9 +6,11 @@
     <title>La Pelu SPA · Redireccionando...</title>
     <script>
       // Single Page Application redirect script for GitHub Pages
-      // Keeps the path for proper SPA routing
-      const pathSegmentsToKeep = 0;
+      // Auto-detect project pages (e.g. /nails-studio/) vs root pages
       const l = window.location;
+      const isGitHubIo = l.hostname.endsWith('github.io');
+      const pathSegmentsToKeep = (isGitHubIo && l.pathname.split('/').filter(Boolean).length > 0) ? 1 : 0;
+      
       l.replace(
         l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
         l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
