@@ -58,8 +58,7 @@ import {
   INITIAL_SERVICE_CATEGORIES,
   SPECIALISTS,
   ADMIN_USER,
-  SYSTEM_USERS,
-  DAVID_USER
+  SYSTEM_USERS
 } from './data/mockData';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from './firebase';

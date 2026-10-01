@@ -21,15 +21,11 @@ export const Header: React.FC<HeaderProps> = ({
   activeAppointmentsCount = 0
 }) => {
   // Build permitted tabs according to user privileges
-  const isDavid = currentUser?.id === 'USR-DAVID-01' ||
-    currentUser?.email?.toLowerCase().includes('david') ||
-    currentUser?.email?.toLowerCase().includes('orjuela') ||
-    currentUser?.nombre?.toLowerCase().includes('david orjuela');
-
-  const isAdmin = currentUser?.rol === 'Administrador' || currentUser?.rol === 'SuperAdmin' || isDavid;
+  const isSuperAdmin = currentUser?.rol === 'SuperAdmin';
+  const isAdmin = currentUser?.rol === 'Administrador' || isSuperAdmin;
   const isCaja = currentUser?.rol === 'Caja';
 
-  const allTabs: { id: AppTab; label: string; icon: string; badge?: number; minRole: 'public' | 'caja' | 'admin' | 'david' }[] = [
+  const allTabs: { id: AppTab; label: string; icon: string; badge?: number; minRole: 'public' | 'caja' | 'admin' | 'superadmin' }[] = [
     { id: 'reservar', label: 'Reservar Turno', icon: 'calendar_month', minRole: 'public' },
     { id: 'servicios', label: 'Servicios & Carta', icon: 'spa', minRole: 'public' },
     {
@@ -43,14 +39,14 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'liquidaciones', label: 'Liquidación', icon: 'receipt_long', minRole: 'admin' },
     { id: 'caja', label: 'Caja & Arqueo', icon: 'account_balance_wallet', minRole: 'caja' },
     { id: 'clientes', label: 'Directorio Clientes', icon: 'groups', minRole: 'caja' },
-    { id: 'usuarios', label: 'Usuarios', icon: 'manage_accounts', minRole: 'david' }, // ONLY David
-    { id: 'api', label: 'Consola API', icon: 'terminal', minRole: 'david' } // ONLY David / SuperAdmin with puedeVerApi
+    { id: 'usuarios', label: 'Usuarios', icon: 'manage_accounts', minRole: 'superadmin' },
+    { id: 'api', label: 'Consola API', icon: 'terminal', minRole: 'superadmin' }
   ];
 
   const visibleTabs = allTabs.filter((tab) => {
     if (tab.minRole === 'public') return true;
     if (!currentUser) return false; // Public user cannot see any admin tabs
-    if (tab.minRole === 'david') return isDavid;
+    if (tab.minRole === 'superadmin') return Boolean(isSuperAdmin || currentUser.puedeVerUsuarios || currentUser.puedeVerApi);
     if (tab.minRole === 'admin') return isAdmin;
     if (tab.minRole === 'caja') return isCaja || isAdmin;
     return false;

@@ -9,56 +9,19 @@ export const INITIAL_SERVICE_CATEGORIES: ServiceCategory[] = [
 ];
 
 export const LOGO_URL = './lumina-logo.svg';
-export const USER_AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBUrZkdIRr4pUE-9QkKlA4YJH4tk8ug4t8ss19lF-xaHuFXDZMHSMNsT9k9zTg0PDXjyE1XBLqv7-3TJMIW1ZrMHrdyvA7EONm345vpZM9IpVzKV952FeAoCg5uRj8ASWjkLrJBn8hl9dZ4nYWpvmFHjrZnDCGuwztm7sv__1kQfaJmUHLZDjmyxmWSv0wSvmVqEKDlZRTrx921qdt6d1vfQiI8yKxjqllB1oBt-7Gy_etZi5Dt7p8vVQ';
 
-export const DAVID_USER: SystemUser = {
-  id: 'USR-DAVID-01',
-  nombre: 'David Orjuela',
-  email: 'david.orjuela@auranailsspa.com',
-  rol: 'SuperAdmin',
-  sucursalAsignada: 'todas',
-  avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
-  creadoEn: '2026-09-01T07:00:00.000Z',
-  puedeVerApi: true,
-  puedeVerUsuarios: true
-};
-
-export const SYSTEM_USERS: SystemUser[] = [
-  DAVID_USER,
-  {
-    id: 'USR-ADMIN-01',
-    nombre: 'Lucía Santamaría',
-    email: 'administracion@auranails.com',
-    rol: 'Administrador',
-    sucursalAsignada: 'chico',
-    avatar: USER_AVATAR,
-    creadoEn: '2026-09-05T08:00:00.000Z',
-    puedeVerApi: false, // Administrador CANNOT see API section
-    puedeVerUsuarios: false // Administrador CANNOT see Users section
-  },
-  {
-    id: 'USR-CAJA-01',
-    nombre: 'Caja & Recepción Chicó',
-    email: 'caja@auranails.com',
-    rol: 'Caja',
-    sucursalAsignada: 'chico',
-    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=200',
-    creadoEn: '2026-09-10T09:00:00.000Z',
-    puedeVerApi: false,
-    puedeVerUsuarios: false
-  }
-];
+export const SYSTEM_USERS: SystemUser[] = [];
 
 export const ADMIN_USER: AdminUser = {
   id: 'admin-01',
-  name: 'David Orjuela',
+  name: 'Administración',
   role: 'SuperAdmin',
-  title: 'Director de Operaciones & Santuario',
-  email: 'david.orjuela@auranailsspa.com',
-  phone: '+57 300 000 0000',
+  title: 'Dirección de Operaciones',
+  email: 'contacto@auranailsspa.com',
+  phone: '',
   branch: 'Santuario Central Chicó · Bogotá',
   branchId: 'chico',
-  avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
+  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
   permissions: [
     'Control total de usuarios y sedes',
     'Consola REST API y pruebas de integración',

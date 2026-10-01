@@ -1,12 +1,9 @@
 {
-  "projectId": "galvanized-emblem-pzp2g",
-  "appId": "1:393020568997:web:45a46bfadfecb5bdaae44c",
-  "apiKey": "AIzaSyC2DJw9R_3pK8G9-h0FoC5L9QPluBp5ZZo",
-  "authDomain": "galvanized-emblem-pzp2g.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-auranailsspa-4643c7da-0060-4c78-bdb5-baee984b4e62",
-  "storageBucket": "galvanized-emblem-pzp2g.firebasestorage.app",
-  "messagingSenderId": "393020568997",
-  "measurementId": "",
-  "oAuthClientId": "393020568997-r88ugt8i5et2jt59291vlqvfn1cl1e90.apps.googleusercontent.com",
-  "recaptchaSiteKey": ""
+  "apiKey": "AIzaSyDKEHXgMZfdVGdM8-nXA_r4tCBI3Hb_y6k",
+  "authDomain": "nails-studio-32cc0.firebaseapp.com",
+  "projectId": "nails-studio-32cc0",
+  "storageBucket": "nails-studio-32cc0.firebasestorage.app",
+  "messagingSenderId": "550802415820",
+  "appId": "1:550802415820:web:bfb8da886866766beb2269",
+  "measurementId": "G-4P56YG4BJ6"
 }

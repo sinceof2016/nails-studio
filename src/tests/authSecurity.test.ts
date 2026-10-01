@@ -39,13 +39,16 @@ class TestRateLimiter {
 }
 
 // 2. Simulación de Validación de Login
+const DYNAMIC_TEST_EMAIL = `test_staff_${crypto.randomBytes(4).toString('hex')}@testdomain.local`;
+const DYNAMIC_TEST_PASSWORD = `P@ss_${crypto.randomBytes(8).toString('hex')}!`;
+
 const MOCK_VAULT = [
   {
-    userId: 'USR-DAVID-01',
-    email: 'david.orjuela@auranailsspa.com',
-    nombre: 'David Orjuela',
+    userId: 'USR-TEST-01',
+    email: DYNAMIC_TEST_EMAIL,
+    nombre: 'Personal de Prueba',
     role: 'SuperAdmin',
-    passwordHash: crypto.createHash('sha256').update('Admin2026!#').digest('hex')
+    passwordHash: crypto.createHash('sha256').update(DYNAMIC_TEST_PASSWORD).digest('hex')
   }
 ];
 
@@ -70,7 +73,7 @@ function mockValidateLogin(identifier?: any, password?: any) {
   const hash = crypto.createHash('sha256').update(strPass).digest('hex');
 
   const match = MOCK_VAULT.find(
-    (u) => (u.email.toLowerCase() === cleanId || (cleanId.includes('david') && u.userId === 'USR-DAVID-01')) && u.passwordHash === hash
+    (u) => u.email.toLowerCase() === cleanId && u.passwordHash === hash
   );
 
   if (!match) {
@@ -112,7 +115,7 @@ async function runTestSuite() {
 
   // PRUEBA 1: Comportamiento Esperado - Login Exitoso y creación de sesión
   console.log('1. [Comportamiento Esperado] Login con credenciales válidas');
-  const res1 = mockValidateLogin('david.orjuela@auranailsspa.com', 'Admin2026!#');
+  const res1 = mockValidateLogin(DYNAMIC_TEST_EMAIL, DYNAMIC_TEST_PASSWORD);
   assert.strictEqual(res1.success, true);
   assert.strictEqual(res1.user?.role, 'SuperAdmin');
   assert.ok(res1.session?.token, 'Debe generar token');
@@ -120,7 +123,7 @@ async function runTestSuite() {
 
   // PRUEBA 2: Entradas Inválidas - Credenciales erróneas
   console.log('2. [Entradas Inválidas] Contraseña incorrecta');
-  const res2 = mockValidateLogin('david.orjuela@auranailsspa.com', 'WrongPass123!');
+  const res2 = mockValidateLogin(DYNAMIC_TEST_EMAIL, 'WrongTestPassword!');
   assert.strictEqual(res2.success, false);
   assert.strictEqual(res2.code, 'INVALID_CREDENTIALS');
   console.log('   ✅ Resultado: Rechazo seguro 401 con mensaje genérico.');

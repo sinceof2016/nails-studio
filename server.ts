@@ -70,50 +70,6 @@ function createRateLimiter(maxRequests: number, windowMs: number) {
 const ULTRAMSG_INSTANCE_ID = process.env.ULTRAMSG_INSTANCE_ID || '';
 const ULTRAMSG_TOKEN = process.env.ULTRAMSG_TOKEN || '';
 
-// Bóveda de credenciales criptográficas protegidas en el backend (Variables de entorno con hash seguro por defecto)
-// Hash SHA-256 de contraseña predeterminada 'Admin2026!#'
-const DEFAULT_SUPERADMIN_HASH = 'ee94a462c7686d70a9862569d453978749d0f0bd3f77eb7f9c6587483edfcd2b';
-// Hash SHA-256 de contraseña predeterminada 'Admin2026!#'
-const DEFAULT_ADMIN_HASH = 'ee94a462c7686d70a9862569d453978749d0f0bd3f77eb7f9c6587483edfcd2b';
-// Hash SHA-256 de contraseña predeterminada 'Caja2026!#'
-const DEFAULT_CAJA_HASH = '2ebde29bb0bae0228efde2163c33233b67da77ccb8bbda291263c08c3eccac2b';
-
-const VAULT_STORE = [
-  {
-    userId: 'USR-DAVID-01',
-    email: process.env.AUTH_SUPERADMIN_EMAIL || 'david.orjuela@auranailsspa.com',
-    nombre: 'David Orjuela',
-    role: 'SuperAdmin' as const,
-    passwordHash: process.env.AUTH_SUPERADMIN_HASH || DEFAULT_SUPERADMIN_HASH,
-    puedeVerApi: true,
-    puedeVerUsuarios: true,
-    sucursalAsignada: 'todas',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200'
-  },
-  {
-    userId: 'USR-ADMIN-01',
-    email: process.env.AUTH_ADMIN_EMAIL || 'administracion@auranails.com',
-    nombre: 'Lucía Santamaría',
-    role: 'Administrador' as const,
-    passwordHash: process.env.AUTH_ADMIN_HASH || DEFAULT_ADMIN_HASH,
-    puedeVerApi: false,
-    puedeVerUsuarios: false,
-    sucursalAsignada: 'chico',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBUrZkdIRr4pUE-9QkKlA4YJH4tk8ug4t8ss19lF-xaHuFXDZMHSMNsT9k9zTg0PDXjyE1XBLqv7-3TJMIW1ZrMHrdyvA7EONm345vpZM9IpVzKV952FeAoCg5uRj8ASWjkLrJBn8hl9dZ4nYWpvmFHjrZnDCGuwztm7sv__1kQfaJmUHLZDjmyxmWSv0wSvmVqEKDlZRTrx921qdt6d1vfQiI8yKxjqllB1oBt-7Gy_etZi5Dt7p8vVQ'
-  },
-  {
-    userId: 'USR-CAJA-01',
-    email: process.env.AUTH_CAJA_EMAIL || 'caja@auranails.com',
-    nombre: 'Caja & Recepción Chicó',
-    role: 'Caja' as const,
-    passwordHash: process.env.AUTH_CAJA_HASH || DEFAULT_CAJA_HASH,
-    puedeVerApi: false,
-    puedeVerUsuarios: false,
-    sucursalAsignada: 'chico',
-    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=200'
-  }
-];
-
 function sha256(str: string): string {
   return crypto.createHash('sha256').update(str).digest('hex');
 }
@@ -151,65 +107,11 @@ function sanitizeText(str: string): string {
 
 // 4. Endpoints con Rate Limiting y Sanitización
 
-// Auth Login: Máximo 8 intentos por 5 minutos (Anti-Bruteforce)
-app.post('/api/auth/login', createRateLimiter(8, 5 * 60 * 1000), (req, res) => {
-  const { identifier, password } = req.body;
-  if (!identifier || !password) {
-    return res.status(400).json({ success: false, error: 'Identificador y contraseña requeridos' });
-  }
-
-  const idTrim = sanitizeText(identifier).toLowerCase();
-  const hash = sha256(String(password));
-
-  const matchedUser = VAULT_STORE.find(
-    (u) =>
-      Boolean(u.passwordHash) &&
-      (u.email.toLowerCase() === idTrim ||
-       (idTrim.includes('david') && u.userId === 'USR-DAVID-01') ||
-       (u.userId === 'USR-DAVID-01' && (idTrim === 'orjueladavid32@gmail.com' || idTrim === 'admin')) ||
-       (idTrim.includes('admin') && u.role === 'Administrador')) &&
-      u.passwordHash === hash
-  );
-
-  if (!matchedUser) {
-    return res.status(401).json({ success: false, error: 'Credenciales inválidas en el Vault' });
-  }
-
-  // Return clean user object WITHOUT password or hash with session expiration
-  const token = crypto.randomBytes(24).toString('hex');
-  const now = Date.now();
-  const sessionTtlMs = 15 * 60 * 1000; // 15 minutos por inactividad
-
-  const safeUser = {
-    id: matchedUser.userId,
-    nombre: matchedUser.nombre,
-    email: matchedUser.email,
-    rol: matchedUser.role,
-    sucursalAsignada: matchedUser.sucursalAsignada,
-    avatar: matchedUser.avatar,
-    puedeVerApi: matchedUser.puedeVerApi,
-    puedeVerUsuarios: matchedUser.puedeVerUsuarios
-  };
-
-  return res.json({
-    success: true,
-    user: safeUser,
-    session: {
-      token,
-      loginTime: now,
-      expiresAt: now + sessionTtlMs,
-      maxInactivityMs: sessionTtlMs
-    }
-  });
-});
-
 // Vault Status Endpoint
 app.get('/api/vault/status', createRateLimiter(30, 60 * 1000), (req, res) => {
   res.json({
     status: 'active',
-    vaultEncrypted: true,
-    algorithm: 'SHA-256 / AES-GCM',
-    usersRegistered: VAULT_STORE.length,
+    authProvider: 'Firebase Auth',
     whatsappGatewayProtected: true,
     timestamp: new Date().toISOString()
   });
@@ -218,7 +120,7 @@ app.get('/api/vault/status', createRateLimiter(30, 60 * 1000), (req, res) => {
 // WhatsApp Dispatch Proxy (Protege la API Key de UltraMsg ejecutando el fetch desde el servidor)
 app.post('/api/whatsapp/send', createRateLimiter(15, 60 * 1000), async (req, res) => {
   try {
-    const { phone, message, clientName, bookingCode, customInstance, customToken } = req.body;
+    const { phone, message, clientName } = req.body;
 
     if (!phone || !message) {
       return res.status(400).json({ success: false, error: 'Teléfono y mensaje requeridos' });
@@ -231,6 +133,13 @@ app.post('/api/whatsapp/send', createRateLimiter(15, 60 * 1000), async (req, res
       });
     }
 
+    if (!ULTRAMSG_INSTANCE_ID || !ULTRAMSG_TOKEN) {
+      return res.status(503).json({
+        success: false,
+        error: 'Servicio de WhatsApp no configurado en el servidor.'
+      });
+    }
+
     const cleanDigits = String(phone).replace(/\D/g, '');
     const cleanPhone = cleanDigits.startsWith('57')
       ? cleanDigits
@@ -239,12 +148,9 @@ app.post('/api/whatsapp/send', createRateLimiter(15, 60 * 1000), async (req, res
       : `57${cleanDigits.slice(-10)}`;
 
     const cleanMsg = sanitizeText(message);
-    const targetInstance = (customInstance && customInstance.trim()) ? customInstance.trim() : ULTRAMSG_INSTANCE_ID;
-    const targetToken = (customToken && customToken.trim()) ? customToken.trim() : ULTRAMSG_TOKEN;
-
-    const instance = targetInstance.startsWith('instance')
-      ? targetInstance
-      : `instance${targetInstance}`;
+    const instance = ULTRAMSG_INSTANCE_ID.startsWith('instance')
+      ? ULTRAMSG_INSTANCE_ID
+      : `instance${ULTRAMSG_INSTANCE_ID}`;
 
     const upstreamUrl = `https://api.ultramsg.com/${instance}/messages/chat`;
 
@@ -252,7 +158,7 @@ app.post('/api/whatsapp/send', createRateLimiter(15, 60 * 1000), async (req, res
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
-        token: targetToken,
+        token: ULTRAMSG_TOKEN,
         to: cleanPhone,
         body: cleanMsg
       })
