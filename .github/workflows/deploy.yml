@@ -32,6 +32,12 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
+      - name: Typecheck and Lint
+        run: npm run lint
+
+      - name: Run Security & QA Tests
+        run: npm run test
+
       - name: Build project
         run: npm run build
 

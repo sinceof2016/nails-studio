@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { LOGO_URL } from '../data/mockData';
 import { AppNotification, SystemUser, AppTab } from '../types';
+import { BUSINESS_CONFIG } from '../config/businessConfig';
 
 interface HeaderProps {
   currentTab: AppTab;
   onNavigate: (tab: AppTab) => void;
   currentUser: SystemUser | null;
   onOpenLogin: () => void;
-  notifications: AppNotification[];
-  onMarkNotificationAsRead: (id: string) => void;
+  notifications?: AppNotification[];
+  onMarkNotificationAsRead?: (id: string) => void;
   activeAppointmentsCount?: number;
 }
 
@@ -17,13 +18,8 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigate,
   currentUser,
   onOpenLogin,
-  notifications,
-  onMarkNotificationAsRead,
   activeAppointmentsCount = 0
 }) => {
-  const [showNotifications, setShowNotifications] = useState(false);
-  const unreadCount = notifications.filter((n) => n.isUnread).length;
-
   // Build permitted tabs according to user privileges
   const isDavid = currentUser?.id === 'USR-DAVID-01' ||
     currentUser?.email?.toLowerCase().includes('david') ||
@@ -85,7 +81,7 @@ export const Header: React.FC<HeaderProps> = ({
       case '404':
         return 'Página No Encontrada (404)';
       default:
-        return 'La Pelu SPA';
+        return BUSINESS_CONFIG.brandName;
     }
   };
 
@@ -101,13 +97,13 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => onNavigate('reservar')}
             >
               <img
-                alt="La Pelu SPA Logo"
+                alt={`${BUSINESS_CONFIG.brandName} Logo`}
                 className="h-9 sm:h-10 w-auto object-contain shrink-0 group-hover:scale-105 transition-transform"
                 src={LOGO_URL}
               />
               <div className="flex flex-col min-w-0">
                 <span className="text-[10px] sm:text-[11px] tracking-widest uppercase font-bold text-[#64444B] truncate font-['Plus_Jakarta_Sans',sans-serif]">
-                  La Pelu SPA
+                  {BUSINESS_CONFIG.brandName}
                 </span>
                 <h1 className="text-sm sm:text-base text-[#1F1417] font-bold leading-tight font-['Plus_Jakarta_Sans',sans-serif] truncate">
                   {getSectionTitle()}
@@ -153,21 +149,6 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="sm:hidden">Ingresar</span>
                 </button>
               )}
-
-              {/* Notifications Button */}
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="relative w-9 h-9 rounded-full bg-[#F6E3E6] hover:bg-[#EED5D9] border border-[#EAD6D9] flex items-center justify-center text-[#644E53] transition-colors cursor-pointer shadow-2xs"
-                title="Notificaciones"
-                aria-label="Ver notificaciones"
-              >
-                <span className="material-symbols-outlined text-[18px]">notifications</span>
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#64444B] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
             </div>
           </div>
         </div>
@@ -210,77 +191,6 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
       </header>
-
-      {/* Notifications Drawer */}
-      {showNotifications && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs animate-in fade-in duration-150">
-          <div
-            className="fixed inset-0"
-            onClick={() => setShowNotifications(false)}
-          />
-          <div className="relative w-full max-w-sm bg-[#FAF4F5] h-full shadow-2xl flex flex-col z-10 border-l border-[#EAD6D9] animate-in slide-in-from-right duration-200">
-            <div className="p-4 border-b border-[#EAD6D9]/60 flex items-center justify-between bg-white">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#64444B] text-[20px]">
-                  notifications
-                </span>
-                <h3 className="font-semibold text-base text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
-                  Novedades del Salón
-                </h3>
-                {unreadCount > 0 && (
-                  <span className="px-2 py-0.5 text-xs rounded-full bg-[#F6E3E6] text-[#64444B] font-bold">
-                    {unreadCount} nuevas
-                  </span>
-                )}
-              </div>
-              <button
-                onClick={() => setShowNotifications(false)}
-                className="w-8 h-8 rounded-full hover:bg-neutral-100 flex items-center justify-center text-[#644E53] cursor-pointer"
-                aria-label="Cerrar notificaciones"
-              >
-                <span className="material-symbols-outlined text-[20px]">close</span>
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {notifications.length === 0 ? (
-                <div className="text-center py-12 text-[#644E53] text-sm">
-                  No tienes notificaciones pendientes.
-                </div>
-              ) : (
-                notifications.map((notif) => (
-                  <div
-                    key={notif.id}
-                    onClick={() => onMarkNotificationAsRead(notif.id)}
-                    className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
-                      notif.isUnread
-                        ? 'bg-white border-[#C5838D] shadow-sm'
-                        : 'bg-[#F6E3E6]/40 border-[#EAD6D9] text-[#644E53]'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <h4 className={`text-xs font-semibold ${notif.isUnread ? 'text-[#1F1417]' : 'text-[#644E53]'}`}>
-                        {notif.title}
-                      </h4>
-                      <span className="text-[10px] text-[#644E53] whitespace-nowrap">
-                        {notif.timeAgo}
-                      </span>
-                    </div>
-                    <p className="text-xs text-[#644E53] mt-1 leading-relaxed">
-                      {notif.message}
-                    </p>
-                    {notif.isUnread && (
-                      <span className="inline-block mt-2 text-[10px] text-[#64444B] font-semibold">
-                        Marcar como leída
-                      </span>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };

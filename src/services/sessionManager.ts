@@ -1,6 +1,9 @@
 /**
  * Session Manager & Auto-Expiration Service
  * Maneja el ciclo de vida de la sesión con caducidad por inactividad y TTL absoluto.
+ * NOTA DE SEGURIDAD (S12): La sesión en sessionStorage solo gestiona el estado visual de la UI.
+ * La autorización y los permisos reales están blindados y aplicados estrictamente por las
+ * reglas del servidor y Firestore Rules en cada operación.
  */
 
 import { SystemUser } from '../types';
@@ -14,7 +17,6 @@ export interface UserSession {
 }
 
 export const SESSION_STORAGE_KEY = 'aura_auth_session';
-export const LEGACY_STORAGE_KEY = 'aura_current_user';
 
 // Duración máxima de inactividad: 15 minutos (900.000 ms)
 export const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;
@@ -34,7 +36,7 @@ function generateSessionToken(): string {
 }
 
 /**
- * Guarda una nueva sesión activa con sus marcas de tiempo
+ * Guarda una nueva sesión activa con sus marcas de tiempo en sessionStorage
  */
 export function createSession(user: SystemUser): UserSession {
   const now = Date.now();
@@ -47,10 +49,12 @@ export function createSession(user: SystemUser): UserSession {
   };
 
   try {
-    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
-    localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify(user));
+    sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+    // Depuración de almacenamiento legado en localStorage
+    localStorage.removeItem(SESSION_STORAGE_KEY);
+    localStorage.removeItem('aura_current_user');
   } catch (e) {
-    console.error('Error guardando la sesión en localStorage:', e);
+    console.error('Error guardando la sesión en sessionStorage:', e);
   }
 
   return session;
@@ -61,14 +65,8 @@ export function createSession(user: SystemUser): UserSession {
  */
 export function getActiveSession(): UserSession | null {
   try {
-    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+    const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
     if (!raw) {
-      // Si no hay sesión estructurada pero hay legado, migramos o invalidamos
-      const legacyRaw = localStorage.getItem(LEGACY_STORAGE_KEY);
-      if (legacyRaw) {
-        const legacyUser = JSON.parse(legacyRaw) as SystemUser;
-        return createSession(legacyUser);
-      }
       return null;
     }
 
@@ -99,7 +97,7 @@ export function getActiveSession(): UserSession | null {
  */
 export function touchSession(): boolean {
   try {
-    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+    const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
     if (!raw) return false;
 
     const session = JSON.parse(raw) as UserSession;
@@ -111,7 +109,7 @@ export function touchSession(): boolean {
     }
 
     session.lastActivity = now;
-    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+    sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
     return true;
   } catch {
     return false;
@@ -123,8 +121,9 @@ export function touchSession(): boolean {
  */
 export function clearSession(): void {
   try {
+    sessionStorage.removeItem(SESSION_STORAGE_KEY);
     localStorage.removeItem(SESSION_STORAGE_KEY);
-    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    localStorage.removeItem('aura_current_user');
   } catch (e) {
     console.error('Error al limpiar la sesión:', e);
   }

@@ -24,8 +24,8 @@ export const UltraMsgConfigModal: React.FC<UltraMsgConfigModalProps> = ({
 }) => {
   const [config, setConfig] = useState<UltraMsgConfig>(() => getUltraMsgConfig());
   const [activeTab, setActiveTab] = useState<'disparos' | 'credenciales' | 'plantillas' | 'historial'>('disparos');
-  const [testPhone, setTestPhone] = useState('3104428890');
-  const [testMessage, setTestMessage] = useState('Prueba de integración UltraMsg Gateway - La Pelu SPA');
+  const [testPhone, setTestPhone] = useState('');
+  const [testMessage, setTestMessage] = useState('Prueba de integración de mensajería');
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; msg: string } | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -465,7 +465,7 @@ export const UltraMsgConfigModal: React.FC<UltraMsgConfigModalProps> = ({
                       type="text"
                       value={testPhone}
                       onChange={(e) => setTestPhone(e.target.value)}
-                      placeholder="3104428890"
+                      placeholder="3001234567"
                       className="w-full p-2.5 rounded-xl border border-[#EAD6D9] text-xs text-[#1F1417]"
                     />
                   </div>

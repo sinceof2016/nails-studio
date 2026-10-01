@@ -57,8 +57,8 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
   const [verificationFeedback, setVerificationFeedback] = useState<KmsVerifyResponse | null>(null);
 
   // WhatsApp Gateway
-  const [testPhone, setTestPhone] = useState('+57 312 849 2011');
-  const [testMessage, setTestMessage] = useState('Hola! Tu turno en La Pelu SPA ha sido confirmado exitosamente.');
+  const [testPhone, setTestPhone] = useState('');
+  const [testMessage, setTestMessage] = useState('Hola! Tu turno en el Santuario de Belleza ha sido confirmado exitosamente.');
   const [sendingTest, setSendingTest] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
   const [history, setHistory] = useState<WhatsAppDispatchRecord[]>(getWhatsAppHistory());
@@ -716,7 +716,7 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
                 type="text"
                 value={testPhone}
                 onChange={(e) => setTestPhone(e.target.value)}
-                placeholder="+57 312 849 2011"
+                placeholder="+57 300 000 0000"
                 className="w-full h-10 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417]"
               />
             </div>

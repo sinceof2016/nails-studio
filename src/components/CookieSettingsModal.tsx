@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { CookiePreferences } from '../types';
 import { COOKIE_CATALOG, getAllCookies } from '../services/cookieService';
+import { BUSINESS_CONFIG } from '../config/businessConfig';
 
 interface CookieSettingsModalProps {
   isOpen: boolean;
@@ -29,9 +30,9 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
   onOpenPolicy
 }) => {
   const [prefValues, setPrefValues] = useState({
-    preferences: currentPreferences ? currentPreferences.preferences : true,
-    analytics: currentPreferences ? currentPreferences.analytics : true,
-    marketing: currentPreferences ? currentPreferences.marketing : true
+    preferences: currentPreferences ? currentPreferences.preferences : false,
+    analytics: currentPreferences ? currentPreferences.analytics : false,
+    marketing: currentPreferences ? currentPreferences.marketing : false
   });
 
   const [activeTab, setActiveTab] = useState<'categories' | 'inspector'>('categories');
@@ -40,9 +41,9 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setPrefValues({
-        preferences: currentPreferences ? currentPreferences.preferences : true,
-        analytics: currentPreferences ? currentPreferences.analytics : true,
-        marketing: currentPreferences ? currentPreferences.marketing : true
+        preferences: currentPreferences ? currentPreferences.preferences : false,
+        analytics: currentPreferences ? currentPreferences.analytics : false,
+        marketing: currentPreferences ? currentPreferences.marketing : false
       });
       setLiveCookies(getAllCookies());
     }
@@ -74,7 +75,7 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
                 Centro de Preferencias de Cookies
               </h2>
               <p className="text-xs text-[#504444]">
-                La Pelu SPA · Transparencia y Control de tus Datos
+                {BUSINESS_CONFIG.brandName} · Transparencia y Control de tus Datos
               </p>
             </div>
           </div>

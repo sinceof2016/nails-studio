@@ -35,11 +35,11 @@ console.log('====================================================');
 {
   const maliciousPayloads = [
     '<script>alert("XSS")</script>',
-    '<SCRIPT SRC="http://evil.com/xss.js"></SCRIPT>',
+    '<SCRIPT SRC="https://evil.com/xss.js"></SCRIPT>',
     '<iframe src="javascript:alert(1)"></iframe>',
     '<img src="x" onerror="alert(\'XSS\')">',
     '<svg onload="alert(document.domain)">',
-    '<b>Diseño</b> <script>document.location="http://attacker.com"</script>'
+    '<b>Diseño</b> <script>document.location="https://attacker.com"</script>'
   ];
 
   for (const payload of maliciousPayloads) {
@@ -84,7 +84,7 @@ console.log('====================================================');
     '{{7*7}}',
     'eval("alert(1)")',
     'new Function("return 42")()',
-    'window.location = "http://evil.com"'
+    'window.location = "https://evil.com"'
   ];
 
   for (const dynamic of dynamicExecution) {

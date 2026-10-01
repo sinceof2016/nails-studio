@@ -1,0 +1,334 @@
+import React from 'react';
+import { Specialist } from '../../../types';
+import { formatCOP } from '../../../utils/format';
+
+interface NewCutModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  cutClientName: string;
+  setCutClientName: (name: string) => void;
+  cutClientPhone: string;
+  setCutClientPhone: (phone: string) => void;
+  cutServicePrice: number;
+  setCutServicePrice: (price: number) => void;
+  cutTip: number;
+  setCutTip: (tip: number) => void;
+  cutSpecialistId: string;
+  setCutSpecialistId: (id: string) => void;
+  cutPaymentMethod: 'efectivo' | 'nequi_daviplata' | 'tarjeta_datafono' | 'mixto';
+  setCutPaymentMethod: (method: 'efectivo' | 'nequi_daviplata' | 'tarjeta_datafono' | 'mixto') => void;
+  cutMontoEfectivo: number;
+  setCutMontoEfectivo: (val: number) => void;
+  cutMontoDigital: number;
+  cutDigitalMethod: 'nequi_daviplata' | 'tarjeta_datafono';
+  setCutDigitalMethod: (method: 'nequi_daviplata' | 'tarjeta_datafono') => void;
+  cutCashReceived: number;
+  setCutCashReceived: (val: number) => void;
+  targetCashToPay: number;
+  cashChange: number;
+  cutValidationError: string | null;
+  specialists: Specialist[];
+  onSubmit: (e: React.FormEvent) => void;
+}
+
+export const NewCutModal: React.FC<NewCutModalProps> = ({
+  isOpen,
+  onClose,
+  cutClientName,
+  setCutClientName,
+  cutClientPhone,
+  setCutClientPhone,
+  cutServicePrice,
+  setCutServicePrice,
+  cutTip,
+  setCutTip,
+  cutSpecialistId,
+  setCutSpecialistId,
+  cutPaymentMethod,
+  setCutPaymentMethod,
+  cutMontoEfectivo,
+  setCutMontoEfectivo,
+  cutMontoDigital,
+  cutDigitalMethod,
+  setCutDigitalMethod,
+  cutCashReceived,
+  setCutCashReceived,
+  targetCashToPay,
+  cashChange,
+  cutValidationError,
+  specialists,
+  onSubmit
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="relative w-full max-w-md bg-[#FAF4F5] rounded-3xl p-6 shadow-2xl border border-[#EAD6D9] space-y-3.5 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-[#EAD6D9]/50 pb-2">
+          <h3 className="font-bold text-sm text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
+            Registrar Servicio Realizado en Caja (COP)
+          </h3>
+          <button
+            onClick={onClose}
+            className="w-7 h-7 rounded-full hover:bg-[#F6E3E6] flex items-center justify-center text-[#644E53]"
+          >
+            <span className="material-symbols-outlined text-[18px]">close</span>
+          </button>
+        </div>
+
+        {cutValidationError && (
+          <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs">
+            {cutValidationError}
+          </div>
+        )}
+
+        <form onSubmit={onSubmit} className="space-y-3 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label className="block font-semibold text-[#644E53] mb-1">Nombre de la Clienta</label>
+              <input
+                type="text"
+                required
+                value={cutClientName}
+                onChange={(e) => setCutClientName(e.target.value)}
+                placeholder="Ej. Mariana Duque"
+                className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417]"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-[#644E53] mb-1">WhatsApp (+57)</label>
+              <input
+                type="text"
+                required
+                value={cutClientPhone}
+                onChange={(e) => setCutClientPhone(e.target.value)}
+                placeholder="+57 300 000 0000"
+                className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs font-mono text-[#1F1417]"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block font-semibold text-[#644E53] mb-1">Valor en COP ($)</label>
+              <input
+                type="number"
+                step="1000"
+                required
+                value={cutServicePrice}
+                onChange={(e) => setCutServicePrice(Number(e.target.value))}
+                className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs font-mono font-bold text-[#64444B]"
+              />
+            </div>
+            <div>
+              <label className="block font-semibold text-[#644E53] mb-1">Propina COP ($)</label>
+              <input
+                type="number"
+                step="1000"
+                value={cutTip}
+                onChange={(e) => setCutTip(Number(e.target.value))}
+                className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs font-mono text-emerald-700"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-semibold text-[#644E53] mb-1">Manicurista Asignada</label>
+            <select
+              value={cutSpecialistId}
+              onChange={(e) => setCutSpecialistId(e.target.value)}
+              className="w-full h-9 px-2 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417]"
+            >
+              {specialists.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} ({s.commissionRate}%)
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* PAYMENT METHOD SELECTOR WITH SPLIT PAYMENT SUPPORT */}
+          <div>
+            <label className="block font-semibold text-[#644E53] mb-1">Método de Pago</label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+              <button
+                type="button"
+                onClick={() => setCutPaymentMethod('efectivo')}
+                className={`p-2 rounded-xl text-center border font-bold text-[11px] cursor-pointer transition-all ${
+                  cutPaymentMethod === 'efectivo'
+                    ? 'bg-[#64444B] text-white border-[#64444B]'
+                    : 'bg-white text-[#644E53] border-[#EAD6D9]'
+                }`}
+              >
+                💵 Efectivo
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCutPaymentMethod('nequi_daviplata')}
+                className={`p-2 rounded-xl text-center border font-bold text-[11px] cursor-pointer transition-all ${
+                  cutPaymentMethod === 'nequi_daviplata'
+                    ? 'bg-[#64444B] text-white border-[#64444B]'
+                    : 'bg-white text-[#644E53] border-[#EAD6D9]'
+                }`}
+              >
+                📱 Nequi/Davi
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCutPaymentMethod('tarjeta_datafono')}
+                className={`p-2 rounded-xl text-center border font-bold text-[11px] cursor-pointer transition-all ${
+                  cutPaymentMethod === 'tarjeta_datafono'
+                    ? 'bg-[#64444B] text-white border-[#64444B]'
+                    : 'bg-white text-[#644E53] border-[#EAD6D9]'
+                }`}
+              >
+                💳 Datáfono
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCutPaymentMethod('mixto')}
+                className={`p-2 rounded-xl text-center border font-bold text-[11px] cursor-pointer transition-all ${
+                  cutPaymentMethod === 'mixto'
+                    ? 'bg-[#64444B] text-white border-[#64444B]'
+                    : 'bg-white text-[#644E53] border-[#EAD6D9]'
+                }`}
+              >
+                ⚡ Pago Mixto
+              </button>
+            </div>
+          </div>
+
+          {/* SPLIT PAYMENT CONFIGURATION */}
+          {cutPaymentMethod === 'mixto' && (
+            <div className="p-3.5 rounded-2xl bg-white border border-[#EAD6D9] space-y-2.5 animate-in fade-in">
+              <div className="flex items-center justify-between text-[11px] font-bold text-[#64444B]">
+                <span>Desglose de Pago Dividido:</span>
+                <span>Total: {formatCOP(cutServicePrice + cutTip)}</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-semibold text-[#644E53] mb-0.5">
+                    Monto Efectivo ($)
+                  </label>
+                  <input
+                    type="number"
+                    step="1000"
+                    value={cutMontoEfectivo}
+                    onChange={(e) => setCutMontoEfectivo(Number(e.target.value))}
+                    className="w-full h-8 px-2.5 rounded-lg bg-[#FAF4F5] border border-[#EAD6D9] text-xs font-mono font-bold text-[#1F1417]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-semibold text-[#644E53] mb-0.5">
+                    Monto Digital ($)
+                  </label>
+                  <input
+                    type="number"
+                    readOnly
+                    value={cutMontoDigital}
+                    className="w-full h-8 px-2.5 rounded-lg bg-gray-50 border border-[#EAD6D9] text-xs font-mono font-bold text-[#71547c]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-semibold text-[#644E53] mb-0.5">
+                  Canal Digital del Restante
+                </label>
+                <select
+                  value={cutDigitalMethod}
+                  onChange={(e) => setCutDigitalMethod(e.target.value as any)}
+                  className="w-full h-8 px-2 rounded-lg bg-[#FAF4F5] border border-[#EAD6D9] text-xs text-[#1F1417]"
+                >
+                  <option value="nequi_daviplata">Transferencia Nequi / Daviplata</option>
+                  <option value="tarjeta_datafono">Tarjeta Débito/Crédito Datáfono</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* CALCULADORA RÁPIDA DE DEVUELTAS */}
+          {(cutPaymentMethod === 'efectivo' || cutPaymentMethod === 'mixto') && (
+            <div className="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-emerald-900 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[15px]">calculate</span>
+                  <span>Calculadora de Devuelta</span>
+                </span>
+                <span className="text-[10px] text-emerald-800">
+                  A Cobrar en Efectivo: <strong>{formatCOP(targetCashToPay)}</strong>
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <label className="block text-[10px] text-emerald-800 mb-0.5">Efectivo Recibido</label>
+                  <input
+                    type="number"
+                    step="1000"
+                    value={cutCashReceived}
+                    onChange={(e) => setCutCashReceived(Number(e.target.value))}
+                    className="w-full h-8 px-2.5 rounded-lg bg-white border border-emerald-300 text-xs font-mono font-bold text-[#1F1417]"
+                  />
+                </div>
+
+                <div className="flex-1 text-right">
+                  <span className="block text-[10px] text-emerald-800 mb-0.5">Devuelta Exacta:</span>
+                  <div className="h-8 px-3 rounded-lg bg-emerald-600 text-white font-mono font-bold text-xs flex items-center justify-end shadow-2xs">
+                    {formatCOP(cashChange)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Fast bill pills */}
+              <div className="flex items-center gap-1 pt-1">
+                <span className="text-[9px] text-emerald-800">Billetes:</span>
+                <button
+                  type="button"
+                  onClick={() => setCutCashReceived(targetCashToPay)}
+                  className="px-2 py-0.5 rounded-md bg-white border border-emerald-300 text-[10px] font-bold text-emerald-800 hover:bg-emerald-100"
+                >
+                  Exacto
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCutCashReceived(50000)}
+                  className="px-2 py-0.5 rounded-md bg-white border border-emerald-300 text-[10px] font-bold text-emerald-800 hover:bg-emerald-100"
+                >
+                  $50k
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCutCashReceived(100000)}
+                  className="px-2 py-0.5 rounded-md bg-white border border-emerald-300 text-[10px] font-bold text-emerald-800 hover:bg-emerald-100"
+                >
+                  $100k
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCutCashReceived(200000)}
+                  className="px-2 py-0.5 rounded-md bg-white border border-emerald-300 text-[10px] font-bold text-emerald-800 hover:bg-emerald-100"
+                >
+                  $200k
+                </button>
+              </div>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="w-full py-3 rounded-xl bg-[#64444B] hover:bg-[#52363C] text-white font-bold text-xs shadow-xs transition-all cursor-pointer active:scale-95"
+          >
+            Guardar Cobro &amp; Enviar Recibo WhatsApp
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};

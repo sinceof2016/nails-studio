@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { Service, Specialist } from '../types';
-import { SERVICES, SPECIALISTS } from '../data/mockData';
+import { Service, Specialist, ServiceCategory } from '../types';
+import { SERVICES, SPECIALISTS, INITIAL_SERVICE_CATEGORIES } from '../data/mockData';
 import { formatCOP } from '../utils/format';
+import { BUSINESS_CONFIG } from '../config/businessConfig';
 
 interface HomeScreenProps {
   onQuickBook: (service: Service) => void;
@@ -10,6 +11,9 @@ interface HomeScreenProps {
   onOpenServiceDetail: (service: Service) => void;
   onOpenCookieSettings?: () => void;
   onOpenCookiePolicy?: () => void;
+  services?: Service[];
+  specialists?: Specialist[];
+  serviceCategories?: ServiceCategory[];
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
@@ -18,22 +22,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onOpenPromo,
   onOpenServiceDetail,
   onOpenCookieSettings,
-  onOpenCookiePolicy
+  onOpenCookiePolicy,
+  services = SERVICES,
+  specialists = SPECIALISTS,
+  serviceCategories = INITIAL_SERVICE_CATEGORIES
 }) => {
   const [activeCategory, setActiveCategory] = useState<string>('todos');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const categories = [
+  const categories = useMemo(() => [
     { id: 'todos', label: 'Todos los Servicios' },
-    { id: 'manicura', label: 'Manicura Rusa' },
-    { id: 'nail-art', label: 'Nail Art Pastel' },
-    { id: 'pedicura', label: 'Pedicura Spa' },
-    { id: 'gel', label: 'Gel & Kapping' },
-    { id: 'tratamientos', label: 'Tratamientos & Cuidado' }
-  ];
+    ...serviceCategories.map((c) => ({ id: c.id, label: c.label }))
+  ], [serviceCategories]);
 
   const filteredServices = useMemo(() => {
-    return SERVICES.filter((service) => {
+    return services.filter((service) => {
       const matchesCategory =
         activeCategory === 'todos' || service.category === activeCategory;
       const matchesQuery =
@@ -42,11 +45,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         service.description.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCategory && matchesQuery;
     });
-  }, [activeCategory, searchQuery]);
+  }, [services, activeCategory, searchQuery]);
 
   return (
     <div className="w-full space-y-6 pb-12 animate-in fade-in duration-200">
-      {/* Top Banner: Welcome & Special Offer (Full Width) */}
+      {/* Top Banner: Protocolo Signature & Ritual de Bienestar (Full Width) */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#F4D9DC] via-[#F8E7E9] to-[#FFFBFB] p-6 sm:p-8 md:p-10 shadow-[0_8px_24px_-4px_rgba(234,185,189,0.3)] border border-[#E8CFD3] flex flex-col justify-between">
         <div className="absolute -right-10 -bottom-10 w-60 h-60 rounded-full bg-white/50 blur-2xl pointer-events-none" />
         <div className="relative z-10 space-y-3 max-w-3xl">
@@ -54,15 +57,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <span className="material-symbols-outlined text-[15px] text-[#64444B] fill">
               auto_awesome
             </span>
-            Santuario de Manicura Rusa &amp; Spa · Chicó Bogotá
+            Protocolo Signature · {BUSINESS_CONFIG.brandName} Chicó
           </div>
 
           <h2 className="text-2xl sm:text-4xl text-[#1F1417] font-bold tracking-tight font-['Plus_Jakarta_Sans',sans-serif] leading-tight">
-            15% OFF en Manicura Rusa &amp; Spa Deluxe
+            El Ritual de Manicura Rusa &amp; Bienestar Clínico
           </h2>
 
           <p className="text-sm sm:text-base text-[#644E53] leading-relaxed">
-            Disfruta de exfoliación de cuarzo rosa, nivelación rubber con colágeno y acabado aperlado glazed donut con esmaltado semipermanente de máxima durabilidad y cuidado clínico de cutículas.
+            Un santuario de belleza y salud ungueal de alta precisión. Combinamos esterilización hospitalaria en autoclave a 134°C, limpieza en seco con tecnología de fresas diamantadas y nutrición regenerativa con aceites botánicos orgánicos para unas uñas impecables y saludables.
           </p>
         </div>
 
@@ -71,12 +74,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             onClick={onOpenPromo}
             className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-[#64444B] text-white text-xs sm:text-sm font-semibold shadow-[0_4px_16px_rgba(100,68,75,0.25)] hover:bg-[#52363C] active:scale-95 transition-all cursor-pointer"
           >
-            <span>Aprovechar 15% OFF</span>
+            <span>Conocer Nuestro Ritual</span>
             <span className="material-symbols-outlined text-[17px] ml-1.5">local_florist</span>
           </button>
           <span className="text-xs sm:text-sm text-[#5E3D44] font-medium flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-[18px] text-[#64444B]">location_on</span>
-            Sede Chicó · Carrera 11 # 93-40 · Reserva online en COP
+            <span className="material-symbols-outlined text-[18px] text-[#64444B]">verified</span>
+            Sede Chicó · Atención personalizada en cabina privada · Reserva en línea
           </span>
         </div>
       </div>
@@ -266,7 +269,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {SPECIALISTS.map((specialist) => (
+          {specialists.map((specialist) => (
             <div
               key={specialist.id}
               onClick={() => onOpenSpecialist(specialist)}
@@ -317,7 +320,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <span className="text-[#7D676B]">Sede Chicó · Bogotá D.C.</span>
         </div>
         <p className="text-[11px] text-[#7D676B]">
-          © {new Date().getFullYear()} La Pelu SPA. Todos los derechos reservados.
+          © {new Date().getFullYear()} {BUSINESS_CONFIG.brandName}. Todos los derechos reservados.
         </p>
       </footer>
     </div>

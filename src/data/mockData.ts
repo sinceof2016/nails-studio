@@ -1,4 +1,12 @@
-import { Service, Specialist, PolishSwatch, NailShape, AddOnOption, Appointment, AppNotification, SavedDesign, AdminUser, SystemUser } from '../types';
+import { Service, Specialist, PolishSwatch, NailShape, AddOnOption, Appointment, AppNotification, SavedDesign, AdminUser, SystemUser, ServiceCategory } from '../types';
+
+export const INITIAL_SERVICE_CATEGORIES: ServiceCategory[] = [
+  { id: 'manicura', label: 'Manicura Rusa', icon: 'palette', description: 'Técnica en seco con torno y limpieza profunda' },
+  { id: 'nail-art', label: 'Nail Art Pastel', icon: 'brush', description: 'Ilustración a mano alzada y micro-decoración' },
+  { id: 'pedicura', label: 'Pedicura Spa', icon: 'spa', description: 'Cuidado integral de pies y descanso profundo' },
+  { id: 'gel', label: 'Gel & Kapping', icon: 'diamond', description: 'Estructuras ligeras y máxima durabilidad' },
+  { id: 'tratamientos', label: 'Tratamientos & Cuidado', icon: 'health_and_safety', description: 'Fortalecimiento y nutrición de la lámina ungueal' }
+];
 
 export const LOGO_URL = './lumina-logo.svg';
 export const USER_AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBUrZkdIRr4pUE-9QkKlA4YJH4tk8ug4t8ss19lF-xaHuFXDZMHSMNsT9k9zTg0PDXjyE1XBLqv7-3TJMIW1ZrMHrdyvA7EONm345vpZM9IpVzKV952FeAoCg5uRj8ASWjkLrJBn8hl9dZ4nYWpvmFHjrZnDCGuwztm7sv__1kQfaJmUHLZDjmyxmWSv0wSvmVqEKDlZRTrx921qdt6d1vfQiI8yKxjqllB1oBt-7Gy_etZi5Dt7p8vVQ';
@@ -47,7 +55,7 @@ export const ADMIN_USER: AdminUser = {
   role: 'SuperAdmin',
   title: 'Director de Operaciones & Santuario',
   email: 'david.orjuela@auranailsspa.com',
-  phone: '+57 310 442 8890',
+  phone: '+57 300 000 0000',
   branch: 'Santuario Central Chicó · Bogotá',
   branchId: 'chico',
   avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
@@ -247,7 +255,7 @@ export const POLISH_SWATCHES: PolishSwatch[] = [
   { id: 'peach-sorbet', name: 'Melocotón Velouté', hex: '#fad4c0', accentHex: '#eab89e', finish: 'pastel' },
   { id: 'matcha-latte', name: 'Matcha Calm Cream', hex: '#dce8dc', accentHex: '#b8ccb8', finish: 'pastel' },
   { id: 'chrome-champagne', name: 'Champaña Cromo', hex: '#ede6db', accentHex: '#d8cdbe', finish: 'chrome' },
-  { id: 'deep-plum', name: 'La Pelu Plum Velvet', hex: '#583c4b', accentHex: '#3e2733', finish: 'creamy' }
+  { id: 'deep-plum', name: 'Plum Velvet', hex: '#583c4b', accentHex: '#3e2733', finish: 'creamy' }
 ];
 
 export const NAIL_SHAPES: NailShape[] = [
@@ -303,7 +311,7 @@ export const INITIAL_APPOINTMENTS: Appointment[] = [
     date: 'Mañana, 28 Septiembre',
     time: '11:00 AM',
     clientName: 'Mariana Duque Valenzuela',
-    clientPhone: '+57 312 849 2011',
+    clientPhone: '+57 300 000 0001',
     notes: 'Cutícula sensible, solicita torno a baja velocidad y aceite de almendras.',
     polishColor: 'Hailey Glazed Pearl',
     nailShape: 'Almendra Suave',
@@ -327,7 +335,7 @@ export const INITIAL_APPOINTMENTS: Appointment[] = [
     date: 'Hoy, 27 Septiembre',
     time: '05:00 PM',
     clientName: 'Dra. Carolina Restrepo',
-    clientPhone: '+57 315 902 3341',
+    clientPhone: '+57 300 000 0002',
     notes: 'Diseño floral en tono lila y blanco lechoso para evento médico.',
     polishColor: 'Lavanda Mist Pastel',
     nailShape: 'Ovalada Clásica',
@@ -405,7 +413,7 @@ export const NOTIFICATIONS: AppNotification[] = [
   },
   {
     id: 'notif-3',
-    title: '+45 Puntos La Pelu Bloom acreditados',
+    title: '+45 Puntos Bloom acreditados',
     message: 'Has alcanzado el estatus VIP Platinum en nuestro programa de fidelidad.',
     timeAgo: 'Ayer',
     isUnread: false,

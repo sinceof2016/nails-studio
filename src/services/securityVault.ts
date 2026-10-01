@@ -5,54 +5,74 @@
  */
 
 import { SystemUser } from '../types';
-import { SYSTEM_USERS, DAVID_USER } from '../data/mockData';
 
-// Bóveda de credenciales criptográficas (hashes SHA-256)
-// Las contraseñas en texto plano NO existen en el bundle del frontend.
-interface VaultEntry {
-  userId: string;
-  email: string;
-  sha256Hash: string;
-  role: 'SuperAdmin' | 'Administrador' | 'Caja';
-}
-
-const VAULT_CREDENTIALS: VaultEntry[] = [
+// Bóveda de usuarios estática para entornos estáticos (GitHub Pages) sin backend Express
+// Hashes SHA-256 irreversibles (Admin: 'Admin2026!#', Caja: 'Caja2026!#')
+const STATIC_VAULT_USERS: Array<{
+  user: SystemUser;
+  hash: string;
+  aliases: string[];
+}> = [
   {
-    userId: 'USR-DAVID-01',
-    email: 'david.orjuela@auranailsspa.com',
-    // Hash SHA-256 de la contraseña del usuario David Orjuela
-    sha256Hash: 'c8b318bc1c2dd5f31b7494a98e2a32e2797dc8215286120e9f38f42cd2a27549',
-    role: 'SuperAdmin'
+    user: {
+      id: 'USR-DAVID-01',
+      nombre: 'David Orjuela',
+      email: 'david.orjuela@auranailsspa.com',
+      rol: 'SuperAdmin',
+      sucursalAsignada: 'todas',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
+      creadoEn: '2026-09-01T07:00:00.000Z',
+      puedeVerApi: true,
+      puedeVerUsuarios: true
+    },
+    hash: 'ee94a462c7686d70a9862569d453978749d0f0bd3f77eb7f9c6587483edfcd2b',
+    aliases: ['david', 'david.orjuela@auranailsspa.com', 'orjueladavid32@gmail.com', 'admin']
   },
   {
-    userId: 'USR-ADMIN-01',
-    email: 'administracion@auranails.com',
-    // Hash SHA-256 de la administradora general
-    sha256Hash: '8d90ed647b948fa80c3c9bbf5316c78f151723f52fb9d6101f818af8afff69ec',
-    role: 'Administrador'
+    user: {
+      id: 'USR-ADMIN-01',
+      nombre: 'Lucía Santamaría',
+      email: 'administracion@auranails.com',
+      rol: 'Administrador',
+      sucursalAsignada: 'chico',
+      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBUrZkdIRr4pUE-9QkKlA4YJH4tk8ug4t8ss19lF-xaHuFXDZMHSMNsT9k9zTg0PDXjyE1XBLqv7-3TJMIW1ZrMHrdyvA7EONm345vpZM9IpVzKV952FeAoCg5uRj8ASWjkLrJBn8hl9dZ4nYWpvmFHjrZnDCGuwztm7sv__1kQfaJmUHLZDjmyxmWSv0wSvmVqEKDlZRTrx921qdt6d1vfQiI8yKxjqllB1oBt-7Gy_etZi5Dt7p8vVQ',
+      creadoEn: '2026-09-05T08:00:00.000Z',
+      puedeVerApi: false,
+      puedeVerUsuarios: false
+    },
+    hash: 'ee94a462c7686d70a9862569d453978749d0f0bd3f77eb7f9c6587483edfcd2b',
+    aliases: ['administracion@auranails.com', 'lucia']
   },
   {
-    userId: 'USR-CAJA-01',
-    email: 'caja@auranails.com',
-    // Hash SHA-256 de caja
-    sha256Hash: 'edd9a992aee94f68ced988c42067d1c75f28b92d62cd0154f7cad9aa0993989f',
-    role: 'Caja'
+    user: {
+      id: 'USR-CAJA-01',
+      nombre: 'Caja & Recepción Chicó',
+      email: 'caja@auranails.com',
+      rol: 'Caja',
+      sucursalAsignada: 'chico',
+      avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=200',
+      creadoEn: '2026-09-10T09:00:00.000Z',
+      puedeVerApi: false,
+      puedeVerUsuarios: false
+    },
+    hash: '2ebde29bb0bae0228efde2163c33233b67da77ccb8bbda291263c08c3eccac2b',
+    aliases: ['caja@auranails.com', 'caja']
   }
 ];
 
-/**
- * Calcula el hash SHA-256 en el cliente utilizando la Web Crypto API nativa del navegador
- */
-async function computeSha256(text: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(text);
-  const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+async function computeSha256(str: string): Promise<string> {
+  if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(str);
+    const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+  return '';
 }
 
 /**
- * Autentica un usuario contra el Vault seguro
+ * Autentica un usuario contra el Vault seguro en el servidor o cliente desacoplado
  */
 export async function authenticateWithVault(
   identifier: string,
@@ -90,31 +110,25 @@ export async function authenticateWithVault(
         }
       }
     } catch {
-      // Si el servidor local no tiene la ruta montada, el Vault criptográfico del navegador asume el control
+      // 2. Servidor backend no disponible (por ejemplo en GitHub Pages o modo offline)
+      // Validación segura con Web Crypto API y hash SHA-256
+      const clientHash = await computeSha256(plainPassword);
+      if (clientHash) {
+        const matched = STATIC_VAULT_USERS.find(
+          (entry) =>
+            (entry.aliases.includes(trimmedId) || entry.user.email.toLowerCase() === trimmedId) &&
+            entry.hash === clientHash
+        );
+        if (matched) {
+          return { success: true, user: matched.user };
+        }
+        return { success: false, error: 'Credenciales inválidas en el Vault.' };
+      }
     }
-
-    // 2. Validación criptográfica en el Vault con Web Crypto API
-    const passwordHash = await computeSha256(plainPassword);
-
-    const vaultMatch = VAULT_CREDENTIALS.find((entry) => {
-      const matchEmail = entry.email.toLowerCase() === trimmedId;
-      const matchDavid = trimmedId.includes('david') && entry.userId === 'USR-DAVID-01';
-      return (matchEmail || matchDavid) && entry.sha256Hash === passwordHash;
-    });
-
-    if (!vaultMatch) {
-      return {
-        success: false,
-        error: 'Credenciales inválidas. Verifica tu usuario o contraseña en la bóveda de seguridad.'
-      };
-    }
-
-    // Buscar perfil público del usuario sin contraseñas
-    const userProfile = SYSTEM_USERS.find((u) => u.id === vaultMatch.userId) || DAVID_USER;
 
     return {
-      success: true,
-      user: userProfile
+      success: false,
+      error: 'Credenciales inválidas en el Vault.'
     };
   } catch (err: any) {
     console.error('Error durante autenticación en el Vault:', err);

@@ -1,4 +1,4 @@
-import { Appointment, Specialist } from '../types';
+import { Appointment, Specialist, SlotLock } from '../types';
 import { SPECIALISTS } from '../data/mockData';
 
 export interface CalendarDayOption {
@@ -22,7 +22,7 @@ export interface SlotAvailability {
   status: 'available' | 'booked' | 'passed';
 }
 
-// Fixed 1-hour interval slots for La Pelu SPA
+// Fixed 1-hour interval slots for Sanctuary SPA
 export const HOURLY_TIME_SLOTS: string[] = [
   '08:00 AM',
   '09:00 AM',
@@ -110,17 +110,23 @@ export function normalizeDateString(dateStr: string): string {
   return dateStr.toLowerCase().replace(/,/g, '').replace(/\s+/g, ' ').trim();
 }
 
-export function datesMatch(aptDate: string, selectedDateLabel: string): boolean {
-  if (!aptDate || !selectedDateLabel) return false;
-  const cleanApt = normalizeDateString(aptDate);
-  const cleanSel = normalizeDateString(selectedDateLabel);
+export function datesMatch(aptDate: string, selectedDate: CalendarDayOption | string): boolean {
+  if (!aptDate || !selectedDate) return false;
 
-  // Exact or contains match
+  const targetId = typeof selectedDate === 'string' ? selectedDate : selectedDate.id;
+  const targetLabel = typeof selectedDate === 'string' ? selectedDate : selectedDate.full;
+
+  // 1. Comparación directa ISO (AAAA-MM-DD)
+  if (aptDate === targetId) return true;
+
+  // 2. Soporte para citas legacy ya guardadas con etiquetas de texto ("Hoy, 28 Sept", etc.)
+  const cleanApt = normalizeDateString(aptDate);
+  const cleanSel = normalizeDateString(targetLabel);
+
   if (cleanApt === cleanSel) return true;
   if (cleanApt.includes('hoy') && cleanSel.includes('hoy')) return true;
   if (cleanApt.includes('mañana') && cleanSel.includes('mañana')) return true;
 
-  // Extract day number (e.g. "28")
   const numApt = cleanApt.match(/\d+/)?.[0];
   const numSel = cleanSel.match(/\d+/)?.[0];
   if (numApt && numSel && numApt === numSel) return true;
@@ -132,8 +138,10 @@ export function datesMatch(aptDate: string, selectedDateLabel: string): boolean 
 export function computeSlotAvailability(
   selectedDateOption: CalendarDayOption,
   specialistId: string, // specialist id or 'any'
-  appointments: Appointment[],
-  now: Date = new Date()
+  appointments: Appointment[] = [],
+  slotLocks: SlotLock[] = [],
+  now: Date = new Date(),
+  specialistsList: Specialist[] = SPECIALISTS
 ): SlotAvailability[] {
   const isToday = selectedDateOption.isToday;
   const currentHour = now.getHours();
@@ -150,19 +158,26 @@ export function computeSlotAvailability(
       }
     }
 
-    // 2. Active appointments for this day & slot
+    // 2. Active appointments for this day & slot (compara por ISO prioritariamente)
     const matchingApts = appointments.filter(
       (a) =>
         a.status !== 'cancelada' &&
         a.time === slot &&
-        datesMatch(a.date, selectedDateOption.full)
+        datesMatch(a.date, selectedDateOption)
     );
 
-    // Booked specialists at this hour
-    const bookedSpecialistIds = matchingApts.map((a) => a.specialistId);
+    // 3. Slot locks públicos para este horario y día (prevención de colisión para visitantes)
+    const matchingLocks = slotLocks.filter(
+      (l) => l.slot === slot && datesMatch(l.date, selectedDateOption)
+    );
+
+    // Booked specialists at this hour from appointments and slot locks
+    const bookedFromApts = matchingApts.map((a) => a.specialistId);
+    const bookedFromLocks = matchingLocks.map((l) => l.specialistId);
+    const bookedSpecialistIds = Array.from(new Set([...bookedFromApts, ...bookedFromLocks]));
 
     // Available specialists at this hour (among those not booked and not passed)
-    const availableSpecialistIds = SPECIALISTS
+    const availableSpecialistIds = specialistsList
       .filter((s) => !bookedSpecialistIds.includes(s.id))
       .map((s) => s.id);
 
@@ -173,11 +188,12 @@ export function computeSlotAvailability(
       // If 'any' specialist is chosen, it is booked only if ALL specialists are booked
       isBooked = availableSpecialistIds.length === 0;
     } else {
-      // Booked if the chosen specialist has an active appointment at this slot
+      // Booked if the chosen specialist has an active appointment or a slot lock at this slot
       const chosenBooking = matchingApts.find((a) => a.specialistId === specialistId);
-      if (chosenBooking) {
+      const isLocked = matchingLocks.some((l) => l.specialistId === specialistId);
+      if (chosenBooking || isLocked) {
         isBooked = true;
-        bookedByClient = chosenBooking.clientName;
+        bookedByClient = chosenBooking?.clientName;
       }
     }
 
@@ -204,9 +220,10 @@ export function computeSlotAvailability(
 export function countFreeSlots(
   dayOption: CalendarDayOption,
   specialistId: string,
-  appointments: Appointment[],
+  appointments: Appointment[] = [],
+  slotLocks: SlotLock[] = [],
   now: Date = new Date()
 ): number {
-  const slots = computeSlotAvailability(dayOption, specialistId, appointments, now);
+  const slots = computeSlotAvailability(dayOption, specialistId, appointments, slotLocks, now);
   return slots.filter((s) => s.status === 'available').length;
 }

@@ -2,6 +2,8 @@ import React from 'react';
 import { ClientProfile, Appointment, SalonCutRecord } from '../types';
 import { formatCOP } from '../utils/format';
 import { buildWaMeUrl } from '../services/whatsappService';
+import { BUSINESS_CONFIG } from '../config/businessConfig';
+import { formatDisplayDate } from '../utils/dateAndId';
 
 interface ClientHistoryModalProps {
   client: ClientProfile | null;
@@ -46,7 +48,7 @@ export const ClientHistoryModal: React.FC<ClientHistoryModalProps> = ({
 
   const waUrl = buildWaMeUrl(
     client.telefono,
-    `Hola ${client.nombre}, te saludamos desde La Pelu SPA. Queremos darte seguimiento a tus citas y consentirte en tu próxima visita.`
+    `Hola ${client.nombre}, te saludamos desde ${BUSINESS_CONFIG.brandName}. Queremos darte seguimiento a tus citas y consentirte en tu próxima visita.`
   );
 
   return (
@@ -169,7 +171,7 @@ export const ClientHistoryModal: React.FC<ClientHistoryModalProps> = ({
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px] text-[#644E53] pt-1 border-t border-[#ebe8e2]">
                     <div>
                       <span>Fecha &amp; Hora:</span>
-                      <strong className="block text-[#1F1417]">{apt.date} · {apt.time}</strong>
+                      <strong className="block text-[#1F1417]">{formatDisplayDate(apt.date)} · {apt.time}</strong>
                     </div>
                     <div>
                       <span>Especialista Asignada:</span>
@@ -203,7 +205,7 @@ export const ClientHistoryModal: React.FC<ClientHistoryModalProps> = ({
                 <div key={cut.id} className="p-2.5 rounded-xl bg-white border border-[#EAD6D9]/50 flex items-center justify-between text-xs">
                   <div>
                     <span className="font-semibold text-[#1F1417] block">{cut.servicioNombre}</span>
-                    <span className="text-[10px] text-[#644E53]">{cut.fecha} · {cut.hora} · Manicurista: {cut.especialistaNombre}</span>
+                    <span className="text-[10px] text-[#644E53]">{formatDisplayDate(cut.fecha)} · {cut.hora} · Manicurista: {cut.especialistaNombre}</span>
                   </div>
                   <div className="text-right">
                     <span className="font-mono font-bold text-[#64444B] block">{formatCOP(cut.servicioPrecio)}</span>

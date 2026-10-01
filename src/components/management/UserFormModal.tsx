@@ -1,0 +1,218 @@
+import React, { useState, useEffect } from 'react';
+import { SystemUser } from '../../types';
+import { validateOnlyPlainText, sanitizeToPlainText } from '../../utils/security';
+
+interface UserFormModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  userToEdit?: SystemUser | null;
+  onSave: (user: SystemUser, password?: string) => void;
+}
+
+export const UserFormModal: React.FC<UserFormModalProps> = ({
+  isOpen,
+  onClose,
+  userToEdit,
+  onSave
+}) => {
+  const [nombre, setNombre] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [rol, setRol] = useState<'SuperAdmin' | 'Administrador' | 'Caja'>('Caja');
+  const [sucursal, setSucursal] = useState('chico');
+  const [avatar, setAvatar] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (userToEdit) {
+      setNombre(userToEdit.nombre);
+      setEmail(userToEdit.email);
+      setRol(userToEdit.rol);
+      setSucursal(userToEdit.sucursalAsignada || 'chico');
+      setAvatar(userToEdit.avatar || '');
+      setPassword('');
+      setFormError(null);
+    } else {
+      setNombre('');
+      setEmail('');
+      setPassword('');
+      setRol('Caja');
+      setSucursal('chico');
+      setAvatar('');
+      setFormError(null);
+    }
+  }, [userToEdit, isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+
+    const nameVal = validateOnlyPlainText(nombre, 'Nombre Completo', 100);
+    if (!nameVal.isValid) {
+      setFormError(nameVal.reason || 'Nombre inválido.');
+      return;
+    }
+
+    const emailVal = validateOnlyPlainText(email, 'Correo', 100);
+    if (!emailVal.isValid) {
+      setFormError(emailVal.reason || 'Correo inválido.');
+      return;
+    }
+
+    if (!userToEdit && (!password || password.length < 6)) {
+      setFormError('La contraseña inicial debe tener al menos 6 caracteres.');
+      return;
+    }
+
+    const cleanNombre = sanitizeToPlainText(nombre);
+    const cleanEmail = sanitizeToPlainText(email).toLowerCase();
+    const cleanAvatar = sanitizeToPlainText(avatar);
+
+    const user: SystemUser = {
+      id: userToEdit ? userToEdit.id : `USR-${Date.now().toString().slice(-4)}`,
+      nombre: cleanNombre,
+      email: cleanEmail,
+      rol,
+      sucursalAsignada: sucursal,
+      avatar: cleanAvatar || (rol === 'SuperAdmin'
+        ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200'
+        : 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=200'),
+      creadoEn: userToEdit?.creadoEn || new Date().toISOString(),
+      puedeVerApi: rol === 'SuperAdmin',
+      puedeVerUsuarios: rol === 'SuperAdmin'
+    };
+
+    onSave(user, password || undefined);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="relative w-full max-w-md bg-[#FAF4F5] rounded-3xl p-6 shadow-2xl border border-[#EAD6D9] space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-[#EAD6D9]/50 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-[#64444B]/10 text-[#64444B] flex items-center justify-center">
+              <span className="material-symbols-outlined text-[18px]">
+                {userToEdit ? 'manage_accounts' : 'person_add'}
+              </span>
+            </div>
+            <h3 className="font-bold text-sm sm:text-base text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
+              {userToEdit ? `Editar Usuario: ${userToEdit.nombre}` : 'Crear Nuevo Usuario'}
+            </h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full hover:bg-[#F6E3E6] flex items-center justify-center text-[#644E53] cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
+          {formError && (
+            <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-[11px] flex items-start gap-1.5">
+              <span className="material-symbols-outlined text-[16px] text-rose-600 shrink-0">error</span>
+              <span>{formError}</span>
+            </div>
+          )}
+
+          <div>
+            <label className="block font-semibold text-[#644E53] mb-1">Nombre Completo *</label>
+            <input
+              type="text"
+              required
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder="Ej. Carolina Medina"
+              className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/20"
+            />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-[#644E53] mb-1">Correo Electrónico *</label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="usuario@auranailsspa.com"
+              className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/20"
+            />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-[#644E53] mb-1">
+              {userToEdit ? 'Cambiar Contraseña (Opcional)' : 'Contraseña de Acceso *'}
+            </label>
+            <input
+              type="password"
+              required={!userToEdit}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={userToEdit ? 'Dejar en blanco para no modificar' : 'Mínimo 6 caracteres'}
+              className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/20"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-semibold text-[#644E53] mb-1">Rol de Acceso *</label>
+              <select
+                value={rol}
+                onChange={(e) => setRol(e.target.value as any)}
+                className="w-full h-9 px-2 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/20"
+              >
+                <option value="SuperAdmin">SuperAdmin (Maestro)</option>
+                <option value="Administrador">Administrador</option>
+                <option value="Caja">Cajero / Recepción</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-semibold text-[#644E53] mb-1">Sede Asignada *</label>
+              <select
+                value={sucursal}
+                onChange={(e) => setSucursal(e.target.value)}
+                className="w-full h-9 px-2 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/20"
+              >
+                <option value="todas">Todas las Sedes</option>
+                <option value="chico">Sede Chicó</option>
+                <option value="usaquen">Sede Usaquén</option>
+                <option value="chapinero">Sede Chapinero</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-semibold text-[#644E53] mb-1">URL de Foto / Avatar</label>
+            <input
+              type="url"
+              value={avatar}
+              onChange={(e) => setAvatar(e.target.value)}
+              placeholder="https://..."
+              className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/20"
+            />
+          </div>
+
+          <div className="pt-2 flex items-center justify-end gap-2 border-t border-[#EAD6D9]/50">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl bg-white hover:bg-neutral-100 text-[#644E53] font-semibold text-xs border border-[#EAD6D9] cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 rounded-xl bg-[#64444B] hover:bg-[#52363C] text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+            >
+              {userToEdit ? 'Guardar Cambios' : 'Crear Usuario'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};

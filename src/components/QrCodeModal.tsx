@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Appointment } from '../types';
+import { BUSINESS_CONFIG } from '../config/businessConfig';
+import { formatDisplayDate } from '../utils/dateAndId';
 
 interface QrCodeModalProps {
   appointment: Appointment | null;
@@ -43,7 +45,7 @@ export const QrCodeModal: React.FC<QrCodeModalProps> = ({
         {/* Ticket card */}
         <div className="bg-white rounded-2xl p-5 border border-[#e8b4b8]/40 shadow-sm text-center relative overflow-hidden">
           <div className="text-xs uppercase tracking-widest text-[#7c5357] font-semibold mb-1">
-            La Pelu SPA Sanctuary
+            {BUSINESS_CONFIG.brandName} Sanctuary
           </div>
           <h4 className="text-base font-bold text-[#1c1c18] font-['Plus_Jakarta_Sans',sans-serif]">
             {appointment.serviceName}
@@ -107,7 +109,7 @@ export const QrCodeModal: React.FC<QrCodeModalProps> = ({
           <div className="mt-4 pt-3 border-t border-[#ebe8e2] text-xs text-[#504444] space-y-1">
             <div className="flex justify-between">
               <span>Fecha:</span>
-              <strong className="text-[#1c1c18]">{appointment.date}</strong>
+              <strong className="text-[#1c1c18]">{formatDisplayDate(appointment.date)}</strong>
             </div>
             <div className="flex justify-between">
               <span>Hora:</span>
@@ -115,7 +117,7 @@ export const QrCodeModal: React.FC<QrCodeModalProps> = ({
             </div>
             <div className="flex justify-between">
               <span>Sede:</span>
-              <strong className="text-[#1c1c18]">Cra. 14 #85-32 Chicó</strong>
+              <strong className="text-[#1c1c18]">{BUSINESS_CONFIG.address}</strong>
             </div>
           </div>
         </div>

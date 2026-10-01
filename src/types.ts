@@ -1,7 +1,14 @@
+export interface ServiceCategory {
+  id: string;
+  label: string;
+  icon?: string;
+  description?: string;
+}
+
 export interface Service {
   id: string;
   name: string;
-  category: 'manicura' | 'nail-art' | 'pedicura' | 'gel' | 'tratamientos';
+  category: string;
   categoryLabel: string;
   price: number;
   durationMinutes: number;
@@ -53,6 +60,15 @@ export interface AddOnOption {
 
 export type PaymentMethod = 'efectivo' | 'nequi_daviplata' | 'tarjeta_datafono' | 'mixto';
 
+export interface SlotLock {
+  id?: string;
+  appointmentId: string;
+  slot: string;
+  date: string;
+  specialistId: string;
+  createdAt: string;
+}
+
 export interface Appointment {
   id: string;
   serviceId: string;
@@ -86,6 +102,9 @@ export interface Appointment {
   branchId?: 'chico' | 'usaquen' | 'chapinero';
   isGroupBooking?: boolean;
   groupGuestsCount?: number;
+  autorizacionDatos?: boolean;
+  autorizacionFecha?: string;
+  autorizacionVersion?: string;
 }
 
 export interface SalonCutRecord {

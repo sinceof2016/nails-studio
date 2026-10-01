@@ -140,7 +140,7 @@ export function validateColombianPhone(phone: string): { isValid: boolean; reaso
   if (digits.length < 10) {
     return {
       isValid: false,
-      reason: 'El teléfono debe tener al menos 10 dígitos (ej. 312 849 2011).'
+      reason: 'El teléfono debe tener al menos 10 dígitos (ej. 300 123 4567).'
     };
   }
   return { isValid: true };

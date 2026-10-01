@@ -20,9 +20,12 @@ import { AdminScreen } from './screens/AdminScreen';
 import { UsersManagementScreen } from './screens/UsersManagementScreen';
 import { ApiConsoleScreen } from './screens/ApiConsoleScreen';
 import { NotFoundScreen } from './screens/NotFoundScreen';
+import { BUSINESS_CONFIG } from './config/businessConfig';
+import { getColombiaDateISO } from './utils/dateAndId';
 import {
   Service,
   Specialist,
+  ServiceCategory,
   Appointment,
   AppNotification,
   SalonCutRecord,
@@ -30,7 +33,8 @@ import {
   CashRegisterClose,
   SystemUser,
   AppTab,
-  CookiePreferences
+  CookiePreferences,
+  SlotLock
 } from './types';
 import {
   getCookieConsent,
@@ -51,14 +55,20 @@ import {
   INITIAL_APPOINTMENTS,
   NOTIFICATIONS,
   SERVICES,
+  INITIAL_SERVICE_CATEGORIES,
+  SPECIALISTS,
   ADMIN_USER,
   SYSTEM_USERS,
   DAVID_USER
 } from './data/mockData';
+import { doc, deleteDoc } from 'firebase/firestore';
+import { db } from './firebase';
 import {
   subscribeToAppointments,
   saveAppointmentToFirestore,
   updateAppointmentStatusInFirestore,
+  subscribeToSlotLocks,
+  getSlotLockDocId,
   subscribeToSalonCuts,
   addSalonCutToFirestore,
   subscribeToExpenses,
@@ -131,10 +141,40 @@ export default function App() {
   // System users list
   const [systemUsers, setSystemUsers] = useState<SystemUser[]>(() => {
     try {
-      const saved = localStorage.getItem('aura_system_users');
+      const saved = localStorage.getItem('pelu_system_users');
       return saved ? JSON.parse(saved) : SYSTEM_USERS;
     } catch {
       return SYSTEM_USERS;
+    }
+  });
+
+  // Services catalog list (SuperAdmin editable)
+  const [services, setServices] = useState<Service[]>(() => {
+    try {
+      const saved = localStorage.getItem('pelu_services');
+      return saved ? JSON.parse(saved) : SERVICES;
+    } catch {
+      return SERVICES;
+    }
+  });
+
+  // Service categories list (SuperAdmin editable)
+  const [serviceCategories, setServiceCategories] = useState<ServiceCategory[]>(() => {
+    try {
+      const saved = localStorage.getItem('pelu_service_categories');
+      return saved ? JSON.parse(saved) : INITIAL_SERVICE_CATEGORIES;
+    } catch {
+      return INITIAL_SERVICE_CATEGORIES;
+    }
+  });
+
+  // Specialists / Manicuristas list (SuperAdmin editable)
+  const [specialists, setSpecialists] = useState<Specialist[]>(() => {
+    try {
+      const saved = localStorage.getItem('pelu_specialists');
+      return saved ? JSON.parse(saved) : SPECIALISTS;
+    } catch {
+      return SPECIALISTS;
     }
   });
 
@@ -148,10 +188,10 @@ export default function App() {
   const [cuts, setCuts] = useState<SalonCutRecord[]>([
     {
       id: 'cut-01',
-      fecha: 'Hoy, 27 Sept',
+      fecha: getColombiaDateISO(),
       hora: '10:30 AM',
       clienteNombre: 'Mariana Duque Valenzuela',
-      clienteTelefono: '+57 312 849 2011',
+      clienteTelefono: '+57 300 000 0001',
       servicioNombre: 'Manicura Rusa Glazed Donut',
       servicioPrecio: 95000,
       especialistaId: 'valentina',
@@ -165,10 +205,10 @@ export default function App() {
     },
     {
       id: 'cut-02',
-      fecha: 'Hoy, 27 Sept',
+      fecha: getColombiaDateISO(),
       hora: '01:15 PM',
       clienteNombre: 'Dra. Carolina Restrepo',
-      clienteTelefono: '+57 315 902 3341',
+      clienteTelefono: '+57 300 000 0002',
       servicioNombre: 'Soft Gel & Minimalist Pastel Art',
       servicioPrecio: 145000,
       especialistaId: 'camila',
@@ -186,7 +226,7 @@ export default function App() {
   const [expenses, setExpenses] = useState<ExpenseRecord[]>([
     {
       id: 'exp-01',
-      fecha: 'Hoy, 27 Sept',
+      fecha: getColombiaDateISO(),
       concepto: 'Kits desechables de esterilización & guantes de nitrilo',
       categoria: 'insumos',
       monto: 45000,
@@ -197,6 +237,9 @@ export default function App() {
 
   // Cash Closes State
   const [cashCloses, setCashCloses] = useState<CashRegisterClose[]>([]);
+
+  // Slot Locks State (prevents double booking)
+  const [slotLocks, setSlotLocks] = useState<SlotLock[]>([]);
 
   // Notifications State
   const [notifications, setNotifications] = useState<AppNotification[]>(() => {
@@ -260,31 +303,57 @@ export default function App() {
     showToast('Consentimiento de cookies revocado. Puedes volver a configurar.');
   };
 
-  // Subscribe to Firestore collections in real-time
+  const isStaff = Boolean(
+    currentUser && ['SuperAdmin', 'Administrador', 'Caja'].includes(currentUser.rol)
+  );
+  const isCaja = currentUser?.rol === 'Caja';
+  const branchFilter = isCaja ? currentUser.sucursalAsignada : undefined;
+
+  // 1. Subscribe to public slot locks (siempre activo para prevenir doble reserva)
   useEffect(() => {
-    const unsubApts = subscribeToAppointments((data) => {
-      if (data && data.length > 0) {
-        setAppointments(data);
-      }
+    const unsubLocks = subscribeToSlotLocks((data) => {
+      setSlotLocks(data || []);
     });
+    return () => unsubLocks();
+  }, []);
 
-    const unsubCuts = subscribeToSalonCuts((data) => {
-      if (data && data.length > 0) {
-        setCuts(data);
-      }
-    });
+  // 2. Subscribe to private Firestore collections in real-time (SOLO si hay usuario staff)
+  useEffect(() => {
+    if (!isStaff) {
+      // Visitante: no tiene sesión de staff, no se suscribe a colecciones privadas
+      return;
+    }
 
-    const unsubExpenses = subscribeToExpenses((data) => {
-      if (data && data.length > 0) {
-        setExpenses(data);
-      }
-    });
+    const unsubApts = subscribeToAppointments(
+      (data) => {
+        setAppointments(data || []);
+      },
+      (err) => console.warn('Error en suscripción de citas:', err)
+    );
 
-    const unsubCloses = subscribeToCashCloses((data) => {
-      if (data && data.length > 0) {
-        setCashCloses(data);
-      }
-    });
+    const unsubCuts = subscribeToSalonCuts(
+      (data) => {
+        setCuts(data || []);
+      },
+      branchFilter,
+      (err) => console.warn('Error en suscripción de cortes:', err)
+    );
+
+    const unsubExpenses = subscribeToExpenses(
+      (data) => {
+        setExpenses(data || []);
+      },
+      branchFilter,
+      (err) => console.warn('Error en suscripción de gastos:', err)
+    );
+
+    const unsubCloses = subscribeToCashCloses(
+      (data) => {
+        setCashCloses(data || []);
+      },
+      branchFilter,
+      (err) => console.warn('Error en suscripción de cierres:', err)
+    );
 
     return () => {
       unsubApts();
@@ -292,7 +361,7 @@ export default function App() {
       unsubExpenses();
       unsubCloses();
     };
-  }, []);
+  }, [isStaff, branchFilter]);
 
   // Persist user and notifications
   useEffect(() => {
@@ -351,44 +420,88 @@ export default function App() {
     setCurrentTab('reservar');
   };
 
-  const handleBookingSuccess = async (newAppointment: Appointment) => {
+  const handleBookingSuccess = (newAppointment: Appointment) => {
     setAppointments((prev) => [newAppointment, ...prev]);
-    await saveAppointmentToFirestore(newAppointment);
-    showToast(`¡Cita ${newAppointment.bookingCode} confirmada & notificada por WhatsApp!`);
+    showToast(`¡Cita ${newAppointment.bookingCode} confirmada exitosamente!`);
   };
 
   const handleUpdateStatus = async (id: string, newStatus: Appointment['status']) => {
+    const previous = appointments.find((a) => a.id === id);
     setAppointments((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
     );
-    await updateAppointmentStatusInFirestore(id, newStatus);
-    showToast(`Estado actualizado: ${newStatus}`);
+    try {
+      await updateAppointmentStatusInFirestore(id, newStatus);
+      showToast(`Estado actualizado: ${newStatus}`);
+    } catch (error) {
+      if (previous) {
+        setAppointments((prev) =>
+          prev.map((a) => (a.id === id ? previous : a))
+        );
+      }
+      const msg = error instanceof Error ? error.message : 'Error al actualizar estado en Firestore.';
+      showToast(`⚠ Error: ${msg}`);
+    }
   };
 
   const handleCancelAppointment = async (id: string) => {
+    const previous = appointments.find((a) => a.id === id);
     setAppointments((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status: 'cancelada' as const } : a))
     );
-    await updateAppointmentStatusInFirestore(id, 'cancelada');
-    showToast('Cita cancelada.');
+    try {
+      await updateAppointmentStatusInFirestore(id, 'cancelada');
+      if (previous) {
+        try {
+          const lockId = getSlotLockDocId(previous.date, previous.specialistId, previous.time);
+          await deleteDoc(doc(db, 'slot_locks', lockId));
+        } catch {
+          // Ignorar si el bloqueo ya fue liberado
+        }
+      }
+      showToast('Cita cancelada.');
+    } catch (error) {
+      if (previous) {
+        setAppointments((prev) =>
+          prev.map((a) => (a.id === id ? previous : a))
+        );
+      }
+      const msg = error instanceof Error ? error.message : 'Error al cancelar la cita en Firestore.';
+      showToast(`⚠ Error: ${msg}`);
+    }
   };
 
   const handleRegisterCut = async (cut: SalonCutRecord) => {
-    setCuts((prev) => [cut, ...prev]);
-    await addSalonCutToFirestore(cut);
-    showToast(`Cobro de ${cut.clienteNombre} registrado en caja.`);
+    try {
+      await addSalonCutToFirestore(cut);
+      setCuts((prev) => [cut, ...prev]);
+      showToast(`Cobro de ${cut.clienteNombre} registrado en caja.`);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Error al registrar el cobro en Firestore.';
+      showToast(`⚠ Error: ${msg}`);
+    }
   };
 
   const handleAddExpense = async (expense: ExpenseRecord) => {
-    setExpenses((prev) => [expense, ...prev]);
-    await addExpenseToFirestore(expense);
-    showToast(`Gasto registrado en caja menor.`);
+    try {
+      await addExpenseToFirestore(expense);
+      setExpenses((prev) => [expense, ...prev]);
+      showToast(`Gasto registrado en caja menor.`);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Error al registrar el gasto en Firestore.';
+      showToast(`⚠ Error: ${msg}`);
+    }
   };
 
   const handleSaveCashClose = async (close: CashRegisterClose) => {
-    setCashCloses((prev) => [close, ...prev]);
-    await addCashCloseToFirestore(close);
-    showToast(`Arqueo de caja del día guardado en Firestore.`);
+    try {
+      await addCashCloseToFirestore(close);
+      setCashCloses((prev) => [close, ...prev]);
+      showToast(`Arqueo de caja del día guardado en Firestore.`);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Error al guardar el arqueo de caja.';
+      showToast(`⚠ Error: ${msg}`);
+    }
   };
 
   const handleMarkNotificationAsRead = (id: string) => {
@@ -410,16 +523,136 @@ export default function App() {
     showToast('Sesión cerrada. Ahora estás en Modo Público.');
   };
 
-  const handleAddUser = (newUser: SystemUser) => {
-    setSystemUsers((prev) => [newUser, ...prev]);
+  const handleAddUser = (newUser: SystemUser, password?: string) => {
+    setSystemUsers((prev) => {
+      const updated = [newUser, ...prev];
+      try {
+        localStorage.setItem('pelu_system_users', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
     showToast(`Usuario ${newUser.nombre} creado exitosamente.`);
   };
 
-  const handleUpdateUser = (updatedUser: SystemUser) => {
-    setSystemUsers((prev) =>
-      prev.map((u) => (u.id === updatedUser.id ? updatedUser : u))
-    );
+  const handleUpdateUser = (updatedUser: SystemUser, password?: string) => {
+    setSystemUsers((prev) => {
+      const updated = prev.map((u) => (u.id === updatedUser.id ? updatedUser : u));
+      try {
+        localStorage.setItem('pelu_system_users', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
     showToast(`Usuario ${updatedUser.nombre} actualizado.`);
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    setSystemUsers((prev) => {
+      const updated = prev.filter((u) => u.id !== userId);
+      try {
+        localStorage.setItem('pelu_system_users', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    showToast('Usuario eliminado del sistema.');
+  };
+
+  const handleAddService = (newService: Service) => {
+    setServices((prev) => {
+      const updated = [newService, ...prev];
+      try {
+        localStorage.setItem('pelu_services', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    showToast(`Servicio "${newService.name}" agregado a la carta.`);
+  };
+
+  const handleUpdateService = (updatedService: Service) => {
+    setServices((prev) => {
+      const updated = prev.map((s) => (s.id === updatedService.id ? updatedService : s));
+      try {
+        localStorage.setItem('pelu_services', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    showToast(`Servicio "${updatedService.name}" actualizado.`);
+  };
+
+  const handleDeleteService = (serviceId: string) => {
+    setServices((prev) => {
+      const updated = prev.filter((s) => s.id !== serviceId);
+      try {
+        localStorage.setItem('pelu_services', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    showToast('Servicio eliminado de la carta.');
+  };
+
+  const handleAddCategory = (newCategory: ServiceCategory) => {
+    setServiceCategories((prev) => {
+      const updated = [...prev, newCategory];
+      try {
+        localStorage.setItem('pelu_service_categories', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    showToast(`Tipo de servicio "${newCategory.label}" creado.`);
+  };
+
+  const handleUpdateCategory = (updatedCategory: ServiceCategory) => {
+    setServiceCategories((prev) => {
+      const updated = prev.map((c) => (c.id === updatedCategory.id ? updatedCategory : c));
+      try {
+        localStorage.setItem('pelu_service_categories', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    showToast(`Tipo de servicio "${updatedCategory.label}" actualizado.`);
+  };
+
+  const handleDeleteCategory = (categoryId: string) => {
+    setServiceCategories((prev) => {
+      const updated = prev.filter((c) => c.id !== categoryId);
+      try {
+        localStorage.setItem('pelu_service_categories', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    showToast('Tipo de servicio eliminado.');
+  };
+
+  const handleAddSpecialist = (newSpecialist: Specialist) => {
+    setSpecialists((prev) => {
+      const updated = [newSpecialist, ...prev];
+      try {
+        localStorage.setItem('pelu_specialists', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    showToast(`Manicurista "${newSpecialist.name}" registrada en el equipo.`);
+  };
+
+  const handleUpdateSpecialist = (updatedSpecialist: Specialist) => {
+    setSpecialists((prev) => {
+      const updated = prev.map((s) => (s.id === updatedSpecialist.id ? updatedSpecialist : s));
+      try {
+        localStorage.setItem('pelu_specialists', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    showToast(`Manicurista "${updatedSpecialist.name}" actualizada.`);
+  };
+
+  const handleDeleteSpecialist = (specialistId: string) => {
+    setSpecialists((prev) => {
+      const updated = prev.filter((s) => s.id !== specialistId);
+      try {
+        localStorage.setItem('pelu_specialists', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    showToast('Manicurista eliminada del equipo.');
   };
 
   const activeAppointmentsCount = appointments.filter(
@@ -447,8 +680,6 @@ export default function App() {
         onNavigate={handleNavigateTab}
         currentUser={currentUser}
         onOpenLogin={() => setIsLoginModalOpen(true)}
-        notifications={notifications}
-        onMarkNotificationAsRead={handleMarkNotificationAsRead}
         activeAppointmentsCount={activeAppointmentsCount}
       />
 
@@ -463,6 +694,9 @@ export default function App() {
             onOpenServiceDetail={setSelectedServiceDetail}
             onOpenCookieSettings={() => setIsCookieSettingsOpen(true)}
             onOpenCookiePolicy={() => setIsCookiePolicyOpen(true)}
+            services={services}
+            specialists={specialists}
+            serviceCategories={serviceCategories}
           />
         )}
 
@@ -473,10 +707,13 @@ export default function App() {
             initialSpecialist={bookingSpecialist}
             promoDiscountPercent={promoDiscount}
             appointments={appointments}
+            slotLocks={slotLocks}
             onBookingSuccess={handleBookingSuccess}
             onNavigateToAppointments={() => setCurrentTab('agenda')}
             onNavigateToServices={() => setCurrentTab('servicios')}
             isPublicView={!currentUser}
+            services={services}
+            specialists={specialists}
           />
         )}
 
@@ -485,6 +722,7 @@ export default function App() {
           <SpecialistsScreen
             onBookWithSpecialist={handleBookWithSpecialist}
             onOpenSpecialistModal={setSelectedSpecialist}
+            specialists={specialists}
           />
         )}
 
@@ -518,13 +756,27 @@ export default function App() {
           />
         )}
 
-        {/* GESTIÓN DE USUARIOS - EXCLUSIVO PARA DAVID */}
+        {/* GESTIÓN DE USUARIOS, SERVICIOS, CATEGORÍAS & MANICURISTAS - EXCLUSIVO PARA SUPERADMIN */}
         {currentTab === 'usuarios' && currentUser && (
           <UsersManagementScreen
             currentUser={currentUser}
             systemUsers={systemUsers}
             onAddUser={handleAddUser}
             onUpdateUser={handleUpdateUser}
+            onDeleteUser={handleDeleteUser}
+            services={services}
+            onAddService={handleAddService}
+            onUpdateService={handleUpdateService}
+            onDeleteService={handleDeleteService}
+            serviceCategories={serviceCategories}
+            onAddCategory={handleAddCategory}
+            onUpdateCategory={handleUpdateCategory}
+            onDeleteCategory={handleDeleteCategory}
+            specialists={specialists}
+            onAddSpecialist={handleAddSpecialist}
+            onUpdateSpecialist={handleUpdateSpecialist}
+            onDeleteSpecialist={handleDeleteSpecialist}
+            onToast={showToast}
           />
         )}
 
@@ -581,7 +833,7 @@ export default function App() {
           </button>
         </div>
         <p className="text-[11px] text-[#7D676B]">
-          © {new Date().getFullYear()} La Pelu SPA · Santuario de Belleza · Chicó Calle 85, Bogotá · WhatsApp (+57) 312 849 2011
+          © {new Date().getFullYear()} {BUSINESS_CONFIG.brandName} · Santuario de Belleza · {BUSINESS_CONFIG.address}, {BUSINESS_CONFIG.city} {BUSINESS_CONFIG.phoneFormatted ? `· WhatsApp ${BUSINESS_CONFIG.phoneFormatted}` : ''}
         </p>
       </footer>
 
@@ -620,11 +872,15 @@ export default function App() {
         onBookService={handleQuickBook}
       />
 
-      {/* Promotional Modal */}
+      {/* Experience & Ritual Modal */}
       <PromoModal
         isOpen={isPromoModalOpen}
         onClose={() => setIsPromoModalOpen(false)}
         onApplyPromo={handleApplyPromo}
+        onNavigateToBooking={() => {
+          setCurrentTab('reservar');
+          setIsPromoModalOpen(false);
+        }}
       />
 
       {/* Cookie Consent Banner */}

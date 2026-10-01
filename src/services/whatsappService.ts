@@ -5,6 +5,7 @@
  */
 
 import { sanitizeToPlainText } from '../utils/security';
+import { BUSINESS_CONFIG } from '../config/businessConfig';
 
 const WHATSAPP_HISTORY_KEY = 'aura_whatsapp_history';
 const ULTRAMSG_CONFIG_KEY = 'aura_ultramsg_config';
@@ -21,14 +22,14 @@ export interface UltraMsgConfig {
 }
 
 export const DEFAULT_ULTRAMSG_CONFIG: UltraMsgConfig = {
-  instanceId: 'instance192909',
-  token: '8qqml39io4sdiwlv',
+  instanceId: '',
+  token: '',
   autoConfirmOnBooking: true,
   autoNotifyStatusChange: true,
   autoNotifyPayment: true,
-  confirmationTemplate: `✨ *LA PELU SPA* - Confirmación de Reserva ✨\n\nHola *{cliente}*, tu cita para *{servicio}* ha sido agendada con éxito.\n\n📌 *Código de Turno:* {codigo}\n📅 *Fecha:* {fecha}\n⏰ *Hora:* {hora}\n📍 *Sede:* {sede}\n\n¡Te esperamos para consentirte en nuestro santuario de belleza! 💅✨`,
-  statusChangeTemplate: `🔔 *LA PELU SPA* - Actualización de Turno 🔔\n\nHola *{cliente}*, tu cita *{codigo}* ha cambiado de estado a: *{estado}*.\n\n📍 *Sede:* {sede}\n💅 *Servicio:* {servicio}\n\nGracias por confiar en La Pelu SPA.`,
-  paymentTemplate: `💳 *LA PELU SPA* - Recibo de Pago 💳\n\nHola *{cliente}*, confirmamos la recepción del pago por tu servicio *{servicio}* por un valor de *$ {monto} COP*.\n\n📌 *Código de Cita:* {codigo}\n\n¡Muchas gracias por tu visita!`
+  confirmationTemplate: `✨ *${BUSINESS_CONFIG.brandName.toUpperCase()}* - Confirmación de Reserva ✨\n\nHola *{cliente}*, tu cita para *{servicio}* ha sido agendada con éxito.\n\n📌 *Código de Turno:* {codigo}\n📅 *Fecha:* {fecha}\n⏰ *Hora:* {hora}\n📍 *Sede:* {sede}\n\n¡Te esperamos para consentirte en nuestro santuario de belleza! 💅✨`,
+  statusChangeTemplate: `🔔 *${BUSINESS_CONFIG.brandName.toUpperCase()}* - Actualización de Turno 🔔\n\nHola *{cliente}*, tu cita *{codigo}* ha cambiado de estado a: *{estado}*.\n\n📍 *Sede:* {sede}\n💅 *Servicio:* {servicio}\n\nGracias por confiar en ${BUSINESS_CONFIG.brandName}.`,
+  paymentTemplate: `💳 *${BUSINESS_CONFIG.brandName.toUpperCase()}* - Recibo de Pago 💳\n\nHola *{cliente}*, confirmamos la recepción del pago por tu servicio *{servicio}* por un valor de *$ {monto} COP*.\n\n📌 *Código de Cita:* {codigo}\n\n¡Muchas gracias por tu visita!`
 };
 
 export function getUltraMsgConfig(): UltraMsgConfig {
@@ -37,9 +38,9 @@ export function getUltraMsgConfig(): UltraMsgConfig {
     if (saved) {
       const parsed = JSON.parse(saved);
       // Auto-migración si el navegador tenía la clave de prueba anterior
-      if (parsed.instanceId === 'instance191642' || !parsed.instanceId) {
-        parsed.instanceId = 'instance192909';
-        parsed.token = '8qqml39io4sdiwlv';
+      if (parsed.instanceId === 'instance191642') {
+        parsed.instanceId = '';
+        parsed.token = '';
         localStorage.setItem(ULTRAMSG_CONFIG_KEY, JSON.stringify({ ...DEFAULT_ULTRAMSG_CONFIG, ...parsed }));
       }
       return { ...DEFAULT_ULTRAMSG_CONFIG, ...parsed };

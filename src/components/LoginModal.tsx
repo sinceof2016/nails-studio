@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { SystemUser } from '../types';
 import { authenticateWithVault } from '../services/securityVault';
 import { checkRateLimit } from '../utils/security';
+import { BUSINESS_CONFIG } from '../config/businessConfig';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -34,7 +35,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     const rateCheck = checkRateLimit('login_attempt');
     if (!rateCheck.allowed) {
       setErrorMessage(
-        `Demasiados intentos de acceso fallidos. Por seguridad, espera ${rateCheck.retryAfterSeconds || 60} segundos.`
+        `Demasiados intentos de acceso fallidos. Por seguridad, espera ${rateCheck.retryAfterSeconds ?? 60} segundos.`
       );
       return;
     }
@@ -78,7 +79,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 Acceso al Sistema
               </h3>
               <p className="text-xs text-[#644E53] mt-0.5">
-                Panel de gestión y administración de La Pelu SPA
+                Panel de gestión y administración de {BUSINESS_CONFIG.brandName}
               </p>
             </div>
           </div>

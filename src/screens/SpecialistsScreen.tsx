@@ -5,11 +5,13 @@ import { SPECIALISTS } from '../data/mockData';
 interface SpecialistsScreenProps {
   onBookWithSpecialist: (specialist: Specialist) => void;
   onOpenSpecialistModal: (specialist: Specialist) => void;
+  specialists?: Specialist[];
 }
 
 export const SpecialistsScreen: React.FC<SpecialistsScreenProps> = ({
   onBookWithSpecialist,
-  onOpenSpecialistModal
+  onOpenSpecialistModal,
+  specialists = SPECIALISTS
 }) => {
   return (
     <div className="w-full space-y-6 pb-12 animate-in fade-in duration-200">
@@ -32,7 +34,7 @@ export const SpecialistsScreen: React.FC<SpecialistsScreenProps> = ({
 
       {/* Specialists Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {SPECIALISTS.map((specialist) => (
+        {specialists.map((specialist) => (
           <div
             key={specialist.id}
             className="bg-white rounded-3xl p-5 border border-[#e8b4b8]/30 shadow-[0_6px_20px_-4px_rgba(232,180,184,0.2)] hover:shadow-[0_12px_30px_-4px_rgba(232,180,184,0.35)] transition-all flex flex-col justify-between group"
