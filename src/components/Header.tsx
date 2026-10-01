@@ -1,5 +1,5 @@
 import React from 'react';
-import { LOGO_URL } from '../data/mockData';
+import { BrandLogo } from './BrandLogo';
 import { AppNotification, SystemUser, AppTab } from '../types';
 import { BUSINESS_CONFIG } from '../config/businessConfig';
 
@@ -96,11 +96,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="flex items-center gap-2.5 sm:gap-3 cursor-pointer min-w-0 group select-none"
               onClick={() => onNavigate('reservar')}
             >
-              <img
-                alt={`${BUSINESS_CONFIG.brandName} Logo`}
-                className="h-9 sm:h-10 w-auto object-contain shrink-0 group-hover:scale-105 transition-transform"
-                src={LOGO_URL}
-              />
+              <BrandLogo className="h-9 sm:h-10 w-9 sm:w-10 shrink-0 group-hover:scale-105 transition-transform" />
               <div className="flex flex-col min-w-0">
                 <span className="text-[10px] sm:text-[11px] tracking-widest uppercase font-bold text-[#64444B] truncate font-['Plus_Jakarta_Sans',sans-serif]">
                   {BUSINESS_CONFIG.brandName}

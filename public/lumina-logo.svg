@@ -65,7 +65,7 @@
     <path d="M 370 193 C 373 194 374 198 371 202" />
   </g>
 
-  <!-- Typography: LUMINA NAIL SPA -->
-  <text x="250" y="340" class="gold-text" font-size="44">LUMINA</text>
-  <text x="250" y="385" class="gold-text" font-size="34" letter-spacing="6px">NAIL SPA</text>
+  <!-- Typography: LA PELU SPA -->
+  <text x="250" y="340" class="gold-text" font-size="42" font-weight="800">LA PELU</text>
+  <text x="250" y="385" class="gold-text" font-size="30" letter-spacing="8px">SPA</text>
 </svg>
