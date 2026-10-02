@@ -74,13 +74,8 @@ export const UsersManagementScreen: React.FC<UsersManagementScreenProps> = ({
     name: string;
   } | null>(null);
 
-  // Security check: Only SuperAdmin / David can access
-  const isSuperAdmin =
-    currentUser.rol === 'SuperAdmin' ||
-    currentUser.id === 'USR-DAVID-01' ||
-    currentUser.email.toLowerCase().includes('david') ||
-    currentUser.email.toLowerCase().includes('orjuela') ||
-    currentUser.nombre.toLowerCase().includes('david orjuela');
+  // Security check: Only SuperAdmin can access
+  const isSuperAdmin = currentUser.rol === 'SuperAdmin';
 
   if (!isSuperAdmin) {
     return (
@@ -88,7 +83,7 @@ export const UsersManagementScreen: React.FC<UsersManagementScreenProps> = ({
         <span className="material-symbols-outlined text-[48px] text-rose-600 mb-2">lock</span>
         <h3 className="text-lg font-bold">Acceso Restringido</h3>
         <p className="text-xs text-[#5A4A43] mt-1">
-          Esta sección está reservada exclusivamente para el rol de Super Administrador (David Orjuela).
+          Esta sección está reservada exclusivamente para el rol de Super Administrador.
         </p>
       </div>
     );
@@ -108,10 +103,10 @@ export const UsersManagementScreen: React.FC<UsersManagementScreenProps> = ({
   const handleSaveUser = (user: SystemUser, password?: string) => {
     if (userToEdit) {
       onUpdateUser(user, password);
-      if (onToast) onToast(`Usuario "${user.nombre}" actualizado.`);
+      if (onToast) onToast(`Perfil "${user.nombre}" actualizado.`);
     } else {
       onAddUser(user, password);
-      if (onToast) onToast(`Usuario "${user.nombre}" creado exitosamente.`);
+      if (onToast) onToast('Esta lista es solo local. Para dar acceso, crea la cuenta en la consola de Firebase y el perfil con el UID.');
     }
   };
 

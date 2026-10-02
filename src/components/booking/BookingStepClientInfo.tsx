@@ -124,6 +124,7 @@ export const BookingStepClientInfo: React.FC<BookingStepClientInfoProps> = ({
             <input
               type="text"
               required
+              maxLength={100}
               value={clientName}
               onChange={(e) => {
                 setClientName(e.target.value);
@@ -155,6 +156,7 @@ export const BookingStepClientInfo: React.FC<BookingStepClientInfoProps> = ({
             </label>
             <input
               type="text"
+              maxLength={500}
               value={clientNotes}
               onChange={(e) => {
                 setClientNotes(e.target.value);
@@ -179,7 +181,7 @@ export const BookingStepClientInfo: React.FC<BookingStepClientInfoProps> = ({
             className={`flex items-start gap-3 p-3.5 rounded-2xl transition-all cursor-pointer ${
               dataPolicyError
                 ? 'bg-rose-50/80 border-2 border-rose-500 ring-2 ring-rose-200'
-                : 'bg-[#F4EFE9] border border-[#C6BDAC] hover:bg-[#C6BDAC]/40/40'
+                : 'bg-[#F4EFE9] border border-[#C6BDAC] hover:bg-[#C6BDAC]/40'
             }`}
           >
             <input
@@ -207,9 +209,9 @@ export const BookingStepClientInfo: React.FC<BookingStepClientInfoProps> = ({
                 }}
                 className="text-[#2B2420] font-bold underline hover:text-[#AA8A74] cursor-pointer"
               >
-                Política de Tratamiento de Datos Personales
-              </button>{' '}
-              y el{' '}
+                Política de Tratamiento de Datos
+              </button>
+              , el{' '}
               <button
                 type="button"
                 onClick={(e) => {
@@ -220,8 +222,20 @@ export const BookingStepClientInfo: React.FC<BookingStepClientInfoProps> = ({
                 className="text-[#2B2420] font-bold underline hover:text-[#AA8A74] cursor-pointer"
               >
                 Aviso de Privacidad
-              </button>{' '}
-              de {BUSINESS_CONFIG.brandName}, para la gestión, confirmación y facturación de mi cita.
+              </button>
+              {' '}y los{' '}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (onOpenTerms) onOpenTerms();
+                }}
+                className="text-[#2B2420] font-bold underline hover:text-[#AA8A74] cursor-pointer"
+              >
+                Términos y Condiciones
+              </button>
+              {' '}de {BUSINESS_CONFIG.brandName}, para la gestión, confirmación y facturación de mi cita.
             </span>
           </label>
 
@@ -257,7 +271,7 @@ export const BookingStepClientInfo: React.FC<BookingStepClientInfoProps> = ({
         <button
           onClick={onConfirm}
           disabled={isSendingWhatsApp}
-          className="px-7 py-3.5 rounded-full bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold font-bold text-xs sm:text-sm shadow-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer disabled:opacity-50"
+          className="px-7 py-3.5 rounded-full bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold text-xs sm:text-sm shadow-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer disabled:opacity-50"
         >
           <span>{isSendingWhatsApp ? 'Registrando cita...' : 'Confirmar Reserva en COP'}</span>
           <span className="material-symbols-outlined text-[18px]">check_circle</span>

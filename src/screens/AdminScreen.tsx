@@ -2,23 +2,26 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
   Appointment,
   AdminUser,
+  SystemUser,
   SalonCutRecord,
   ExpenseRecord,
   CashRegisterClose,
   ClientProfile,
-  PaymentMethod
+  PaymentMethod,
+  Service,
+  Specialist
 } from '../types';
 import { QrCodeModal } from '../components/QrCodeModal';
 import { ClientHistoryModal } from '../components/ClientHistoryModal';
 import { UltraMsgConfigModal } from '../components/UltraMsgConfigModal';
-import { SPECIALISTS, SERVICES } from '../data/mockData';
 import { formatCOP } from '../utils/format';
 import { validateOnlyPlainText, sanitizeToPlainText, validateColombianPhone, checkRateLimit } from '../utils/security';
 import { sendUltraMsgWhatsApp, getUltraMsgConfig, renderTemplate } from '../services/whatsappService';
 import { BUSINESS_CONFIG } from '../config/businessConfig';
 import { getColombiaDateISO, getColombiaTimeStr, generateSecureId, generateBookingCode, formatDisplayDate } from '../utils/dateAndId';
+import { HOURLY_TIME_SLOTS } from '../utils/calendarAvailability';
 
-// Subcomponents for tabs and modals (divided for high maintainability)
+// Subcomponents for tabs and modals
 import { AdminAgendaTab } from '../components/admin/tabs/AdminAgendaTab';
 import { AdminCajaTab } from '../components/admin/tabs/AdminCajaTab';
 import { AdminCortesTab, SpecialistLiquidationItem } from '../components/admin/tabs/AdminCortesTab';
@@ -29,18 +32,22 @@ import { NewExpenseModal } from '../components/admin/modals/NewExpenseModal';
 import { CashCloseModal } from '../components/admin/modals/CashCloseModal';
 
 interface AdminScreenProps {
-  admin: AdminUser;
+  admin: AdminUser | SystemUser;
+  currentUser?: SystemUser | null;
   appointments: Appointment[];
   cuts: SalonCutRecord[];
   expenses: ExpenseRecord[];
   cashCloses: CashRegisterClose[];
-  onUpdateStatus: (appointmentId: string, newStatus: Appointment['status']) => void;
-  onCancelAppointment: (appointmentId: string) => void;
+  services: Service[];
+  specialists: Specialist[];
+  onUpdateStatus: (appointmentId: string, newStatus: Appointment['status']) => Promise<void> | void;
+  onCancelAppointment: (appointmentId: string) => Promise<void> | void;
+  onDeleteAppointment?: (appointmentId: string, extra?: { date?: string; specialistId?: string; time?: string }) => Promise<void> | void;
   onNavigateToBooking: () => void;
-  onRegisterCut: (cut: SalonCutRecord) => void;
-  onAddExpense: (expense: ExpenseRecord) => void;
-  onSaveCashClose: (close: CashRegisterClose) => void;
-  onAddAppointment?: (appointment: Appointment) => Promise<void> | void;
+  onRegisterCut: (cut: SalonCutRecord) => Promise<void>;
+  onAddExpense: (expense: ExpenseRecord) => Promise<void>;
+  onSaveCashClose: (close: CashRegisterClose) => Promise<void>;
+  onAddAppointment?: (appointment: Appointment) => Promise<void>;
   onToast?: (message: string) => void;
   initialTab?: 'agenda' | 'caja' | 'cortes' | 'clientes';
   onTabChange?: (tab: 'agenda' | 'caja' | 'cortes' | 'clientes') => void;
@@ -48,12 +55,16 @@ interface AdminScreenProps {
 
 export const AdminScreen: React.FC<AdminScreenProps> = ({
   admin,
+  currentUser,
   appointments,
   cuts,
   expenses,
   cashCloses,
+  services,
+  specialists,
   onUpdateStatus,
   onCancelAppointment,
+  onDeleteAppointment,
   onNavigateToBooking,
   onRegisterCut,
   onAddExpense,
@@ -64,15 +75,28 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
   onTabChange
 }) => {
   // Navigation tabs within Admin
-  const [activeAdminTab, setActiveAdminTab] = useState<'agenda' | 'caja' | 'cortes' | 'clientes'>(initialTab);
+  const isCajaRole = (currentUser?.rol || ('rol' in admin ? admin.rol : admin.role)) === 'Caja';
+  const effectiveInitialTab = isCajaRole && initialTab === 'cortes' ? 'agenda' : initialTab;
+  const [activeAdminTab, setActiveAdminTab] = useState<'agenda' | 'caja' | 'cortes' | 'clientes'>(effectiveInitialTab);
+
+  // Fecha seleccionada para la jornada de caja y liquidación (ISO Colombia)
+  const [selectedDate, setSelectedDate] = useState<string>(getColombiaDateISO());
+
+  // Base inicial en caja (editable)
+  const [cashBase, setCashBase] = useState<number>(200000);
 
   useEffect(() => {
     if (initialTab) {
-      setActiveAdminTab(initialTab);
+      if (isCajaRole && initialTab === 'cortes') {
+        setActiveAdminTab('agenda');
+      } else {
+        setActiveAdminTab(initialTab);
+      }
     }
-  }, [initialTab]);
+  }, [initialTab, isCajaRole]);
 
   const handleSelectTab = (tab: 'agenda' | 'caja' | 'cortes' | 'clientes') => {
+    if (isCajaRole && tab === 'cortes') return;
     setActiveAdminTab(tab);
     if (onTabChange) {
       onTabChange(tab);
@@ -82,6 +106,12 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
   const notify = (msg: string) => {
     if (onToast) onToast(msg);
   };
+
+  // Active user details
+  const activeUserName = currentUser?.nombre || ('nombre' in admin ? admin.nombre : admin.name) || 'Personal de Salón';
+  const activeUserRole = currentUser?.rol || ('rol' in admin ? admin.rol : admin.role) || 'Caja';
+  const activeBranchId = currentUser?.sucursalAsignada || ('branchId' in admin ? admin.branchId : 'santuario-patio-bonito') || 'santuario-patio-bonito';
+  const activeBranchName = BUSINESS_CONFIG.branchName;
 
   // Filters for Agenda
   const [filterStatus, setFilterStatus] = useState<string>('todos');
@@ -98,24 +128,27 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
   const [showExpressModal, setShowExpressModal] = useState(false);
   const [expressClientName, setExpressClientName] = useState('');
   const [expressClientPhone, setExpressClientPhone] = useState('+57 3');
-  const [expressServiceId, setExpressServiceId] = useState(SERVICES[0].id);
-  const [expressSpecialistId, setExpressSpecialistId] = useState(SPECIALISTS[0].id);
+  const [expressServiceId, setExpressServiceId] = useState(services[0]?.id || 'manicura-rusa-glazed');
+  const [expressSpecialistId, setExpressSpecialistId] = useState(specialists[0]?.id || 'valentina-r');
+  const [expressTime, setExpressTime] = useState(HOURLY_TIME_SLOTS[2] || '10:00 AM');
   const [expressStatus, setExpressStatus] = useState<'en_preparacion' | 'confirmada'>('en_preparacion');
   const [expressNotes, setExpressNotes] = useState('');
   const [expressSendWhatsApp, setExpressSendWhatsApp] = useState(true);
   const [expressValidationError, setExpressValidationError] = useState<string | null>(null);
+  const [isSubmittingExpress, setIsSubmittingExpress] = useState(false);
 
-  // 2. NEW CUT MODAL STATE (WITH SPLIT PAYMENT & CHANGE CALCULATOR)
+  // 2. NEW CUT MODAL STATE
   const [showNewCutModal, setShowNewCutModal] = useState(false);
   const [cutClientName, setCutClientName] = useState('');
   const [cutClientPhone, setCutClientPhone] = useState('');
-  const [cutServiceName, setCutServiceName] = useState('Manicura Rusa Glazed Donut');
-  const [cutServicePrice, setCutServicePrice] = useState(95000);
-  const [cutSpecialistId, setCutSpecialistId] = useState(SPECIALISTS[0].id);
+  const [cutServiceName, setCutServiceName] = useState(services[0]?.name || 'Manicura Rusa Glazed Donut');
+  const [cutServicePrice, setCutServicePrice] = useState(services[0]?.price || 95000);
+  const [cutSpecialistId, setCutSpecialistId] = useState(specialists[0]?.id || 'valentina-r');
   const [cutPaymentMethod, setCutPaymentMethod] = useState<PaymentMethod>('efectivo');
   const [cutTip, setCutTip] = useState(0);
   const [cutNote, setCutNote] = useState('');
   const [cutValidationError, setCutValidationError] = useState<string | null>(null);
+  const [isSubmittingCut, setIsSubmittingCut] = useState(false);
 
   // Split Payment & Cash change state
   const [cutMontoEfectivo, setCutMontoEfectivo] = useState(50000);
@@ -132,51 +165,68 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
     }
   }, [cutServicePrice, cutTip, cutMontoEfectivo, cutPaymentMethod]);
 
-  // New Expense modal state
+  // 3. NEW EXPENSE MODAL STATE
   const [showExpenseModal, setShowExpenseModal] = useState(false);
   const [expenseConcept, setExpenseConcept] = useState('');
   const [expenseAmount, setExpenseAmount] = useState(45000);
   const [expenseCategory, setExpenseCategory] = useState<'insumos' | 'servicios' | 'mantenimiento' | 'caja_menor'>('insumos');
   const [expenseValidationError, setExpenseValidationError] = useState<string | null>(null);
+  const [isSubmittingExpense, setIsSubmittingExpense] = useState(false);
 
-  // Cash Close modal state
+  // 4. CASH CLOSE MODAL STATE
   const [showCloseModal, setShowCloseModal] = useState(false);
-  const [cashBase, setCashBase] = useState(200000);
   const [countedCash, setCountedCash] = useState(200000);
+  const [isSubmittingClose, setIsSubmittingClose] = useState(false);
 
-  // Status counters
+  // Agenda stats
   const totalCount = appointments.length;
   const confirmedCount = appointments.filter((a) => a.status === 'confirmada').length;
   const inPrepCount = appointments.filter((a) => a.status === 'en_preparacion').length;
   const completedCount = appointments.filter((a) => a.status === 'completada').length;
   const canceledCount = appointments.filter((a) => a.status === 'cancelada').length;
 
-  // Daily totals calculation in COP (handles split payments accurately)
-  const totalCashIncome = cuts.reduce((acc, curr) => {
-    if (curr.metodoPago === 'efectivo') {
-      return acc + curr.servicioPrecio + curr.propina;
-    } else if (curr.metodoPago === 'mixto' && curr.montoEfectivo !== undefined) {
-      return acc + curr.montoEfectivo;
-    }
-    return acc;
-  }, 0);
+  // FILTRAR REGISTROS DE COBROS Y GASTOS POR LA FECHA SELECCIONADA
+  const dayCuts = useMemo(() => {
+    return cuts.filter((c) => !c.fecha || c.fecha === selectedDate);
+  }, [cuts, selectedDate]);
 
-  const totalDigitalIncome = cuts.reduce((acc, curr) => {
-    if (curr.metodoPago === 'nequi_daviplata' || curr.metodoPago === 'tarjeta_datafono') {
-      return acc + curr.servicioPrecio + curr.propina;
-    } else if (curr.metodoPago === 'mixto' && curr.montoDigital !== undefined) {
-      return acc + curr.montoDigital;
-    }
-    return acc;
-  }, 0);
+  const dayExpenses = useMemo(() => {
+    return expenses.filter((e) => !e.fecha || e.fecha === selectedDate);
+  }, [expenses, selectedDate]);
 
-  const totalExpensesAmount = expenses.reduce((acc, curr) => acc + curr.monto, 0);
+  // Daily totals calculation in COP based on selected date
+  const totalCashIncome = useMemo(() => {
+    return dayCuts.reduce((acc, curr) => {
+      if (curr.metodoPago === 'efectivo') {
+        return acc + curr.servicioPrecio + curr.propina;
+      } else if (curr.metodoPago === 'mixto' && curr.montoEfectivo !== undefined) {
+        return acc + curr.montoEfectivo;
+      }
+      return acc;
+    }, 0);
+  }, [dayCuts]);
+
+  const totalDigitalIncome = useMemo(() => {
+    return dayCuts.reduce((acc, curr) => {
+      if (curr.metodoPago === 'nequi_daviplata' || curr.metodoPago === 'tarjeta_datafono') {
+        return acc + curr.servicioPrecio + curr.propina;
+      } else if (curr.metodoPago === 'mixto' && curr.montoDigital !== undefined) {
+        return acc + curr.montoDigital;
+      }
+      return acc;
+    }, 0);
+  }, [dayCuts]);
+
+  const totalExpensesAmount = useMemo(() => {
+    return dayExpenses.reduce((acc, curr) => acc + curr.monto, 0);
+  }, [dayExpenses]);
+
   const expectedCashInHand = cashBase + totalCashIncome - totalExpensesAmount;
 
-  // Specialists liquidation breakdown
+  // Specialists liquidation breakdown for selected date
   const specialistsLiquidation: SpecialistLiquidationItem[] = useMemo(() => {
-    return SPECIALISTS.map((spec) => {
-      const specCuts = cuts.filter((c) => c.especialistaId === spec.id);
+    return specialists.map((spec) => {
+      const specCuts = dayCuts.filter((c) => c.especialistaId === spec.id);
       const totalServices = specCuts.reduce((acc, c) => acc + c.servicioPrecio, 0);
       const totalCommission = specCuts.reduce((acc, c) => acc + c.comisionEspecialista, 0);
       const totalTips = specCuts.reduce((acc, c) => acc + c.propina, 0);
@@ -185,6 +235,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         name: spec.name,
         role: spec.role,
         avatar: spec.avatar,
+        phone: spec.phone,
+        telefono: spec.telefono,
         commissionRate: spec.commissionRate ?? 50,
         cutsCount: specCuts.length,
         totalServices,
@@ -193,7 +245,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         payoutTotal: totalCommission + totalTips
       };
     });
-  }, [cuts]);
+  }, [specialists, dayCuts]);
 
   // Clients database synthesized with safe normalization
   const clientProfiles: ClientProfile[] = useMemo(() => {
@@ -250,34 +302,42 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
   // 1-CLIC FAST DISPATCHES FOR AGENDA
   const handleQuickReminder = async (apt: Appointment) => {
     const msg = `✨ *${BUSINESS_CONFIG.brandName} - Recordatorio de Cita* ✨\n\nHola ${apt.clientName}, te recordamos tu cita de *${apt.serviceName}* agendada para hoy a las *${apt.time}* con ${apt.specialistName}.\n\n📍 ${BUSINESS_CONFIG.address}, ${BUSINESS_CONFIG.city}.\n🎫 Código: ${apt.bookingCode}\n\n¡Te esperamos con una copa de cortesía! 💅🥂`;
-    
-    await sendUltraMsgWhatsApp({
+
+    const res = await sendUltraMsgWhatsApp({
       phone: apt.clientPhone,
       message: msg,
       clientName: apt.clientName,
       bookingCode: apt.bookingCode
     });
-    notify(`✓ Recordatorio enviado a ${apt.clientName} por WhatsApp`);
+    if (res.messageId && !res.messageId.startsWith('static-wa-')) {
+      notify(`✓ Recordatorio enviado a ${apt.clientName} por WhatsApp`);
+    } else {
+      notify(`✓ Recordatorio preparado para ${apt.clientName} (modo estático)`);
+    }
   };
 
   const handleTableReady = async (apt: Appointment) => {
-    const msg = `💅 *¡Tu mesa está lista en ${BUSINESS_CONFIG.brandName}!* 💅\n\nHola ${apt.clientName}, tu manicurista *${apt.specialistName}* ya tiene tu mesa esterilizada y lista en cabina para tu servicio *${apt.serviceName}*.\n\n¡Puedes pasar a tomar asiento! ✨`;
-    
-    await sendUltraMsgWhatsApp({
+    const msg = `🌟 *${BUSINESS_CONFIG.brandName} - Tu Mesa está Lista* 🌟\n\n¡Hola ${apt.clientName}! Tu especialista ${apt.specialistName} ya tiene todo esterilizado y preparado en cabina para tu *${apt.serviceName}*.\n\nPuedes pasar a recepción cuando gustes. ¡Bienvenida a tu santuario de belleza! 💆‍♀️✨`;
+
+    const res = await sendUltraMsgWhatsApp({
       phone: apt.clientPhone,
       message: msg,
       clientName: apt.clientName,
       bookingCode: apt.bookingCode
     });
-    notify(`✓ Notificación de "Mesa Lista" enviada a ${apt.clientName}`);
+    if (res.messageId && !res.messageId.startsWith('static-wa-')) {
+      notify(`✓ Notificación de "Mesa Lista" enviada a ${apt.clientName}`);
+    } else {
+      notify(`✓ Notificación de "Mesa Lista" preparada para ${apt.clientName} (modo estático)`);
+    }
   };
 
-  // SEND SPECIALIST LIQUIDATION VIA WHATSAPP
+  // SEND SPECIALIST LIQUIDATION VIA WHATSAPP (al teléfono de la especialista)
   const handleSendSpecialistLiquidation = async (spec: SpecialistLiquidationItem) => {
-    const todayStr = new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'short' });
+    const dateStr = formatDisplayDate(selectedDate);
     const msg = `✨ *${BUSINESS_CONFIG.brandName.toUpperCase()} - LIQUIDACIÓN DEL DÍA* ✨\n\n` +
       `👤 *Especialista:* ${spec.name}\n` +
-      `📅 *Fecha:* ${todayStr}\n` +
+      `📅 *Fecha:* ${dateStr}\n` +
       `🏢 *Sede:* ${BUSINESS_CONFIG.address}, ${BUSINESS_CONFIG.city}\n\n` +
       `💅 *Servicios Realizados:* ${spec.cutsCount} (${formatCOP(spec.totalServices)})\n` +
       `⭐ *Tu Comisión (${spec.commissionRate}%):* ${formatCOP(spec.totalCommission)}\n` +
@@ -286,13 +346,19 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       `💰 *TOTAL A RECIBIR HOY: ${formatCOP(spec.payoutTotal)}*\n\n` +
       `¡Excelente jornada de trabajo y gracias por tu dedicación! 💖💅`;
 
-    await sendUltraMsgWhatsApp({
-      phone: BUSINESS_CONFIG.phone || '',
+    const targetPhone = spec.telefono || spec.phone || BUSINESS_CONFIG.phone || '';
+
+    const res = await sendUltraMsgWhatsApp({
+      phone: targetPhone,
       message: msg,
       clientName: spec.name,
       bookingCode: `LIQ-${spec.id.toUpperCase()}`
     });
-    notify(`✓ Reporte de liquidación enviado a ${spec.name} por WhatsApp.`);
+    if (res.messageId && !res.messageId.startsWith('static-wa-')) {
+      notify(`✓ Reporte de liquidación enviado a ${spec.name} por WhatsApp.`);
+    } else {
+      notify(`✓ Reporte de liquidación generado para ${spec.name} (modo estático).`);
+    }
   };
 
   // CREATE WALK-IN / TURNO EXPRESS APPOINTMENT
@@ -324,11 +390,10 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
     const cleanClientPhone = sanitizeToPlainText(expressClientPhone);
     const cleanNotes = expressNotes ? `[Walk-in] ${sanitizeToPlainText(expressNotes)}` : '[Turno Express Walk-in en Salón]';
 
-    const selectedServ = SERVICES.find((s) => s.id === expressServiceId) || SERVICES[0];
-    const selectedSpec = SPECIALISTS.find((s) => s.id === expressSpecialistId) || SPECIALISTS[0];
+    const selectedServ = services.find((s) => s.id === expressServiceId) || services[0];
+    const selectedSpec = specialists.find((s) => s.id === expressSpecialistId) || specialists[0];
     const bookingCode = generateBookingCode(appointments.map((a) => a.bookingCode));
     const currentDateISO = getColombiaDateISO();
-    const currentTimeStr = getColombiaTimeStr();
 
     const newApt: Appointment = {
       id: generateSecureId('apt-walkin'),
@@ -342,7 +407,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       specialistRole: selectedSpec.role,
       specialistAvatar: selectedSpec.avatar,
       date: currentDateISO,
-      time: currentTimeStr,
+      time: expressTime,
       clientName: cleanClientName,
       clientPhone: cleanClientPhone,
       notes: cleanNotes,
@@ -351,33 +416,60 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       status: expressStatus,
       bookingCode,
       createdAt: currentDateISO,
-      branchId: admin.branchId || 'chico'
+      branchId: activeBranchId,
+      autorizacionDatos: true,
+      autorizacionFecha: currentDateISO,
+      autorizacionVersion: BUSINESS_CONFIG.dataPolicyVersion
     };
 
-    if (onAddAppointment) {
-      await onAddAppointment(newApt);
-    }
+    setIsSubmittingExpress(true);
+    try {
+      if (onAddAppointment) {
+        await onAddAppointment(newApt);
+      }
 
-    if (expressSendWhatsApp) {
-      const msg = `✨ *${BUSINESS_CONFIG.brandName} - Turno Express Confirmado* ✨\n\nHola ${expressClientName}, bienvenida a nuestro santuario.\n\n💅 *Servicio:* ${selectedServ.name}\n👩‍🎨 *Especialista:* ${selectedSpec.name}\n⏰ *Hora:* ${currentTimeStr}\n🎫 *Turno:* ${bookingCode}\n💵 *Valor:* ${formatCOP(selectedServ.price)}\n\n¡Tu momento de relajación y belleza comienza ahora! ✨`;
-      
-      await sendUltraMsgWhatsApp({
-        phone: expressClientPhone,
-        message: msg,
-        clientName: expressClientName,
-        bookingCode
-      });
-    }
+      if (expressSendWhatsApp) {
+        try {
+          const ultramsgConfig = getUltraMsgConfig();
+          const messageBody = renderTemplate(ultramsgConfig.confirmationTemplate, {
+            cliente: cleanClientName,
+            servicio: selectedServ.name,
+            codigo: bookingCode,
+            fecha: formatDisplayDate(currentDateISO),
+            hora: expressTime,
+            sede: BUSINESS_CONFIG.branchName,
+            monto: formatCOP(selectedServ.price),
+            estado: expressStatus === 'en_preparacion' ? 'En Cabina' : 'Confirmada'
+          });
 
-    setShowExpressModal(false);
-    setExpressClientName('');
-    setExpressNotes('');
-    notify(`✓ Turno Express ${bookingCode} registrado y asignado a ${selectedSpec.name}`);
+          await sendUltraMsgWhatsApp({
+            phone: cleanClientPhone,
+            message: messageBody,
+            clientName: cleanClientName,
+            bookingCode
+          });
+        } catch {
+          // WhatsApp es complementario
+        }
+      }
+
+      setShowExpressModal(false);
+      setExpressClientName('');
+      setExpressNotes('');
+      notify(`✓ Turno Express agendado: ${cleanClientName} (${expressTime} con ${selectedSpec.name})`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al guardar la cita en Firestore.';
+      setExpressValidationError(msg);
+    } finally {
+      setIsSubmittingExpress(false);
+    }
   };
 
-  // Status Change with optional UltraMsg WhatsApp notification
-  const handleStatusChangeWithNotification = async (apt: Appointment, newStatus: Appointment['status']) => {
-    onUpdateStatus(apt.id, newStatus);
+  const handleStatusChangeWithNotification = async (
+    apt: Appointment,
+    newStatus: Appointment['status']
+  ) => {
+    await onUpdateStatus(apt.id, newStatus);
 
     const ultraConfig = getUltraMsgConfig();
     if (ultraConfig.autoNotifyStatusChange) {
@@ -411,7 +503,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
   };
 
   // Submit new Cut with validation, split payment & rate limit
-  const handleSubmitCut = (e: React.FormEvent) => {
+  const handleSubmitCut = async (e: React.FormEvent) => {
     e.preventDefault();
     setCutValidationError(null);
 
@@ -427,10 +519,12 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       return;
     }
 
-    const noteVal = validateOnlyPlainText(cutNote, 'Nota del Servicio', 500);
-    if (!noteVal.isValid) {
-      setCutValidationError(noteVal.reason || 'Nota no válida.');
-      return;
+    if (cutNote && cutNote.trim()) {
+      const noteVal = validateOnlyPlainText(cutNote, 'Nota del Servicio', 500);
+      if (!noteVal.isValid) {
+        setCutValidationError(noteVal.reason || 'Nota no válida.');
+        return;
+      }
     }
 
     const phoneVal = validateColombianPhone(cutClientPhone);
@@ -443,7 +537,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
     const cleanCutClientPhone = sanitizeToPlainText(cutClientPhone);
     const cleanCutNote = sanitizeToPlainText(cutNote);
 
-    const spec = SPECIALISTS.find((s) => s.id === cutSpecialistId) || SPECIALISTS[0];
+    const spec = specialists.find((s) => s.id === cutSpecialistId) || specialists[0];
     const commissionPercent = spec.commissionRate ?? 50;
     const priceNum = Math.max(0, Number(cutServicePrice) || 0);
     const tipNum = Math.max(0, Number(cutTip) || 0);
@@ -461,9 +555,10 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       finalDigitalMethod = cutDigitalMethod;
     }
 
+    // CONSTRUCCIÓN ESTRICTA SIN VALORES UNDEFINED (cumple reglas isValidCut)
     const newCut: SalonCutRecord = {
       id: generateSecureId('cut'),
-      fecha: getColombiaDateISO(),
+      fecha: selectedDate,
       hora: getColombiaTimeStr(),
       clienteNombre: cleanCutClientName,
       clienteTelefono: cleanCutClientPhone,
@@ -476,44 +571,54 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       recaudoSalon,
       propina: tipNum,
       metodoPago: cutPaymentMethod,
-      montoEfectivo: finalMontoEfectivo,
-      montoDigital: finalMontoDigital,
-      digitalMethod: finalDigitalMethod,
-      sucursalId: admin.branchId || 'chico',
-      nota: cleanCutNote
+      ...(cutPaymentMethod === 'mixto' ? {
+        montoEfectivo: finalMontoEfectivo,
+        montoDigital: finalMontoDigital,
+        digitalMethod: finalDigitalMethod
+      } : {}),
+      sucursalId: activeBranchId,
+      ...(cleanCutNote ? { nota: cleanCutNote } : {})
     };
 
-    onRegisterCut(newCut);
+    setIsSubmittingCut(true);
+    try {
+      await onRegisterCut(newCut);
 
-    const ultraConfig = getUltraMsgConfig();
-    if (ultraConfig.autoNotifyPayment) {
-      const paymentMsg = renderTemplate(ultraConfig.paymentTemplate, {
-        cliente: cleanCutClientName,
-        codigo: newCut.id.toUpperCase(),
-        servicio: cutServiceName,
-        fecha: formatDisplayDate(newCut.fecha),
-        hora: newCut.hora,
-        sede: `${BUSINESS_CONFIG.address}, ${BUSINESS_CONFIG.city}`,
-        estado: 'Pagado',
-        monto: formatCOP(totalCobro)
-      });
+      const ultraConfig = getUltraMsgConfig();
+      if (ultraConfig.autoNotifyPayment) {
+        const paymentMsg = renderTemplate(ultraConfig.paymentTemplate, {
+          cliente: cleanCutClientName,
+          codigo: newCut.id.toUpperCase(),
+          servicio: cutServiceName,
+          fecha: formatDisplayDate(newCut.fecha),
+          hora: newCut.hora,
+          sede: `${BUSINESS_CONFIG.address}, ${BUSINESS_CONFIG.city}`,
+          estado: 'Pagado',
+          monto: formatCOP(totalCobro)
+        });
 
-      sendUltraMsgWhatsApp({
-        phone: cleanCutClientPhone,
-        message: paymentMsg,
-        clientName: cleanCutClientName,
-        bookingCode: newCut.id.toUpperCase()
-      });
+        sendUltraMsgWhatsApp({
+          phone: cleanCutClientPhone,
+          message: paymentMsg,
+          clientName: cleanCutClientName,
+          bookingCode: newCut.id.toUpperCase()
+        });
+      }
+
+      setShowNewCutModal(false);
+      setCutClientName('');
+      setCutNote('');
+      notify(`✓ Cobro registrado: ${formatCOP(priceNum)} (${spec.name} +${formatCOP(comisionEspecialista)})`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al registrar el cobro en Firestore.';
+      setCutValidationError(msg);
+    } finally {
+      setIsSubmittingCut(false);
     }
-
-    setShowNewCutModal(false);
-    setCutClientName('');
-    setCutNote('');
-    notify(`✓ Cobro registrado: ${formatCOP(priceNum)} (${spec.name} +${formatCOP(comisionEspecialista)})`);
   };
 
   // Submit expense
-  const handleSubmitExpense = (e: React.FormEvent) => {
+  const handleSubmitExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     setExpenseValidationError(null);
 
@@ -533,45 +638,67 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 
     const newExp: ExpenseRecord = {
       id: generateSecureId('exp'),
-      fecha: getColombiaDateISO(),
+      fecha: selectedDate,
       concepto: cleanConcept,
       categoria: expenseCategory,
       monto: amountNum,
-      sucursalId: admin.branchId || 'chico',
-      registradoPor: admin.name
+      sucursalId: activeBranchId,
+      registradoPor: activeUserName
     };
 
-    onAddExpense(newExp);
-    setShowExpenseModal(false);
-    setExpenseConcept('');
+    setIsSubmittingExpense(true);
+    try {
+      await onAddExpense(newExp);
+      setShowExpenseModal(false);
+      setExpenseConcept('');
+      notify(`✓ Gasto de ${formatCOP(amountNum)} registrado en caja menor.`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al registrar el gasto en Firestore.';
+      setExpenseValidationError(msg);
+    } finally {
+      setIsSubmittingExpense(false);
+    }
   };
 
   // Submit cash close with real-time discrepancy checking
-  const handleSaveClose = () => {
+  const handleSaveClose = async () => {
+    if (expectedCashInHand < 0) {
+      notify('⚠ No se puede cerrar la caja con efectivo esperado negativo.');
+      return;
+    }
+
     const diff = countedCash - expectedCashInHand;
     const newClose: CashRegisterClose = {
       id: generateSecureId('close'),
-      fecha: getColombiaDateISO(),
+      fecha: selectedDate,
       hora: getColombiaTimeStr(),
       baseInicial: cashBase,
       entradasEfectivo: totalCashIncome,
       entradasDigitales: totalDigitalIncome,
       egresosGastos: totalExpensesAmount,
-      efectivoEsperado: expectedCashInHand,
-      efectivoContado: countedCash,
+      efectivoEsperado: Math.max(0, expectedCashInHand),
+      efectivoContado: Math.max(0, countedCash),
       diferencia: diff,
       estado: Math.abs(diff) < 100 ? 'cuadrada' : 'descuadre',
-      responsableNombre: admin.name,
-      sucursalId: admin.branchId || 'chico'
+      responsableNombre: activeUserName,
+      sucursalId: activeBranchId
     };
 
-    onSaveCashClose(newClose);
-    setShowCloseModal(false);
-    notify(
-      Math.abs(diff) < 100
-        ? '✓ Cierre de caja guardado con éxito. Caja Cuadrada.'
-        : `⚠ Cierre de caja guardado con diferencia de ${formatCOP(diff)}.`
-    );
+    setIsSubmittingClose(true);
+    try {
+      await onSaveCashClose(newClose);
+      setShowCloseModal(false);
+      notify(
+        Math.abs(diff) < 100
+          ? '✓ Cierre de caja guardado con éxito. Caja Cuadrada.'
+          : `⚠ Cierre de caja guardado con diferencia de ${formatCOP(diff)}.`
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al guardar el arqueo de caja.';
+      notify(`⚠ ${msg}`);
+    } finally {
+      setIsSubmittingClose(false);
+    }
   };
 
   // Calculate quick change for cash payment
@@ -588,32 +715,30 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       
       {/* Admin Credentials & Quick Highlights Banner */}
       <div className="rounded-3xl bg-gradient-to-r from-[#F4EFE9] via-[#C6BDAC]/30 to-[#F4EFE9] p-6 sm:p-7 text-[#2B2420] border border-[#C6BDAC]/80 shadow-xs relative overflow-hidden">
-        <div className="absolute -right-8 -bottom-8 w-44 h-44 rounded-full bg-[#C6BDAC]/40/20 blur-2xl pointer-events-none" />
+        <div className="absolute -right-8 -bottom-8 w-44 h-44 rounded-full bg-[#C6BDAC]/40 blur-2xl pointer-events-none" />
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 relative z-10">
           <div className="flex items-center gap-3">
-            <img
-              src={admin.avatar}
-              alt={admin.name}
-              className="w-14 h-14 rounded-full object-cover ring-2 ring-[#2B2420]/25 shadow-xs"
-            />
+            <div className="w-14 h-14 rounded-full bg-[#2B2420] text-white flex items-center justify-center font-bold text-lg ring-2 ring-[#2B2420]/25 shadow-xs">
+              {activeUserName.charAt(0).toUpperCase()}
+            </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg sm:text-xl font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#2B2420]">
-                  {admin.name}
+                  {activeUserName}
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-[#BB9C87]/10 text-[#2B2420] text-[10px] font-bold tracking-wider uppercase border border-[#BB9C87]/20">
-                  ★ {admin.role}
+                <span className="px-2.5 py-0.5 rounded-full bg-[#BB9C87]/20 text-[#2B2420] text-[10px] font-bold tracking-wider uppercase border border-[#BB9C87]/40">
+                  ★ {activeUserRole}
                 </span>
               </div>
-              <p className="text-xs text-[#5A4A43]">{admin.title} · {admin.branch}</p>
+              <p className="text-xs text-[#5A4A43]">{activeBranchName} · Panel de Control</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/70 text-emerald-800 text-xs font-mono border border-emerald-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Firestore Sincronizado
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/80 text-emerald-900 text-xs font-medium border border-emerald-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+              Conexión Activa
             </span>
           </div>
         </div>
@@ -621,22 +746,22 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         {/* Quick Metrics in COP */}
         <div className="pt-4 border-t border-[#C6BDAC]/60 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center relative z-10">
           <div className="p-2.5 rounded-2xl bg-white/80 border border-[#C6BDAC]/50 shadow-2xs">
-            <span className="text-[10px] text-[#5A4A43] block uppercase tracking-wider font-semibold">Citas Hoy</span>
+            <span className="text-[10px] text-[#5A4A43] block uppercase tracking-wider font-semibold">Citas Registradas</span>
             <strong className="text-base sm:text-lg font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#2B2420]">{totalCount}</strong>
           </div>
           <div className="p-2.5 rounded-2xl bg-white/80 border border-[#C6BDAC]/50 shadow-2xs">
-            <span className="text-[10px] text-[#5A4A43] block uppercase tracking-wider font-semibold">Caja Efectivo</span>
-            <strong className="text-base sm:text-lg font-bold text-[#2B2420] font-mono">
+            <span className="text-[10px] text-[#5A4A43] block uppercase tracking-wider font-semibold">Caja en Gaveta</span>
+            <strong className={`text-base sm:text-lg font-bold font-mono ${expectedCashInHand < 0 ? 'text-rose-700' : 'text-[#2B2420]'}`}>
               {formatCOP(expectedCashInHand)}
             </strong>
           </div>
           <div className="p-2.5 rounded-2xl bg-white/80 border border-[#C6BDAC]/50 shadow-2xs">
-            <span className="text-[10px] text-[#5A4A43] block uppercase tracking-wider font-semibold">Cortes / Cobros</span>
-            <strong className="text-base sm:text-lg font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#2B2420]">{cuts.length}</strong>
+            <span className="text-[10px] text-[#5A4A43] block uppercase tracking-wider font-semibold">Cobros ({formatDisplayDate(selectedDate)})</span>
+            <strong className="text-base sm:text-lg font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#2B2420]">{dayCuts.length}</strong>
           </div>
           <div className="p-2.5 rounded-2xl bg-white/80 border border-[#C6BDAC]/50 shadow-2xs">
             <span className="text-[10px] text-[#5A4A43] block uppercase tracking-wider font-semibold">Directorio Clientes</span>
-            <strong className="text-base sm:text-lg font-bold text-emerald-700 font-['Plus_Jakarta_Sans',sans-serif]">
+            <strong className="text-base sm:text-lg font-bold text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
               {clientProfiles.length}
             </strong>
           </div>
@@ -670,17 +795,19 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
             <span>Caja &amp; Arqueo</span>
           </button>
 
-          <button
-            onClick={() => handleSelectTab('cortes')}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeAdminTab === 'cortes'
-                ? 'bg-[#BB9C87] text-[#2B2420] font-bold shadow-xs'
-                : 'bg-white text-[#5A4A43] hover:bg-[#C6BDAC]/40 border border-[#C6BDAC]/70'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">receipt_long</span>
-            <span>Liquidación</span>
-          </button>
+          {!isCajaRole && (
+            <button
+              onClick={() => handleSelectTab('cortes')}
+              className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeAdminTab === 'cortes'
+                  ? 'bg-[#BB9C87] text-[#2B2420] font-bold shadow-xs'
+                  : 'bg-white text-[#5A4A43] hover:bg-[#C6BDAC]/40 border border-[#C6BDAC]/70'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]">receipt_long</span>
+              <span>Liquidación</span>
+            </button>
+          )}
 
           <button
             onClick={() => handleSelectTab('clientes')}
@@ -729,28 +856,40 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
           onTableReady={handleTableReady}
           onStatusChangeWithNotification={handleStatusChangeWithNotification}
           onSelectAppointmentForQr={setSelectedAppointmentForQr}
+          onDeleteAppointment={onDeleteAppointment ? (apt) => onDeleteAppointment(apt.id, { date: apt.date, specialistId: apt.specialistId, time: apt.time }) : undefined}
+          userRole={activeUserRole}
+          specialists={specialists}
         />
       )}
 
       {/* 2. CAJA & ARQUEO TAB */}
       {activeAdminTab === 'caja' && (
         <AdminCajaTab
-          cuts={cuts}
+          cuts={dayCuts}
+          allExpenses={dayExpenses}
           cashBase={cashBase}
           totalCashIncome={totalCashIncome}
           totalExpensesAmount={totalExpensesAmount}
           expectedCashInHand={expectedCashInHand}
           totalDigitalIncome={totalDigitalIncome}
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          branchName={activeBranchName}
+          registeredBy={activeUserName}
           onOpenNewCutModal={() => setShowNewCutModal(true)}
           onOpenExpenseModal={() => setShowExpenseModal(true)}
           onOpenCloseModal={() => setShowCloseModal(true)}
         />
       )}
 
-      {/* 3. CORTES & LIQUIDACIÓN TAB */}
-      {activeAdminTab === 'cortes' && (
+      {/* 3. CORTES & LIQUIDACIÓN TAB (Oculto para rol Caja) */}
+      {activeAdminTab === 'cortes' && !isCajaRole && (
         <AdminCortesTab
           specialistsLiquidation={specialistsLiquidation}
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          branchName={activeBranchName}
+          registeredBy={activeUserName}
           onSendSpecialistLiquidation={handleSendSpecialistLiquidation}
         />
       )}
@@ -775,6 +914,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         setExpressServiceId={setExpressServiceId}
         expressSpecialistId={expressSpecialistId}
         setExpressSpecialistId={setExpressSpecialistId}
+        expressTime={expressTime}
+        setExpressTime={setExpressTime}
         expressStatus={expressStatus}
         setExpressStatus={setExpressStatus}
         expressNotes={expressNotes}
@@ -782,8 +923,9 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         expressSendWhatsApp={expressSendWhatsApp}
         setExpressSendWhatsApp={setExpressSendWhatsApp}
         expressValidationError={expressValidationError}
-        services={SERVICES}
-        specialists={SPECIALISTS}
+        services={services}
+        specialists={specialists}
+        isSubmitting={isSubmittingExpress}
         onSubmit={handleCreateExpressAppointment}
       />
 
@@ -795,12 +937,16 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         setCutClientName={setCutClientName}
         cutClientPhone={cutClientPhone}
         setCutClientPhone={setCutClientPhone}
+        cutServiceName={cutServiceName}
+        setCutServiceName={setCutServiceName}
         cutServicePrice={cutServicePrice}
         setCutServicePrice={setCutServicePrice}
         cutTip={cutTip}
         setCutTip={setCutTip}
         cutSpecialistId={cutSpecialistId}
         setCutSpecialistId={setCutSpecialistId}
+        cutNote={cutNote}
+        setCutNote={setCutNote}
         cutPaymentMethod={cutPaymentMethod}
         setCutPaymentMethod={setCutPaymentMethod}
         cutMontoEfectivo={cutMontoEfectivo}
@@ -813,7 +959,9 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         targetCashToPay={targetCashToPay}
         cashChange={cashChange}
         cutValidationError={cutValidationError}
-        specialists={SPECIALISTS}
+        services={services}
+        specialists={specialists}
+        isSubmitting={isSubmittingCut}
         onSubmit={handleSubmitCut}
       />
 
@@ -823,9 +971,12 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         onClose={() => setShowExpenseModal(false)}
         expenseConcept={expenseConcept}
         setExpenseConcept={setExpenseConcept}
+        expenseCategory={expenseCategory}
+        setExpenseCategory={setExpenseCategory}
         expenseAmount={expenseAmount}
         setExpenseAmount={setExpenseAmount}
         expenseValidationError={expenseValidationError}
+        isSubmitting={isSubmittingExpense}
         onSubmit={handleSubmitExpense}
       />
 
@@ -833,10 +984,13 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       <CashCloseModal
         isOpen={showCloseModal}
         onClose={() => setShowCloseModal(false)}
+        cashBase={cashBase}
+        setCashBase={setCashBase}
         expectedCashInHand={expectedCashInHand}
         countedCash={countedCash}
         setCountedCash={setCountedCash}
         onSaveClose={handleSaveClose}
+        isSubmitting={isSubmittingClose}
       />
 
       {/* MODAL 5: PASE QR */}

@@ -182,12 +182,24 @@ service cloud.firestore {
                        request.resource.data.slot is string &&
                        request.resource.data.date is string &&
                        request.resource.data.specialistId is string &&
-                       // el bloqueo solo nace junto con la cita nueva que lo origina (misma transacción)
-                       !exists(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)) &&
-                       existsAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)) &&
-                       getAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.date == request.resource.data.date &&
-                       getAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.time == request.resource.data.slot &&
-                       getAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.specialistId == request.resource.data.specialistId;
+                       (
+                         // (1) Reserva nueva: el bloqueo nace junto con la cita nueva que lo origina (misma transacción)
+                         (
+                           !exists(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)) &&
+                           existsAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)) &&
+                           getAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.date == request.resource.data.date &&
+                           getAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.time == request.resource.data.slot &&
+                           getAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.specialistId == request.resource.data.specialistId
+                         ) ||
+                         // (2) Reactivar una cita cancelada: solo el personal puede recrear el bloqueo de una cita que ya existe y coincide
+                         (
+                           esStaff() &&
+                           exists(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)) &&
+                           get(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.date == request.resource.data.date &&
+                           get(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.time == request.resource.data.slot &&
+                           get(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.specialistId == request.resource.data.specialistId
+                         )
+                       );
       allow update: if false;
       allow delete: if esStaff();
     }

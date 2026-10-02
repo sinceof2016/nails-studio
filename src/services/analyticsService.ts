@@ -69,6 +69,28 @@ export async function disableAnalytics(): Promise<void> {
       // Ignorar
     }
   }
+  if (typeof document !== 'undefined') {
+    // Eliminar cookies de Google Analytics (_ga*, _gid*, _gat*, etc.)
+    const cookies = document.cookie.split(';');
+    const hostname = window.location.hostname;
+    const domainParts = hostname.split('.');
+    const parentDomain = domainParts.length > 1 ? `.${domainParts.slice(-2).join('.')}` : hostname;
+    const paths = ['/', '/nails-studio', '/nails-studio/'];
+
+    for (const cookie of cookies) {
+      const name = cookie.split('=')[0].trim();
+      if (name.startsWith('_ga') || name.startsWith('_gid') || name.startsWith('_gat')) {
+        for (const path of paths) {
+          document.cookie = `${name}=; Path=${path}; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
+          document.cookie = `${name}=; Path=${path}; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Domain=${hostname};`;
+          document.cookie = `${name}=; Path=${path}; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Domain=.${hostname};`;
+          if (parentDomain !== hostname) {
+            document.cookie = `${name}=; Path=${path}; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Domain=${parentDomain};`;
+          }
+        }
+      }
+    }
+  }
 }
 
 /**

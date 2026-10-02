@@ -28,6 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
   const allTabs: { id: AppTab; label: string; icon: string; badge?: number; minRole: 'public' | 'caja' | 'admin' | 'superadmin' }[] = [
     { id: 'reservar', label: 'Reservar Turno', icon: 'calendar_month', minRole: 'public' },
     { id: 'servicios', label: 'Servicios & Carta', icon: 'spa', minRole: 'public' },
+    { id: 'especialistas', label: 'Especialistas', icon: 'face', minRole: 'public' },
     {
       id: 'agenda',
       label: 'Libro de Citas',

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { Toast } from './components/Toast';
 import { LoginModal } from './components/LoginModal';
@@ -56,6 +56,7 @@ import {
   touchSession,
   getActiveSession
 } from './services/sessionManager';
+import { logoutVault } from './services/securityVault';
 import {
   NOTIFICATIONS,
   SERVICES,
@@ -64,12 +65,15 @@ import {
   ADMIN_USER,
   SYSTEM_USERS
 } from './data/mockData';
-import { doc, deleteDoc } from 'firebase/firestore';
+import { doc, deleteDoc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import {
   subscribeToAppointments,
-  saveAppointmentToFirestore,
+  saveAppointmentWithLockInFirestore,
   updateAppointmentStatusInFirestore,
+  reactivateAppointmentWithLockInFirestore,
+  cancelAppointmentWithLockReleaseInFirestore,
+  deleteAppointmentInFirestore,
   subscribeToSlotLocks,
   getSlotLockDocId,
   subscribeToSalonCuts,
@@ -120,9 +124,7 @@ export default function App() {
 
   const handleNavigateTab = (tab: AppTab) => {
     setCurrentTab(tab);
-    if (tab === 'reservar' || tab === 'servicios') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Listen for hash / path changes to route to 404 or specific tabs
@@ -281,6 +283,7 @@ export default function App() {
   };
 
   const handleRevokeCookies = () => {
+    disableAnalytics();
     revokeConsent();
     setCookieConsent(null);
     setIsCookieBannerOpen(true);
@@ -376,11 +379,17 @@ export default function App() {
     }
   }, [notifications]);
 
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const showToast = (message: string) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
     setToastMessage(message);
-    setTimeout(() => {
+    toastTimeoutRef.current = setTimeout(() => {
       setToastMessage(null);
-    }, 3200);
+      toastTimeoutRef.current = null;
+    }, 3500);
   };
 
   // Handlers
@@ -388,20 +397,29 @@ export default function App() {
     setBookingService(service);
     showToast(`${service.name} seleccionado`);
     setCurrentTab('reservar');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBookWithSpecialist = (specialist: Specialist) => {
     setBookingSpecialist(specialist);
     showToast(`Especialista ${specialist.name} asignada`);
     setCurrentTab('reservar');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleApplyPromo = (percent: number) => {
+    if (percent <= 0) {
+      setPromoDiscount(0);
+      setCurrentTab('reservar');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     setPromoDiscount(percent);
-    const promoService = SERVICES.find((s) => s.id === 'manicura-rusa-glazed') || SERVICES[0];
+    const promoService = services.find((s) => s.id === 'manicura-rusa-glazed') || services[0];
     setBookingService(promoService);
     showToast(`¡${percent}% OFF aplicado con éxito!`);
     setCurrentTab('reservar');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBookingSuccess = (newAppointment: Appointment) => {
@@ -410,49 +428,73 @@ export default function App() {
     trackBookingConfirmed(newAppointment.serviceId, BUSINESS_CONFIG.branchName);
   };
 
+  const handleAddExpressAppointment = async (newAppointment: Appointment) => {
+    await saveAppointmentWithLockInFirestore(newAppointment);
+    setAppointments((prev) => [newAppointment, ...prev]);
+    showToast(`¡Turno express ${newAppointment.bookingCode} guardado en Firestore!`);
+  };
+
   const handleUpdateStatus = async (id: string, newStatus: Appointment['status']) => {
     const previous = appointments.find((a) => a.id === id);
-    setAppointments((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
-    );
+    if (!previous || previous.status === newStatus) return;
+
+    if (newStatus === 'cancelada') {
+      try {
+        await cancelAppointmentWithLockReleaseInFirestore(previous);
+        setAppointments((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, status: 'cancelada' as const } : a))
+        );
+        showToast('Cita cancelada y horario liberado.');
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : 'Error al cancelar la cita en Firestore.';
+        showToast(`⚠ Error: ${msg}`);
+      }
+      return;
+    }
+
+    if (previous.status === 'cancelada' && (newStatus === 'confirmada' || newStatus === 'en_preparacion')) {
+      try {
+        await reactivateAppointmentWithLockInFirestore(previous, newStatus);
+        setAppointments((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
+        );
+        showToast(`✓ Cita reactivada con éxito. Horario bloqueado. Estado: ${newStatus === 'en_preparacion' ? 'En Cabina' : 'Confirmada'}`);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : 'Error al reactivar la cita en Firestore.';
+        showToast(`⚠ ${msg}`);
+      }
+      return;
+    }
+
     try {
       await updateAppointmentStatusInFirestore(id, newStatus);
-      showToast(`Estado actualizado: ${newStatus}`);
+      setAppointments((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
+      );
+      showToast(`✓ Estado actualizado: ${newStatus === 'en_preparacion' ? 'En Cabina' : newStatus === 'completada' ? 'Completada' : newStatus}`);
     } catch (error) {
-      if (previous) {
-        setAppointments((prev) =>
-          prev.map((a) => (a.id === id ? previous : a))
-        );
-      }
       const msg = error instanceof Error ? error.message : 'Error al actualizar estado en Firestore.';
       showToast(`⚠ Error: ${msg}`);
     }
   };
 
-  const handleCancelAppointment = async (id: string) => {
+  const handleDeleteAppointment = async (
+    id: string,
+    extra?: { date?: string; specialistId?: string; time?: string }
+  ) => {
     const previous = appointments.find((a) => a.id === id);
-    setAppointments((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status: 'cancelada' as const } : a))
-    );
+    const date = extra?.date || previous?.date;
+    const specialistId = extra?.specialistId || previous?.specialistId;
+    const time = extra?.time || previous?.time;
+
     try {
-      await updateAppointmentStatusInFirestore(id, 'cancelada');
-      if (previous) {
-        try {
-          const lockId = getSlotLockDocId(previous.date, previous.specialistId, previous.time);
-          await deleteDoc(doc(db, 'slot_locks', lockId));
-        } catch {
-          // Ignorar si el bloqueo ya fue liberado
-        }
-      }
-      showToast('Cita cancelada.');
+      await deleteAppointmentInFirestore(id, { date, specialistId, time });
+      setAppointments((prev) => prev.filter((a) => a.id !== id));
+      showToast('Cita eliminada permanentemente y horario liberado.');
     } catch (error) {
-      if (previous) {
-        setAppointments((prev) =>
-          prev.map((a) => (a.id === id ? previous : a))
-        );
-      }
-      const msg = error instanceof Error ? error.message : 'Error al cancelar la cita en Firestore.';
+      const msg = error instanceof Error ? error.message : 'Error al eliminar cita en Firestore.';
       showToast(`⚠ Error: ${msg}`);
+      throw error;
     }
   };
 
@@ -464,6 +506,7 @@ export default function App() {
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Error al registrar el cobro en Firestore.';
       showToast(`⚠ Error: ${msg}`);
+      throw error;
     }
   };
 
@@ -475,6 +518,7 @@ export default function App() {
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Error al registrar el gasto en Firestore.';
       showToast(`⚠ Error: ${msg}`);
+      throw error;
     }
   };
 
@@ -486,6 +530,7 @@ export default function App() {
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Error al guardar el arqueo de caja.';
       showToast(`⚠ Error: ${msg}`);
+      throw error;
     }
   };
 
@@ -501,7 +546,8 @@ export default function App() {
     showToast(`Sesión iniciada como: ${user.nombre} (${user.rol})`);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logoutVault();
     clearSession();
     setCurrentUser(null);
     setCurrentTab('servicios');
@@ -516,7 +562,7 @@ export default function App() {
       } catch {}
       return updated;
     });
-    showToast(`Usuario ${newUser.nombre} creado exitosamente.`);
+    showToast('Esta lista es solo local. Para dar acceso, crea la cuenta en la consola de Firebase y el perfil con el UID.');
   };
 
   const handleUpdateUser = (updatedUser: SystemUser, password?: string) => {
@@ -720,20 +766,24 @@ export default function App() {
           currentTab === 'cobro' ||
           currentTab === 'liquidaciones' ||
           currentTab === 'caja' ||
-          currentTab === 'clientes') && (
+          currentTab === 'clientes') && isStaff && currentUser ? (
           <AdminScreen
-            admin={ADMIN_USER}
+            admin={currentUser}
+            currentUser={currentUser}
             appointments={appointments}
             cuts={cuts}
             expenses={expenses}
             cashCloses={cashCloses}
+            services={services}
+            specialists={specialists}
             onUpdateStatus={handleUpdateStatus}
-            onCancelAppointment={handleCancelAppointment}
+            onCancelAppointment={(id) => handleUpdateStatus(id, 'cancelada')}
+            onDeleteAppointment={handleDeleteAppointment}
             onNavigateToBooking={() => setCurrentTab('reservar')}
             onRegisterCut={handleRegisterCut}
             onAddExpense={handleAddExpense}
             onSaveCashClose={handleSaveCashClose}
-            onAddAppointment={handleBookingSuccess}
+            onAddAppointment={handleAddExpressAppointment}
             onToast={showToast}
             initialTab={getAdminInitialTab(currentTab)}
             onTabChange={(adminTab) => {
@@ -743,7 +793,25 @@ export default function App() {
               else if (adminTab === 'clientes') setCurrentTab('clientes');
             }}
           />
-        )}
+        ) : (currentTab === 'agenda' ||
+          currentTab === 'cobro' ||
+          currentTab === 'liquidaciones' ||
+          currentTab === 'caja' ||
+          currentTab === 'clientes') ? (
+          <div className="p-8 text-center bg-white rounded-3xl border border-[#C6BDAC] max-w-md mx-auto my-8 space-y-3">
+            <span className="material-symbols-outlined text-[48px] text-[#BB9C87]">lock</span>
+            <h3 className="text-lg font-bold text-[#2B2420]">Acceso Exclusivo para Personal</h3>
+            <p className="text-xs text-[#5A4A43]">
+              Para ingresar al panel de control de La Pelu SPA debes iniciar sesión con tu cuenta verificada.
+            </p>
+            <button
+              onClick={() => setIsLoginModalOpen(true)}
+              className="px-6 py-2.5 rounded-full bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] text-xs font-bold transition-all cursor-pointer shadow-xs"
+            >
+              Iniciar Sesión
+            </button>
+          </div>
+        ) : null}
 
         {/* GESTIÓN DE USUARIOS, SERVICIOS, CATEGORÍAS & MANICURISTAS - EXCLUSIVO PARA SUPERADMIN */}
         {currentTab === 'usuarios' && currentUser && (
@@ -920,6 +988,10 @@ export default function App() {
           setIsCookiePolicyOpen(false);
           setIsCookieSettingsOpen(true);
         }}
+        onOpenDataPolicy={() => {
+          setIsCookiePolicyOpen(false);
+          setIsDataPolicyOpen(true);
+        }}
       />
 
       {/* Legal Modals */}
@@ -938,6 +1010,10 @@ export default function App() {
       <TermsAndConditionsModal
         isOpen={isTermsOpen}
         onClose={() => setIsTermsOpen(false)}
+        onOpenCancellationPolicy={() => {
+          setIsTermsOpen(false);
+          setIsCancellationPolicyOpen(true);
+        }}
       />
       <CancellationPolicyModal
         isOpen={isCancellationPolicyOpen}

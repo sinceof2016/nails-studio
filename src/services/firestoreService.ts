@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Appointment, SalonCutRecord, ExpenseRecord, CashRegisterClose, SlotLock } from '../types';
+import { getColombiaDateISO } from '../utils/dateAndId';
 
 const APPOINTMENTS_COLLECTION = 'appointments';
 const SLOT_LOCKS_COLLECTION = 'slot_locks';
@@ -108,6 +109,53 @@ export async function updateAppointmentStatusInFirestore(
 ): Promise<void> {
   const docRef = doc(db, APPOINTMENTS_COLLECTION, appointmentId);
   await updateDoc(docRef, { status: newStatus });
+}
+
+// Reactivate a cancelled appointment with slot lock in a single transaction
+export async function reactivateAppointmentWithLockInFirestore(
+  appointment: Appointment,
+  newStatus: Appointment['status']
+): Promise<void> {
+  const lockId = getSlotLockDocId(appointment.date, appointment.specialistId, appointment.time);
+  const lockDocRef = doc(db, SLOT_LOCKS_COLLECTION, lockId);
+  const aptDocRef = doc(db, APPOINTMENTS_COLLECTION, appointment.id);
+
+  await runTransaction(db, async (transaction) => {
+    const lockSnap = await transaction.get(lockDocRef);
+    if (lockSnap.exists()) {
+      throw new Error(`El horario de las ${appointment.time} con ${appointment.specialistName} ya se encuentra ocupado por otra cita.`);
+    }
+
+    const aptSnap = await transaction.get(aptDocRef);
+    if (!aptSnap.exists()) {
+      throw new Error(`La cita con ID ${appointment.id} no existe en Firestore.`);
+    }
+
+    const lockData: SlotLock = {
+      appointmentId: appointment.id,
+      slot: appointment.time,
+      date: appointment.date,
+      specialistId: appointment.specialistId,
+      createdAt: getColombiaDateISO()
+    };
+
+    transaction.set(lockDocRef, lockData);
+    transaction.update(aptDocRef, { status: newStatus });
+  });
+}
+
+// Cancel appointment and release its lock in a single atomic transaction
+export async function cancelAppointmentWithLockReleaseInFirestore(
+  appointment: Appointment
+): Promise<void> {
+  const lockId = getSlotLockDocId(appointment.date, appointment.specialistId, appointment.time);
+  const lockDocRef = doc(db, SLOT_LOCKS_COLLECTION, lockId);
+  const aptDocRef = doc(db, APPOINTMENTS_COLLECTION, appointment.id);
+
+  await runTransaction(db, async (transaction) => {
+    transaction.update(aptDocRef, { status: 'cancelada' });
+    transaction.delete(lockDocRef);
+  });
 }
 
 // Delete appointment in Firestore (y libera su bloqueo de horario si existe)

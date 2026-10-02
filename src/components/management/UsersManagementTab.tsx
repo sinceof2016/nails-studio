@@ -29,11 +29,27 @@ export const UsersManagementTab: React.FC<UsersManagementTabProps> = ({
         </div>
         <button
           onClick={onOpenCreateModal}
-          className="px-4 py-2 rounded-full bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+          className="px-4 py-2 rounded-full bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
         >
           <span className="material-symbols-outlined text-[16px]">person_add</span>
-          <span>+ Nuevo Usuario</span>
+          <span>+ Nuevo Perfil Local</span>
         </button>
+      </div>
+
+      {/* Guía Breve de Aprovisionamiento Oficial para SuperAdmin */}
+      <div className="bg-[#F4EFE9] rounded-2xl p-4 sm:p-5 border border-[#C6BDAC] text-xs space-y-2.5">
+        <div className="flex items-center gap-2 text-[#2B2420] font-bold">
+          <span className="material-symbols-outlined text-[18px] text-[#BB9C87]">admin_panel_settings</span>
+          <span>Guía para SuperAdmin: Aprovisionamiento de Acceso Real</span>
+        </div>
+        <p className="text-[#5A4A43] text-[11px] leading-relaxed">
+          Para habilitar el ingreso de un nuevo miembro del equipo en el sistema oficial, sigue estos 3 pasos en Firebase:
+        </p>
+        <ol className="list-decimal list-inside space-y-1 text-[#2B2420] text-[11px] font-medium bg-white/70 p-3 rounded-xl border border-[#C6BDAC]/60">
+          <li><strong>Crear cuenta en Authentication:</strong> Ingresa a la consola de Firebase &gt; <em>Authentication &gt; Users &gt; Add user</em> (Email y Contraseña).</li>
+          <li><strong>Copiar el UID:</strong> Copia el identificador único (UID) generado automáticamente por Firebase Auth.</li>
+          <li><strong>Crear el perfil en Firestore:</strong> En la colección <code className="bg-[#F4EFE9] px-1 py-0.5 rounded font-mono text-[#5A4A43]">users/{'{uid}'}</code>, crea el documento con el UID como ID y los campos: <code className="font-mono text-[#5A4A43]">rol</code> ('SuperAdmin' | 'Administrador' | 'Caja'), <code className="font-mono text-[#5A4A43]">sucursalAsignada</code> ('chico' | 'todas'), <code className="font-mono text-[#5A4A43]">nombre</code>, <code className="font-mono text-[#5A4A43]">email</code>, <code className="font-mono text-[#5A4A43]">puedeVerApi</code> (bool) y <code className="font-mono text-[#5A4A43]">puedeVerUsuarios</code> (bool).</li>
+        </ol>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

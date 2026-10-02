@@ -17,8 +17,8 @@ export const AdminClientesTab: React.FC<AdminClientesTabProps> = ({
         <h3 className="text-base font-bold text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
           Directorio de Clientes ({clientProfiles.length})
         </h3>
-        <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-          100% Verificados
+        <span className="text-xs text-[#5A4A43] font-medium bg-[#F4EFE9] px-3 py-1 rounded-full border border-[#C6BDAC]">
+          Historial de Citas y Cobros
         </span>
       </div>
 

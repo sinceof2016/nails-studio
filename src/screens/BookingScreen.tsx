@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Service, Specialist, Appointment, SlotLock } from '../types';
-import { SERVICES, SPECIALISTS } from '../data/mockData';
+import { SERVICES, SPECIALISTS, ADD_ON_OPTIONS } from '../data/mockData';
 import { formatCOP } from '../utils/format';
 import { sendUltraMsgWhatsApp, getUltraMsgConfig, renderTemplate } from '../services/whatsappService';
 import { saveAppointmentWithLockInFirestore } from '../services/firestoreService';
@@ -207,7 +207,10 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
 
   // Pricing Calculation in COP
   const basePrice = selectedService ? selectedService.price : 0;
-  const addOnsTotal = selectedAddOns.length * 25000;
+  const addOnsTotal = selectedAddOns.reduce((acc, name) => {
+    const opt = ADD_ON_OPTIONS.find((a) => a.name === name);
+    return acc + (opt ? opt.price : 0);
+  }, 0);
   const subtotal = basePrice + addOnsTotal;
   const discountAmount = promoDiscountPercent > 0 ? (subtotal * promoDiscountPercent) / 100 : 0;
   const finalPrice = Math.max(0, subtotal - discountAmount);
@@ -400,6 +403,16 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
         onNavigateToAppointments={onNavigateToAppointments}
         onReset={() => {
           setBookingConfirmed(null);
+          setClientName('');
+          setClientPhone('');
+          setClientNotes('');
+          setSelectedTime('');
+          setAcceptedDataPolicy(false);
+          setSelectedAddOns([]);
+          setSelectedPolish('Hailey Glazed Pearl');
+          setSelectedShape('Almendra Suave');
+          setFormError(null);
+          setDataPolicyError(false);
           setStep(1);
         }}
       />
@@ -519,6 +532,8 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
           <BookingStepCustomization
             selectedShape={selectedShape}
             setSelectedShape={setSelectedShape}
+            selectedPolish={selectedPolish}
+            setSelectedPolish={setSelectedPolish}
             selectedAddOns={selectedAddOns}
             toggleAddOn={toggleAddOn}
             onBack={() => goToStep(2)}

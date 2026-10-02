@@ -34,6 +34,8 @@ export interface Specialist {
   availableDays: string[];
   specialties: string[];
   commissionRate: number; // e.g. 50%
+  phone?: string;
+  telefono?: string;
 }
 
 export interface PolishSwatch {
@@ -99,7 +101,7 @@ export interface Appointment {
   bookingCode: string;
   createdAt: string;
   notifiedViaWhatsApp?: boolean;
-  branchId?: 'chico' | 'usaquen' | 'chapinero';
+  branchId?: string;
   isGroupBooking?: boolean;
   groupGuestsCount?: number;
   autorizacionDatos?: boolean;
@@ -125,7 +127,7 @@ export interface SalonCutRecord {
   montoEfectivo?: number;
   montoDigital?: number;
   digitalMethod?: 'nequi_daviplata' | 'tarjeta_datafono';
-  sucursalId: 'chico' | 'usaquen' | 'chapinero';
+  sucursalId: string;
   nota?: string;
   appointmentId?: string;
 }
@@ -136,7 +138,7 @@ export interface ExpenseRecord {
   concepto: string;
   categoria: 'insumos' | 'servicios' | 'mantenimiento' | 'caja_menor';
   monto: number;
-  sucursalId: 'chico' | 'usaquen' | 'chapinero';
+  sucursalId: string;
   registradoPor: string;
 }
 
@@ -153,7 +155,7 @@ export interface CashRegisterClose {
   diferencia: number;
   estado: 'cuadrada' | 'descuadre';
   responsableNombre: string;
-  sucursalId: 'chico' | 'usaquen' | 'chapinero';
+  sucursalId: string;
 }
 
 export interface ClientProfile {
@@ -179,7 +181,7 @@ export interface AdminUser {
   email: string;
   phone: string;
   branch: string;
-  branchId: 'chico' | 'usaquen' | 'chapinero';
+  branchId: string;
   avatar: string;
   permissions: string[];
 }

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Service, Specialist, Appointment } from '../../../types';
+import { Service, Specialist } from '../../../types';
 import { formatCOP } from '../../../utils/format';
+import { HOURLY_TIME_SLOTS } from '../../../utils/calendarAvailability';
 
 interface ExpressAppointmentModalProps {
   isOpen: boolean;
@@ -13,6 +14,8 @@ interface ExpressAppointmentModalProps {
   setExpressServiceId: (id: string) => void;
   expressSpecialistId: string;
   setExpressSpecialistId: (id: string) => void;
+  expressTime: string;
+  setExpressTime: (time: string) => void;
   expressStatus: 'confirmada' | 'en_preparacion';
   setExpressStatus: (status: 'confirmada' | 'en_preparacion') => void;
   expressNotes: string;
@@ -22,6 +25,7 @@ interface ExpressAppointmentModalProps {
   expressValidationError: string | null;
   services: Service[];
   specialists: Specialist[];
+  isSubmitting?: boolean;
   onSubmit: (e: React.FormEvent) => void;
 }
 
@@ -36,6 +40,8 @@ export const ExpressAppointmentModal: React.FC<ExpressAppointmentModalProps> = (
   setExpressServiceId,
   expressSpecialistId,
   setExpressSpecialistId,
+  expressTime,
+  setExpressTime,
   expressStatus,
   setExpressStatus,
   expressNotes,
@@ -45,6 +51,7 @@ export const ExpressAppointmentModal: React.FC<ExpressAppointmentModalProps> = (
   expressValidationError,
   services,
   specialists,
+  isSubmitting = false,
   onSubmit
 }) => {
   if (!isOpen) return null;
@@ -67,7 +74,8 @@ export const ExpressAppointmentModal: React.FC<ExpressAppointmentModalProps> = (
 
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded-full hover:bg-[#C6BDAC]/40 flex items-center justify-center text-[#5A4A43]"
+            disabled={isSubmitting}
+            className="w-7 h-7 rounded-full hover:bg-[#C6BDAC]/40 flex items-center justify-center text-[#5A4A43] disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-[18px]">close</span>
           </button>
@@ -86,9 +94,11 @@ export const ExpressAppointmentModal: React.FC<ExpressAppointmentModalProps> = (
               <input
                 type="text"
                 required
+                disabled={isSubmitting}
                 value={expressClientName}
                 onChange={(e) => setExpressClientName(e.target.value)}
                 placeholder="Ej. Carolina Gómez"
+                maxLength={100}
                 className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420]"
               />
             </div>
@@ -98,6 +108,7 @@ export const ExpressAppointmentModal: React.FC<ExpressAppointmentModalProps> = (
               <input
                 type="text"
                 required
+                disabled={isSubmitting}
                 value={expressClientPhone}
                 onChange={(e) => setExpressClientPhone(e.target.value)}
                 placeholder="Ej. 300 123 4567"
@@ -110,6 +121,7 @@ export const ExpressAppointmentModal: React.FC<ExpressAppointmentModalProps> = (
             <label className="block font-semibold text-[#5A4A43] mb-1">Tratamiento / Servicio</label>
             <select
               value={expressServiceId}
+              disabled={isSubmitting}
               onChange={(e) => setExpressServiceId(e.target.value)}
               className="w-full h-9 px-2.5 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420]"
             >
@@ -123,9 +135,10 @@ export const ExpressAppointmentModal: React.FC<ExpressAppointmentModalProps> = (
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div>
-              <label className="block font-semibold text-[#5A4A43] mb-1">Manicurista Disponible</label>
+              <label className="block font-semibold text-[#5A4A43] mb-1">Manicurista Asignada</label>
               <select
                 value={expressSpecialistId}
+                disabled={isSubmitting}
                 onChange={(e) => setExpressSpecialistId(e.target.value)}
                 className="w-full h-9 px-2.5 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420]"
               >
@@ -138,25 +151,44 @@ export const ExpressAppointmentModal: React.FC<ExpressAppointmentModalProps> = (
             </div>
 
             <div>
-              <label className="block font-semibold text-[#5A4A43] mb-1">Estado de Entrada</label>
+              <label className="block font-semibold text-[#5A4A43] mb-1">Franja Horaria de Hoy</label>
               <select
-                value={expressStatus}
-                onChange={(e) => setExpressStatus(e.target.value as any)}
-                className="w-full h-9 px-2.5 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420]"
+                value={expressTime}
+                disabled={isSubmitting}
+                onChange={(e) => setExpressTime(e.target.value)}
+                className="w-full h-9 px-2.5 rounded-xl bg-white border border-[#C6BDAC] text-xs font-mono font-bold text-[#2B2420]"
               >
-                <option value="en_preparacion">En Cabina (Inmediato)</option>
-                <option value="confirmada">En Sala de Espera</option>
+                {HOURLY_TIME_SLOTS.map((slot) => (
+                  <option key={slot} value={slot}>
+                    {slot}
+                  </option>
+                ))}
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block font-semibold text-[#5A4A43] mb-1">Estado de Entrada</label>
+            <select
+              value={expressStatus}
+              disabled={isSubmitting}
+              onChange={(e) => setExpressStatus(e.target.value as 'confirmada' | 'en_preparacion')}
+              className="w-full h-9 px-2.5 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420]"
+            >
+              <option value="en_preparacion">En Cabina (Inmediato)</option>
+              <option value="confirmada">En Sala de Espera</option>
+            </select>
           </div>
 
           <div>
             <label className="block font-semibold text-[#5A4A43] mb-1">Observación Rápida (Opcional)</label>
             <input
               type="text"
+              disabled={isSubmitting}
               value={expressNotes}
               onChange={(e) => setExpressNotes(e.target.value)}
               placeholder="Ej. Tono Glazed, uña almendrada..."
+              maxLength={500}
               className="w-full h-8 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420]"
             />
           </div>
@@ -165,6 +197,7 @@ export const ExpressAppointmentModal: React.FC<ExpressAppointmentModalProps> = (
             <span className="text-[11px] text-[#5A4A43]">Enviar Pase Digital por WhatsApp</span>
             <input
               type="checkbox"
+              disabled={isSubmitting}
               checked={expressSendWhatsApp}
               onChange={(e) => setExpressSendWhatsApp(e.target.checked)}
               className="h-4 w-4 accent-[#2B2420] cursor-pointer"
@@ -173,10 +206,20 @@ export const ExpressAppointmentModal: React.FC<ExpressAppointmentModalProps> = (
 
           <button
             type="submit"
-            className="w-full py-3 rounded-xl bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
+            disabled={isSubmitting}
+            className="w-full py-3 rounded-xl bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50"
           >
-            <span className="material-symbols-outlined text-[16px]">check_circle</span>
-            <span>Crear Turno Express &amp; Pasar a Cabina</span>
+            {isSubmitting ? (
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-[#2B2420] border-t-transparent rounded-full animate-spin" />
+                <span>Guardando Cita y Bloqueo en Firestore...</span>
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                <span>Crear Turno Express &amp; Pasar a Cabina</span>
+              </>
+            )}
           </button>
         </form>
       </div>

@@ -5,9 +5,12 @@ interface NewExpenseModalProps {
   onClose: () => void;
   expenseConcept: string;
   setExpenseConcept: (concept: string) => void;
+  expenseCategory: 'insumos' | 'servicios' | 'mantenimiento' | 'caja_menor';
+  setExpenseCategory: (category: 'insumos' | 'servicios' | 'mantenimiento' | 'caja_menor') => void;
   expenseAmount: number;
   setExpenseAmount: (amount: number) => void;
   expenseValidationError: string | null;
+  isSubmitting?: boolean;
   onSubmit: (e: React.FormEvent) => void;
 }
 
@@ -16,9 +19,12 @@ export const NewExpenseModal: React.FC<NewExpenseModalProps> = ({
   onClose,
   expenseConcept,
   setExpenseConcept,
+  expenseCategory,
+  setExpenseCategory,
   expenseAmount,
   setExpenseAmount,
   expenseValidationError,
+  isSubmitting = false,
   onSubmit
 }) => {
   if (!isOpen) return null;
@@ -30,7 +36,8 @@ export const NewExpenseModal: React.FC<NewExpenseModalProps> = ({
           <h3 className="font-bold text-sm text-[#ba1a1a]">Registrar Egreso / Gasto de Caja Menor</h3>
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded-full hover:bg-[#C6BDAC]/40 flex items-center justify-center text-[#5A4A43]"
+            disabled={isSubmitting}
+            className="w-7 h-7 rounded-full hover:bg-[#C6BDAC]/40 flex items-center justify-center text-[#5A4A43] disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-[18px]">close</span>
           </button>
@@ -51,8 +58,25 @@ export const NewExpenseModal: React.FC<NewExpenseModalProps> = ({
               value={expenseConcept}
               onChange={(e) => setExpenseConcept(e.target.value)}
               placeholder="Ej. Insumos desechables o esterilización"
+              maxLength={200}
+              disabled={isSubmitting}
               className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420]"
             />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-[#5A4A43] mb-1">Categoría del Gasto</label>
+            <select
+              value={expenseCategory}
+              onChange={(e) => setExpenseCategory(e.target.value as 'insumos' | 'servicios' | 'mantenimiento' | 'caja_menor')}
+              disabled={isSubmitting}
+              className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420]"
+            >
+              <option value="insumos">Insumos y Materiales</option>
+              <option value="servicios">Servicios Básicos / Públicos</option>
+              <option value="mantenimiento">Mantenimiento y Reparaciones</option>
+              <option value="caja_menor">Caja Menor / Gastos Varios</option>
+            </select>
           </div>
 
           <div>
@@ -60,18 +84,28 @@ export const NewExpenseModal: React.FC<NewExpenseModalProps> = ({
             <input
               type="number"
               step="1000"
+              min="1000"
               required
               value={expenseAmount}
               onChange={(e) => setExpenseAmount(Number(e.target.value))}
+              disabled={isSubmitting}
               className="w-full h-9 px-3 rounded-xl bg-white border border-rose-300 text-xs font-mono font-bold text-[#ba1a1a]"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full py-2.5 rounded-xl bg-[#ba1a1a] hover:bg-rose-800 text-white font-bold text-xs shadow-xs transition-all cursor-pointer active:scale-95"
+            disabled={isSubmitting}
+            className="w-full py-2.5 rounded-xl bg-[#ba1a1a] hover:bg-rose-800 text-white font-bold text-xs shadow-xs transition-all cursor-pointer active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5"
           >
-            Descontar de Caja Menor
+            {isSubmitting ? (
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Guardando...</span>
+              </>
+            ) : (
+              <span>Descontar de Caja Menor</span>
+            )}
           </button>
         </form>
       </div>

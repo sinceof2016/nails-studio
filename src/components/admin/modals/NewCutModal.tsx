@@ -1,5 +1,5 @@
 import React from 'react';
-import { Specialist } from '../../../types';
+import { Specialist, Service } from '../../../types';
 import { formatCOP } from '../../../utils/format';
 
 interface NewCutModalProps {
@@ -9,12 +9,16 @@ interface NewCutModalProps {
   setCutClientName: (name: string) => void;
   cutClientPhone: string;
   setCutClientPhone: (phone: string) => void;
+  cutServiceName: string;
+  setCutServiceName: (name: string) => void;
   cutServicePrice: number;
   setCutServicePrice: (price: number) => void;
   cutTip: number;
   setCutTip: (tip: number) => void;
   cutSpecialistId: string;
   setCutSpecialistId: (id: string) => void;
+  cutNote: string;
+  setCutNote: (note: string) => void;
   cutPaymentMethod: 'efectivo' | 'nequi_daviplata' | 'tarjeta_datafono' | 'mixto';
   setCutPaymentMethod: (method: 'efectivo' | 'nequi_daviplata' | 'tarjeta_datafono' | 'mixto') => void;
   cutMontoEfectivo: number;
@@ -27,7 +31,9 @@ interface NewCutModalProps {
   targetCashToPay: number;
   cashChange: number;
   cutValidationError: string | null;
+  services: Service[];
   specialists: Specialist[];
+  isSubmitting?: boolean;
   onSubmit: (e: React.FormEvent) => void;
 }
 
@@ -38,12 +44,16 @@ export const NewCutModal: React.FC<NewCutModalProps> = ({
   setCutClientName,
   cutClientPhone,
   setCutClientPhone,
+  cutServiceName,
+  setCutServiceName,
   cutServicePrice,
   setCutServicePrice,
   cutTip,
   setCutTip,
   cutSpecialistId,
   setCutSpecialistId,
+  cutNote,
+  setCutNote,
   cutPaymentMethod,
   setCutPaymentMethod,
   cutMontoEfectivo,
@@ -56,7 +66,9 @@ export const NewCutModal: React.FC<NewCutModalProps> = ({
   targetCashToPay,
   cashChange,
   cutValidationError,
+  services,
   specialists,
+  isSubmitting = false,
   onSubmit
 }) => {
   if (!isOpen) return null;
@@ -109,6 +121,31 @@ export const NewCutModal: React.FC<NewCutModalProps> = ({
             </div>
           </div>
 
+          {/* SELECTOR DE SERVICIO */}
+          <div>
+            <label className="block font-semibold text-[#5A4A43] mb-1">Servicio del Catálogo</label>
+            <select
+              value={cutServiceName}
+              onChange={(e) => {
+                const selected = services.find((s) => s.name === e.target.value);
+                setCutServiceName(e.target.value);
+                if (selected) {
+                  setCutServicePrice(selected.price);
+                }
+              }}
+              className="w-full h-9 px-2 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420]"
+            >
+              {services.map((s) => (
+                <option key={s.id} value={s.name}>
+                  {s.name} ({formatCOP(s.price)})
+                </option>
+              ))}
+              {services.length === 0 && (
+                <option value={cutServiceName}>{cutServiceName}</option>
+              )}
+            </select>
+          </div>
+
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="block font-semibold text-[#5A4A43] mb-1">Valor en COP ($)</label>
@@ -146,6 +183,18 @@ export const NewCutModal: React.FC<NewCutModalProps> = ({
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block font-semibold text-[#5A4A43] mb-1">Nota / Referencia de Cita (Opcional)</label>
+            <input
+              type="text"
+              value={cutNote}
+              onChange={(e) => setCutNote(e.target.value)}
+              placeholder="Ej. Cita #AURA-123 o petición especial"
+              maxLength={500}
+              className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420]"
+            />
           </div>
 
           {/* PAYMENT METHOD SELECTOR WITH SPLIT PAYMENT SUPPORT */}
@@ -323,9 +372,10 @@ export const NewCutModal: React.FC<NewCutModalProps> = ({
 
           <button
             type="submit"
-            className="w-full py-3 rounded-xl bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold font-bold text-xs shadow-xs transition-all cursor-pointer active:scale-95"
+            disabled={isSubmitting}
+            className="w-full py-3 rounded-xl bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold text-xs shadow-xs transition-all cursor-pointer active:scale-95 disabled:opacity-50"
           >
-            Guardar Cobro &amp; Enviar Recibo WhatsApp
+            {isSubmitting ? 'Guardando en Firestore...' : 'Guardar Cobro & Enviar Recibo WhatsApp'}
           </button>
         </form>
       </div>

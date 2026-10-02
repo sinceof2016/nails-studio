@@ -7,7 +7,7 @@ interface UserFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   userToEdit?: SystemUser | null;
-  onSave: (user: SystemUser, password?: string) => void;
+  onSave: (user: SystemUser) => void;
 }
 
 export const UserFormModal: React.FC<UserFormModalProps> = ({
@@ -18,7 +18,6 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
 }) => {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [rol, setRol] = useState<'SuperAdmin' | 'Administrador' | 'Caja'>('Caja');
   const [sucursal, setSucursal] = useState('chico');
   const [avatar, setAvatar] = useState('');
@@ -31,12 +30,10 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       setRol(userToEdit.rol);
       setSucursal(userToEdit.sucursalAsignada || 'chico');
       setAvatar(userToEdit.avatar || '');
-      setPassword('');
       setFormError(null);
     } else {
       setNombre('');
       setEmail('');
-      setPassword('');
       setRol('Caja');
       setSucursal('chico');
       setAvatar('');
@@ -62,11 +59,6 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       return;
     }
 
-    if (!userToEdit && (!password || password.length < 6)) {
-      setFormError('La contraseña inicial debe tener al menos 6 caracteres.');
-      return;
-    }
-
     const cleanNombre = sanitizeToPlainText(nombre);
     const cleanEmail = sanitizeToPlainText(email).toLowerCase();
     const cleanAvatar = sanitizeToPlainText(avatar);
@@ -85,7 +77,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       puedeVerUsuarios: rol === 'SuperAdmin'
     };
 
-    onSave(user, password || undefined);
+    onSave(user);
     onClose();
   };
 
@@ -100,7 +92,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               </span>
             </div>
             <h3 className="font-bold text-sm sm:text-base text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
-              {userToEdit ? `Editar Usuario: ${userToEdit.nombre}` : 'Crear Nuevo Usuario'}
+              {userToEdit ? `Editar Usuario: ${userToEdit.nombre}` : 'Registrar Perfil de Usuario'}
             </h3>
           </div>
           <button
@@ -109,6 +101,13 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
+        </div>
+
+        <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-[11px] text-amber-900 flex items-start gap-2">
+          <span className="material-symbols-outlined text-[16px] text-amber-700 shrink-0 mt-0.5">info</span>
+          <div>
+            <strong>Nota de Acceso:</strong> Esta lista gestiona los perfiles locales. Para otorgar credenciales de inicio de sesión reales, crea la cuenta en la consola de Firebase Authentication y vincula el UID correspondiente en Firestore.
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
@@ -139,20 +138,6 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="usuario@ejemplo.com"
-              className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20"
-            />
-          </div>
-
-          <div>
-            <label className="block font-semibold text-[#5A4A43] mb-1">
-              {userToEdit ? 'Cambiar Contraseña (Opcional)' : 'Contraseña de Acceso *'}
-            </label>
-            <input
-              type="password"
-              required={!userToEdit}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={userToEdit ? 'Dejar en blanco para no modificar' : 'Mínimo 6 caracteres'}
               className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20"
             />
           </div>
@@ -205,9 +190,9 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold font-bold text-xs shadow-xs transition-all cursor-pointer"
+              className="px-5 py-2 rounded-xl bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold text-xs shadow-xs transition-all cursor-pointer"
             >
-              {userToEdit ? 'Guardar Cambios' : 'Crear Usuario'}
+              {userToEdit ? 'Guardar Cambios' : 'Registrar Perfil'}
             </button>
           </div>
         </form>

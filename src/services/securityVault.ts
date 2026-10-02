@@ -30,7 +30,7 @@ export async function authenticateWithVault(
       return { success: false, error: 'Credenciales inválidas.' };
     }
 
-    // 2. Consulta de rol y permisos en Firestore: users/{uid}
+    // 2. Consulta estricta de rol y permisos en Firestore: users/{uid}
     const userDocRef = doc(db, 'users', firebaseUser.uid);
     const userDocSnap = await getDoc(userDocRef);
 
@@ -41,7 +41,7 @@ export async function authenticateWithVault(
         nombre: data.nombre || data.name || firebaseUser.displayName || 'Personal de Salón',
         email: firebaseUser.email || email,
         rol: data.rol || data.role || 'Caja',
-        sucursalAsignada: data.sucursalAsignada || data.branchId || 'chico',
+        sucursalAsignada: data.sucursalAsignada || data.branchId || 'santuario-patio-bonito',
         avatar: data.avatar || firebaseUser.photoURL || undefined,
         creadoEn: data.creadoEn || data.createdAt || new Date().toISOString(),
         puedeVerApi: Boolean(data.puedeVerApi || data.rol === 'SuperAdmin'),
@@ -50,20 +50,12 @@ export async function authenticateWithVault(
       return { success: true, user };
     }
 
-    // Si el usuario existe en Firebase Auth pero su perfil en users/{uid} aún no ha sido poblado
-    const defaultUser: SystemUser = {
-      id: firebaseUser.uid,
-      nombre: firebaseUser.displayName || email.split('@')[0],
-      email: firebaseUser.email || email,
-      rol: 'SuperAdmin',
-      sucursalAsignada: 'todas',
-      avatar: firebaseUser.photoURL || undefined,
-      creadoEn: new Date().toISOString(),
-      puedeVerApi: true,
-      puedeVerUsuarios: true
+    // Cerrado por defecto: Si no existe perfil en users/{uid}, cerrar sesión y denegar acceso
+    await signOut(auth);
+    return {
+      success: false,
+      error: 'Tu cuenta no tiene permisos asignados. Contacta al SuperAdmin para registrar tu perfil de staff.'
     };
-
-    return { success: true, user: defaultUser };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : '';
     if (errorMsg.includes('auth/invalid-credential') || errorMsg.includes('auth/user-not-found') || errorMsg.includes('auth/wrong-password')) {

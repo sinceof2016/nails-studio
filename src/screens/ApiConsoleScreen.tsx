@@ -25,13 +25,10 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
   currentUser,
   onSendFeedback
 }) => {
-  // Security guard: Only David / SuperAdmin can access
-  const isDavid = currentUser.id === 'USR-DAVID-01' ||
-    currentUser.email.toLowerCase().includes('david') ||
-    currentUser.email.toLowerCase().includes('orjuela') ||
-    currentUser.nombre.toLowerCase().includes('david orjuela');
+  // Security guard: Only SuperAdmin can access
+  const isSuperAdmin = currentUser.rol === 'SuperAdmin';
 
-  if (!isDavid && !currentUser.puedeVerApi) {
+  if (!isSuperAdmin && !currentUser.puedeVerApi) {
     return (
       <div className="p-8 text-center bg-white rounded-3xl border border-rose-200 text-rose-800">
         <span className="material-symbols-outlined text-[48px] text-rose-600 mb-2">lock</span>

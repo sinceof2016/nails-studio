@@ -1,21 +1,23 @@
 import React from 'react';
-import { NAIL_SHAPES, ADD_ON_OPTIONS } from '../../data/mockData';
+import { NAIL_SHAPES, ADD_ON_OPTIONS, POLISH_SWATCHES } from '../../data/catalogo';
 import { formatCOP } from '../../utils/format';
 
 interface BookingStepCustomizationProps {
   selectedShape: string;
   setSelectedShape: (shape: string) => void;
+  selectedPolish?: string;
+  setSelectedPolish?: (polish: string) => void;
   selectedAddOns: string[];
   toggleAddOn: (addonName: string) => void;
   onBack: () => void;
   onNext: () => void;
-  selectedPolish?: string;
-  setSelectedPolish?: (polish: string) => void;
 }
 
 export const BookingStepCustomization: React.FC<BookingStepCustomizationProps> = ({
   selectedShape,
   setSelectedShape,
+  selectedPolish = 'Hailey Glazed Pearl',
+  setSelectedPolish,
   selectedAddOns,
   toggleAddOn,
   onBack,
@@ -23,17 +25,65 @@ export const BookingStepCustomization: React.FC<BookingStepCustomizationProps> =
 }) => {
   return (
     <div className="space-y-5 animate-in fade-in duration-150">
-      {/* 1. Forma de Uña */}
+      {/* 1. Selector de Tono de Esmalte */}
       <div className="bg-white rounded-3xl p-5 border border-[#C6BDAC] shadow-xs space-y-3">
-        <h3 className="text-base font-bold text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
-          1. Forma de Uña Preferida
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
+            1. Tono o Acabado de Esmalte
+          </h3>
+          <span className="text-xs font-semibold text-[#2B2420]">
+            Seleccionado: <strong>{selectedPolish}</strong>
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          {POLISH_SWATCHES.map((swatch) => {
+            const isSelected = selectedPolish === swatch.name;
+            return (
+              <button
+                key={swatch.id}
+                type="button"
+                onClick={() => setSelectedPolish && setSelectedPolish(swatch.name)}
+                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
+                  isSelected
+                    ? 'bg-[#BB9C87] text-[#2B2420] font-bold border-[#BB9C87] shadow-xs'
+                    : 'bg-white border-[#C6BDAC] text-[#2B2420] hover:border-[#BB9C87]/50'
+                }`}
+              >
+                <span
+                  className="w-6 h-6 rounded-full border border-black/15 shrink-0 shadow-2xs"
+                  style={{ backgroundColor: swatch.hex }}
+                />
+                <div className="min-w-0 flex-1">
+                  <span className="text-xs font-bold block truncate">{swatch.name}</span>
+                  <span className={`text-[10px] capitalize block ${isSelected ? 'text-[#2B2420]/80' : 'text-[#5A4A43]'}`}>
+                    Acabado {swatch.finish}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 2. Forma de Uña */}
+      <div className="bg-white rounded-3xl p-5 border border-[#C6BDAC] shadow-xs space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
+            2. Forma de Uña Preferida
+          </h3>
+          <span className="text-xs font-semibold text-[#2B2420]">
+            Seleccionada: <strong>{selectedShape}</strong>
+          </span>
+        </div>
+
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {NAIL_SHAPES.map((shape) => {
             const isSelected = selectedShape === shape.name;
             return (
               <button
                 key={shape.id}
+                type="button"
                 onClick={() => setSelectedShape(shape.name)}
                 className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                   isSelected
@@ -51,11 +101,11 @@ export const BookingStepCustomization: React.FC<BookingStepCustomizationProps> =
         </div>
       </div>
 
-      {/* 2. Add-ons in COP */}
+      {/* 3. Add-ons in COP */}
       <div className="bg-white rounded-3xl p-5 border border-[#C6BDAC] shadow-xs space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-bold text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
-            2. Complementos &amp; Spa Opcionales
+            3. Complementos &amp; Spa Opcionales
           </h3>
           <span className="text-xs text-[#2B2420] font-bold">Valores en COP</span>
         </div>
@@ -92,14 +142,16 @@ export const BookingStepCustomization: React.FC<BookingStepCustomizationProps> =
 
       <div className="flex items-center justify-between pt-2">
         <button
+          type="button"
           onClick={onBack}
           className="px-5 py-2.5 rounded-full bg-white border border-[#C6BDAC] text-[#5A4A43] text-xs font-semibold hover:bg-[#C6BDAC]/40 cursor-pointer"
         >
           Atrás
         </button>
         <button
+          type="button"
           onClick={onNext}
-          className="px-6 py-3 rounded-full bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold font-bold text-xs shadow-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
+          className="px-6 py-3 rounded-full bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold text-xs shadow-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
         >
           <span>Continuar a Confirmación</span>
           <span className="material-symbols-outlined text-[16px]">arrow_forward</span>

@@ -1,6 +1,6 @@
-import React from 'react';
-import { Appointment } from '../../../types';
-import { SPECIALISTS } from '../../../data/mockData';
+import React, { useState } from 'react';
+import { Appointment, Specialist } from '../../../types';
+import { SPECIALISTS as DEFAULT_SPECIALISTS } from '../../../data/mockData';
 import { formatCOP } from '../../../utils/format';
 import { formatDisplayDate } from '../../../utils/dateAndId';
 
@@ -26,6 +26,9 @@ interface AdminAgendaTabProps {
   onTableReady: (apt: Appointment) => void;
   onStatusChangeWithNotification: (apt: Appointment, newStatus: Appointment['status']) => void;
   onSelectAppointmentForQr: (apt: Appointment) => void;
+  onDeleteAppointment?: (apt: Appointment) => void;
+  userRole?: string;
+  specialists?: Specialist[];
 }
 
 export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
@@ -49,10 +52,54 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
   onQuickReminder,
   onTableReady,
   onStatusChangeWithNotification,
-  onSelectAppointmentForQr
+  onSelectAppointmentForQr,
+  onDeleteAppointment,
+  userRole,
+  specialists = DEFAULT_SPECIALISTS
 }) => {
+  const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null);
+  const canDeleteAppointments = userRole === 'SuperAdmin' || userRole === 'Administrador';
+
+  const confirmDelete = () => {
+    if (appointmentToDelete && onDeleteAppointment) {
+      onDeleteAppointment(appointmentToDelete);
+      setAppointmentToDelete(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
+      {/* Diálogo de confirmación para eliminar cita */}
+      {appointmentToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="relative w-full max-w-sm bg-[#F4EFE9] rounded-3xl p-6 shadow-2xl border border-[#C6BDAC] space-y-3.5">
+            <div className="flex items-center gap-2 text-rose-800">
+              <span className="material-symbols-outlined text-[24px]">delete_forever</span>
+              <h3 className="font-bold text-sm text-[#2B2420]">Eliminar Cita #{appointmentToDelete.bookingCode}</h3>
+            </div>
+            <p className="text-xs text-[#5A4A43] leading-relaxed">
+              ¿Estás seguro de eliminar permanentemente la cita de <strong className="text-[#2B2420]">{appointmentToDelete.clientName}</strong>? Esta acción borrará el registro de Firestore y liberará el horario de las {appointmentToDelete.time} con {appointmentToDelete.specialistName}.
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#C6BDAC]/50">
+              <button
+                type="button"
+                onClick={() => setAppointmentToDelete(null)}
+                className="px-4 py-2 rounded-xl bg-white border border-[#C6BDAC] text-xs font-semibold text-[#5A4A43] hover:bg-[#C6BDAC]/30 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                className="px-4 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold shadow-xs cursor-pointer"
+              >
+                Sí, Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top Actions: Search + Fast Walk-in + Regular Booking */}
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
         <div className="relative flex-1">
@@ -127,7 +174,7 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
             <span className="text-[10px] opacity-80">({appointments.length})</span>
           </button>
 
-          {SPECIALISTS.map((spec) => {
+          {specialists.map((spec) => {
             const count = appointments.filter((a) => a.specialistId === spec.id).length;
             const isSelected = specialistFilter === spec.id;
 
@@ -158,93 +205,94 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
         <button
           onClick={() => setFilterStatus('todos')}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2B2420] ${
             filterStatus === 'todos'
-              ? 'bg-[#BB9C87] text-[#2B2420] font-bold shadow-xs'
-              : 'bg-white text-[#5A4A43] border border-[#C6BDAC]/80 hover:bg-[#C6BDAC]/40'
+              ? 'bg-[#2B2420] text-white shadow-xs font-bold'
+              : 'bg-white text-[#5A4A43] border border-[#C6BDAC]/70 hover:bg-[#C6BDAC]/40'
           }`}
         >
           Todas ({totalCount})
         </button>
+
         <button
           onClick={() => setFilterStatus('confirmada')}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2B2420] ${
             filterStatus === 'confirmada'
-              ? 'bg-[#2d6a4f] text-white shadow-xs'
+              ? 'bg-[#dce8dc] text-[#2d6a4f] shadow-xs font-bold border border-[#2d6a4f]/40'
               : 'bg-white text-[#2d6a4f] border border-[#dce8dc] hover:bg-[#dce8dc]/40'
           }`}
         >
           Confirmadas ({confirmedCount})
         </button>
+
         <button
           onClick={() => setFilterStatus('en_preparacion')}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#918380] ${
+          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2B2420] ${
             filterStatus === 'en_preparacion'
-              ? 'bg-primary text-on-primary font-bold shadow-xs border border-primary'
-              : 'bg-white text-[#5A4A43] border border-[#C6BDAC] hover:bg-[#F4EFE9]'
+              ? 'bg-[#BB9C87] text-[#2B2420] shadow-xs font-bold'
+              : 'bg-white text-[#2B2420] border border-[#C6BDAC] hover:bg-[#BB9C87]/20'
           }`}
         >
           En Cabina ({inPrepCount})
         </button>
+
         <button
           onClick={() => setFilterStatus('completada')}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#918380] ${
+          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2B2420] ${
             filterStatus === 'completada'
-              ? 'bg-[#2B2420] text-[#F4EFE9] font-bold shadow-xs border border-[#2B2420]'
-              : 'bg-white text-[#5A4A43] border border-[#C6BDAC] hover:bg-[#F4EFE9]'
+              ? 'bg-[#C6BDAC] text-[#2B2420] shadow-xs font-bold'
+              : 'bg-white text-[#5A4A43] border border-[#C6BDAC]/70 hover:bg-[#C6BDAC]/40'
           }`}
         >
           Completadas ({completedCount})
         </button>
+
         <button
           onClick={() => setFilterStatus('cancelada')}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2B2420] ${
             filterStatus === 'cancelada'
-              ? 'bg-[#ba1a1a] text-white shadow-xs'
-              : 'bg-white text-[#ba1a1a] border border-[#ffdad6] hover:bg-[#ffdad6]/40'
+              ? 'bg-rose-100 text-rose-800 shadow-xs font-bold border border-rose-300'
+              : 'bg-white text-rose-700 border border-rose-200 hover:bg-rose-50'
           }`}
         >
           Canceladas ({canceledCount})
         </button>
       </div>
 
-      {/* Appointments Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredAppointments.length === 0 ? (
-          <div className="col-span-full text-center py-12 px-6 bg-white rounded-3xl border border-[#C6BDAC]/60">
-            <span className="material-symbols-outlined text-[#C6BDAC] text-[44px] mb-2">
-              event_busy
-            </span>
-            <h4 className="text-sm font-bold text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
-              No se encontraron citas con estos filtros
-            </h4>
-            <p className="text-xs text-[#5A4A43] mt-1">
-              Prueba cambiando el estado o la búsqueda para ver más registros de la agenda.
-            </p>
-          </div>
-        ) : (
-          filteredAppointments.map((apt) => {
+      {/* Appointments List */}
+      {filteredAppointments.length === 0 ? (
+        <div className="p-8 text-center bg-white rounded-3xl border border-[#C6BDAC]/60 space-y-2">
+          <span className="material-symbols-outlined text-[36px] text-[#5A4A43]">event_busy</span>
+          <h4 className="text-sm font-bold text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
+            No hay citas registradas con este criterio
+          </h4>
+          <p className="text-xs text-[#5A4A43]">
+            Intenta cambiar el filtro de estado o la búsqueda de clienta.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          {filteredAppointments.map((apt) => {
             const isExpanded = expandedAptId === apt.id;
 
             return (
               <div
                 key={apt.id}
-                className="bg-white rounded-3xl p-5 shadow-xs border border-[#C6BDAC]/60 space-y-3 transition-all hover:border-[#BB9C87]/40"
+                className="bg-white rounded-3xl p-4 sm:p-5 border border-[#C6BDAC]/60 shadow-xs space-y-3.5 hover:border-[#BB9C87] transition-all"
               >
-                {/* Header row */}
+                {/* Header: Date, Time & Status badge */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-[#2B2420] bg-[#C6BDAC]/40 px-2.5 py-0.5 rounded-md">
-                      {apt.bookingCode}
+                    <span className="font-mono text-xs font-bold bg-[#F4EFE9] text-[#2B2420] px-2.5 py-1 rounded-xl border border-[#C6BDAC]/60">
+                      {apt.time}
                     </span>
-                    <span className="text-xs text-[#5A4A43] font-medium flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[14px] text-[#2B2420]">schedule</span>
-                      {formatDisplayDate(apt.date)} · {apt.time}
+                    <span className="text-xs font-semibold text-[#5A4A43]">
+                      {formatDisplayDate(apt.date)}
                     </span>
                   </div>
 
                   <span
-                    className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                    className={`px-3 py-1 rounded-full text-[11px] font-bold ${
                       apt.status === 'confirmada'
                         ? 'bg-[#dce8dc] text-[#2d6a4f]'
                         : apt.status === 'en_preparacion'
@@ -334,8 +382,8 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
                 </div>
 
                 {/* Action buttons */}
-                <div className="pt-2 border-t border-[#C6BDAC] flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
+                <div className="pt-2 border-t border-[#C6BDAC] flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <div className="flex items-center gap-1 text-[11px] font-semibold text-[#5A4A43]">
                       <span>Estado:</span>
                       <select
@@ -357,6 +405,17 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
                       <span className="material-symbols-outlined text-[14px]">qr_code</span>
                       <span>Pase QR</span>
                     </button>
+
+                    {canDeleteAppointments && (
+                      <button
+                        onClick={() => setAppointmentToDelete(apt)}
+                        className="h-7 px-2 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+                        title="Eliminar cita permanentemente de Firestore"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">delete</span>
+                        <span>Eliminar</span>
+                      </button>
+                    )}
                   </div>
 
                   <button
@@ -393,9 +452,9 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
                 )}
               </div>
             );
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Service } from '../types';
+import { formatCOP } from '../utils/format';
 
 interface ServiceDetailModalProps {
   service: Service | null;
@@ -55,10 +56,10 @@ export const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
               </h3>
             </div>
             <div className="text-right shrink-0">
-              <span className="text-2xl font-bold text-[#5A4A43]">
-                ${service.price}
+              <span className="text-xl font-bold font-mono text-[#2B2420]">
+                {formatCOP(service.price)}
               </span>
-              <span className="block text-[11px] text-[#5A4A43]">USD</span>
+              <span className="block text-[10px] text-[#5A4A43]">COP</span>
             </div>
           </div>
 
@@ -126,7 +127,7 @@ export const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
             }}
             className="w-full py-3 px-4 rounded-full bg-primary hover:bg-[#AA8A74] text-on-primary font-bold text-sm shadow-xs active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span>Reservar este servicio (${service.price})</span>
+            <span>Reservar este servicio ({formatCOP(service.price)})</span>
             <span className="material-symbols-outlined text-[18px]">
               calendar_add_on
             </span>
