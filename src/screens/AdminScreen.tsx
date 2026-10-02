@@ -207,8 +207,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         map.set(key, {
           id: `client-${key}`,
           nombre: apt.clientName || 'Clienta Anónima',
-          telefono: apt.clientPhone || '+57 300 000 0000',
-          email: apt.clientEmail || `${(apt.clientName || 'cliente').toLowerCase().replace(/\s+/g, '.')}@auranailsspa.com`,
+          telefono: apt.clientPhone || '',
+          email: apt.clientEmail || '',
           totalCitas: 1,
           gastoTotal: apt.totalPrice ?? 0,
           primeraVisita: apt.date || 'Reciente',
@@ -287,7 +287,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       `¡Excelente jornada de trabajo y gracias por tu dedicación! 💖💅`;
 
     await sendUltraMsgWhatsApp({
-      phone: BUSINESS_CONFIG.phone || '+57 300 000 0000',
+      phone: BUSINESS_CONFIG.phone || '',
       message: msg,
       clientName: spec.name,
       bookingCode: `LIQ-${spec.id.toUpperCase()}`
@@ -440,7 +440,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
     }
 
     const cleanCutClientName = sanitizeToPlainText(cutClientName) || 'Cliente en Salón';
-    const cleanCutClientPhone = sanitizeToPlainText(cutClientPhone) || '+57 300 000 0000';
+    const cleanCutClientPhone = sanitizeToPlainText(cutClientPhone);
     const cleanCutNote = sanitizeToPlainText(cutNote);
 
     const spec = SPECIALISTS.find((s) => s.id === cutSpecialistId) || SPECIALISTS[0];
@@ -587,26 +587,26 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
     <div className="w-full space-y-6 pb-12 animate-in fade-in duration-200">
       
       {/* Admin Credentials & Quick Highlights Banner */}
-      <div className="rounded-3xl bg-gradient-to-r from-[#FAF4F5] via-[#F6E3E6] to-[#F7E5DE] p-6 sm:p-7 text-[#1F1417] border border-[#EAD6D9]/80 shadow-xs relative overflow-hidden">
-        <div className="absolute -right-8 -bottom-8 w-44 h-44 rounded-full bg-[#E8B4B8]/20 blur-2xl pointer-events-none" />
+      <div className="rounded-3xl bg-gradient-to-r from-[#F4EFE9] via-[#C6BDAC]/30 to-[#F4EFE9] p-6 sm:p-7 text-[#2B2420] border border-[#C6BDAC]/80 shadow-xs relative overflow-hidden">
+        <div className="absolute -right-8 -bottom-8 w-44 h-44 rounded-full bg-[#C6BDAC]/40/20 blur-2xl pointer-events-none" />
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 relative z-10">
           <div className="flex items-center gap-3">
             <img
               src={admin.avatar}
               alt={admin.name}
-              className="w-14 h-14 rounded-full object-cover ring-2 ring-[#64444B]/25 shadow-xs"
+              className="w-14 h-14 rounded-full object-cover ring-2 ring-[#2B2420]/25 shadow-xs"
             />
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg sm:text-xl font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#1F1417]">
+                <h2 className="text-lg sm:text-xl font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#2B2420]">
                   {admin.name}
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-[#64444B]/10 text-[#64444B] text-[10px] font-bold tracking-wider uppercase border border-[#64444B]/20">
+                <span className="px-2.5 py-0.5 rounded-full bg-[#BB9C87]/10 text-[#2B2420] text-[10px] font-bold tracking-wider uppercase border border-[#BB9C87]/20">
                   ★ {admin.role}
                 </span>
               </div>
-              <p className="text-xs text-[#644E53]">{admin.title} · {admin.branch}</p>
+              <p className="text-xs text-[#5A4A43]">{admin.title} · {admin.branch}</p>
             </div>
           </div>
 
@@ -619,23 +619,23 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         </div>
 
         {/* Quick Metrics in COP */}
-        <div className="pt-4 border-t border-[#EAD6D9]/60 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center relative z-10">
-          <div className="p-2.5 rounded-2xl bg-white/80 border border-[#EAD6D9]/50 shadow-2xs">
-            <span className="text-[10px] text-[#644E53] block uppercase tracking-wider font-semibold">Citas Hoy</span>
-            <strong className="text-base sm:text-lg font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#1F1417]">{totalCount}</strong>
+        <div className="pt-4 border-t border-[#C6BDAC]/60 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center relative z-10">
+          <div className="p-2.5 rounded-2xl bg-white/80 border border-[#C6BDAC]/50 shadow-2xs">
+            <span className="text-[10px] text-[#5A4A43] block uppercase tracking-wider font-semibold">Citas Hoy</span>
+            <strong className="text-base sm:text-lg font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#2B2420]">{totalCount}</strong>
           </div>
-          <div className="p-2.5 rounded-2xl bg-white/80 border border-[#EAD6D9]/50 shadow-2xs">
-            <span className="text-[10px] text-[#644E53] block uppercase tracking-wider font-semibold">Caja Efectivo</span>
-            <strong className="text-base sm:text-lg font-bold text-[#64444B] font-mono">
+          <div className="p-2.5 rounded-2xl bg-white/80 border border-[#C6BDAC]/50 shadow-2xs">
+            <span className="text-[10px] text-[#5A4A43] block uppercase tracking-wider font-semibold">Caja Efectivo</span>
+            <strong className="text-base sm:text-lg font-bold text-[#2B2420] font-mono">
               {formatCOP(expectedCashInHand)}
             </strong>
           </div>
-          <div className="p-2.5 rounded-2xl bg-white/80 border border-[#EAD6D9]/50 shadow-2xs">
-            <span className="text-[10px] text-[#644E53] block uppercase tracking-wider font-semibold">Cortes / Cobros</span>
-            <strong className="text-base sm:text-lg font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#1F1417]">{cuts.length}</strong>
+          <div className="p-2.5 rounded-2xl bg-white/80 border border-[#C6BDAC]/50 shadow-2xs">
+            <span className="text-[10px] text-[#5A4A43] block uppercase tracking-wider font-semibold">Cortes / Cobros</span>
+            <strong className="text-base sm:text-lg font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#2B2420]">{cuts.length}</strong>
           </div>
-          <div className="p-2.5 rounded-2xl bg-white/80 border border-[#EAD6D9]/50 shadow-2xs">
-            <span className="text-[10px] text-[#644E53] block uppercase tracking-wider font-semibold">Directorio Clientes</span>
+          <div className="p-2.5 rounded-2xl bg-white/80 border border-[#C6BDAC]/50 shadow-2xs">
+            <span className="text-[10px] text-[#5A4A43] block uppercase tracking-wider font-semibold">Directorio Clientes</span>
             <strong className="text-base sm:text-lg font-bold text-emerald-700 font-['Plus_Jakarta_Sans',sans-serif]">
               {clientProfiles.length}
             </strong>
@@ -644,14 +644,14 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       </div>
 
       {/* Internal Sub-Navigation Tabs */}
-      <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar border-b border-[#EAD6D9]/70 pb-2">
+      <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar border-b border-[#C6BDAC]/70 pb-2">
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={() => handleSelectTab('agenda')}
             className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeAdminTab === 'agenda'
-                ? 'bg-[#64444B] text-white shadow-xs'
-                : 'bg-white text-[#644E53] hover:bg-[#F6E3E6] border border-[#EAD6D9]/70'
+                ? 'bg-[#BB9C87] text-[#2B2420] font-bold shadow-xs'
+                : 'bg-white text-[#5A4A43] hover:bg-[#C6BDAC]/40 border border-[#C6BDAC]/70'
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">calendar_today</span>
@@ -662,8 +662,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
             onClick={() => handleSelectTab('caja')}
             className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeAdminTab === 'caja'
-                ? 'bg-[#64444B] text-white shadow-xs'
-                : 'bg-white text-[#644E53] hover:bg-[#F6E3E6] border border-[#EAD6D9]/70'
+                ? 'bg-[#BB9C87] text-[#2B2420] font-bold shadow-xs'
+                : 'bg-white text-[#5A4A43] hover:bg-[#C6BDAC]/40 border border-[#C6BDAC]/70'
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">point_of_sale</span>
@@ -674,8 +674,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
             onClick={() => handleSelectTab('cortes')}
             className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeAdminTab === 'cortes'
-                ? 'bg-[#64444B] text-white shadow-xs'
-                : 'bg-white text-[#644E53] hover:bg-[#F6E3E6] border border-[#EAD6D9]/70'
+                ? 'bg-[#BB9C87] text-[#2B2420] font-bold shadow-xs'
+                : 'bg-white text-[#5A4A43] hover:bg-[#C6BDAC]/40 border border-[#C6BDAC]/70'
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">receipt_long</span>
@@ -686,8 +686,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
             onClick={() => handleSelectTab('clientes')}
             className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeAdminTab === 'clientes'
-                ? 'bg-[#64444B] text-white shadow-xs'
-                : 'bg-white text-[#644E53] hover:bg-[#F6E3E6] border border-[#EAD6D9]/70'
+                ? 'bg-[#BB9C87] text-[#2B2420] font-bold shadow-xs'
+                : 'bg-white text-[#5A4A43] hover:bg-[#C6BDAC]/40 border border-[#C6BDAC]/70'
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">group</span>

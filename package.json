@@ -12,7 +12,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test": "tsx src/tests/authSecurity.test.ts && tsx src/tests/plainTextSecurity.test.ts"
+    "test": "tsx src/tests/authSecurity.test.ts && tsx src/tests/plainTextSecurity.test.ts && tsx src/tests/dataAuthorization.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

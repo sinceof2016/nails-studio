@@ -52,7 +52,7 @@ export const BUSINESS_CONFIG: BusinessConfig = {
   representanteLegal: getEnv('VITE_REPRESENTANTE_LEGAL', 'PENDIENTE_REPRESENTANTE_LEGAL'),
 
   // Domicilio y ubicación
-  address: getEnv('VITE_BUSINESS_ADDRESS', 'PENDIENTE_DOMICILIO_DIRECCION'),
+  address: getEnv('VITE_BUSINESS_ADDRESS', 'PENDIENTE_DIRECCION'),
   city: getEnv('VITE_BUSINESS_CITY', 'PENDIENTE_CIUDAD'),
   country: getEnv('VITE_BUSINESS_COUNTRY', 'Colombia'),
 
@@ -65,12 +65,11 @@ export const BUSINESS_CONFIG: BusinessConfig = {
   privacyEmail: getEnv('VITE_PRIVACY_EMAIL', 'PENDIENTE_CORREO_PRIVACIDAD'),
 
   // Operación y sedes
-  branchName: getEnv('VITE_BRANCH_NAME', 'Sede Principal'),
+  branchName: getEnv('VITE_BRANCH_NAME', 'Santuario Patio Bonito'),
   bookingCodePrefix: getEnv('VITE_BOOKING_CODE_PREFIX', 'PELU'),
 
   // Régimen comercial y consumidor (Ley 1480 de 2011)
-  // PENDIENTE REVISIÓN LEGAL: Confirmar si el negocio es responsable de IVA (Régimen Común/Simple) y política de propinas
-  taxNotice: 'Precios en pesos colombianos (COP). No incluyen IVA.',
+  taxNotice: 'Precios en pesos colombianos (COP).',
   cancellationNoticeHours: 24, // PENDIENTE REVISIÓN LEGAL: Confirmar plazo de anticipación para cancelación
   advancePaymentRequired: false, // La reserva online NO cobra anticipo ni solicita datos de pago en línea
 

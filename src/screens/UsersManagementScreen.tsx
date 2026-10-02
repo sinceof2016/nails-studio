@@ -87,7 +87,7 @@ export const UsersManagementScreen: React.FC<UsersManagementScreenProps> = ({
       <div className="p-8 text-center bg-white rounded-3xl border border-rose-200 text-rose-800 max-w-md mx-auto my-8">
         <span className="material-symbols-outlined text-[48px] text-rose-600 mb-2">lock</span>
         <h3 className="text-lg font-bold">Acceso Restringido</h3>
-        <p className="text-xs text-[#644E53] mt-1">
+        <p className="text-xs text-[#5A4A43] mt-1">
           Esta sección está reservada exclusivamente para el rol de Super Administrador (David Orjuela).
         </p>
       </div>
@@ -202,40 +202,40 @@ export const UsersManagementScreen: React.FC<UsersManagementScreenProps> = ({
   return (
     <div className="w-full space-y-6 pb-12 animate-in fade-in duration-200">
       {/* Banner */}
-      <div className="rounded-3xl bg-gradient-to-r from-[#FAF4F5] via-[#F6E3E6] to-[#F7E5DE] p-6 sm:p-8 text-[#1F1417] border border-[#EAD6D9]/80 shadow-xs relative overflow-hidden">
-        <div className="absolute -right-8 -bottom-8 w-44 h-44 rounded-full bg-[#E8B4B8]/20 blur-2xl pointer-events-none" />
+      <div className="rounded-3xl bg-gradient-to-r from-[#F4EFE9] via-[#C6BDAC]/30 to-[#F4EFE9] p-6 sm:p-8 text-[#2B2420] border border-[#C6BDAC]/80 shadow-xs relative overflow-hidden">
+        <div className="absolute -right-8 -bottom-8 w-44 h-44 rounded-full bg-[#C6BDAC]/40/20 blur-2xl pointer-events-none" />
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#64444B]/10 text-[#64444B] text-xs font-semibold mb-2 border border-[#64444B]/20">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#BB9C87]/10 text-[#2B2420] text-xs font-semibold mb-2 border border-[#BB9C87]/20">
               <span className="material-symbols-outlined text-[15px] fill">stars</span>
               Panel de Control Maestro · SuperAdmin
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#1F1417]">
+            <h2 className="text-2xl sm:text-3xl font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#2B2420]">
               Gestión Integral del Santuario
             </h2>
-            <p className="text-xs sm:text-sm text-[#644E53] mt-1 max-w-xl">
+            <p className="text-xs sm:text-sm text-[#5A4A43] mt-1 max-w-xl">
               Configura y administra la carta de servicios, manicuristas, tipos y categorías, y las cuentas de personal con acceso al sistema.
             </p>
           </div>
 
-          <div className="flex items-center gap-2 bg-white/80 backdrop-blur-xs p-1.5 rounded-2xl border border-[#EAD6D9] text-xs">
+          <div className="flex items-center gap-2 bg-white/80 backdrop-blur-xs p-1.5 rounded-2xl border border-[#C6BDAC] text-xs">
             <span className="material-symbols-outlined text-[18px] text-emerald-600">verified_user</span>
             <div>
-              <span className="font-bold text-[#1F1417] block leading-tight">{currentUser.nombre}</span>
-              <span className="text-[10px] text-[#644E53] uppercase font-bold tracking-wider">Super Administrador</span>
+              <span className="font-bold text-[#2B2420] block leading-tight">{currentUser.nombre}</span>
+              <span className="text-[10px] text-[#5A4A43] uppercase font-bold tracking-wider">Super Administrador</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex items-center gap-2 border-b border-[#EAD6D9] pb-2 overflow-x-auto no-scrollbar">
+      <div className="flex items-center gap-2 border-b border-[#C6BDAC] pb-2 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveSubTab('usuarios')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
             activeSubTab === 'usuarios'
-              ? 'bg-[#64444B] text-white shadow-xs'
-              : 'bg-white text-[#644E53] hover:bg-[#F6E3E6]/60 border border-[#EAD6D9]'
+              ? 'bg-[#BB9C87] text-[#2B2420] font-bold shadow-xs'
+              : 'bg-white text-[#5A4A43] hover:bg-[#C6BDAC]/40/60 border border-[#C6BDAC]'
           }`}
         >
           <span className="material-symbols-outlined text-[18px]">manage_accounts</span>
@@ -246,8 +246,8 @@ export const UsersManagementScreen: React.FC<UsersManagementScreenProps> = ({
           onClick={() => setActiveSubTab('servicios')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
             activeSubTab === 'servicios'
-              ? 'bg-[#64444B] text-white shadow-xs'
-              : 'bg-white text-[#644E53] hover:bg-[#F6E3E6]/60 border border-[#EAD6D9]'
+              ? 'bg-[#BB9C87] text-[#2B2420] font-bold shadow-xs'
+              : 'bg-white text-[#5A4A43] hover:bg-[#C6BDAC]/40/60 border border-[#C6BDAC]'
           }`}
         >
           <span className="material-symbols-outlined text-[18px]">spa</span>
@@ -258,8 +258,8 @@ export const UsersManagementScreen: React.FC<UsersManagementScreenProps> = ({
           onClick={() => setActiveSubTab('categorias')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
             activeSubTab === 'categorias'
-              ? 'bg-[#64444B] text-white shadow-xs'
-              : 'bg-white text-[#644E53] hover:bg-[#F6E3E6]/60 border border-[#EAD6D9]'
+              ? 'bg-[#BB9C87] text-[#2B2420] font-bold shadow-xs'
+              : 'bg-white text-[#5A4A43] hover:bg-[#C6BDAC]/40/60 border border-[#C6BDAC]'
           }`}
         >
           <span className="material-symbols-outlined text-[18px]">category</span>
@@ -270,8 +270,8 @@ export const UsersManagementScreen: React.FC<UsersManagementScreenProps> = ({
           onClick={() => setActiveSubTab('especialistas')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
             activeSubTab === 'especialistas'
-              ? 'bg-[#64444B] text-white shadow-xs'
-              : 'bg-white text-[#644E53] hover:bg-[#F6E3E6]/60 border border-[#EAD6D9]'
+              ? 'bg-[#BB9C87] text-[#2B2420] font-bold shadow-xs'
+              : 'bg-white text-[#5A4A43] hover:bg-[#C6BDAC]/40/60 border border-[#C6BDAC]'
           }`}
         >
           <span className="material-symbols-outlined text-[18px]">brush</span>
@@ -361,13 +361,13 @@ export const UsersManagementScreen: React.FC<UsersManagementScreenProps> = ({
             </div>
 
             <div className="text-center space-y-1.5">
-              <h3 className="font-bold text-base text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
+              <h3 className="font-bold text-base text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
                 ¿Confirmas la eliminación?
               </h3>
-              <p className="text-xs text-[#644E53] leading-relaxed">
+              <p className="text-xs text-[#5A4A43] leading-relaxed">
                 Estás a punto de eliminar {deleteConfirm.type === 'user' ? 'al usuario' : deleteConfirm.type === 'service' ? 'el servicio' : deleteConfirm.type === 'category' ? 'el tipo de servicio' : 'a la manicurista'}:
               </p>
-              <strong className="block text-sm text-[#1F1417] font-semibold bg-[#FAF4F5] p-2 rounded-xl border border-[#EAD6D9]">
+              <strong className="block text-sm text-[#2B2420] font-semibold bg-[#F4EFE9] p-2 rounded-xl border border-[#C6BDAC]">
                 {deleteConfirm.name}
               </strong>
               <p className="text-[11px] text-rose-700">Esta acción no se puede deshacer.</p>
@@ -377,7 +377,7 @@ export const UsersManagementScreen: React.FC<UsersManagementScreenProps> = ({
               <button
                 type="button"
                 onClick={() => setDeleteConfirm(null)}
-                className="flex-1 py-2.5 rounded-xl bg-white hover:bg-neutral-100 text-[#644E53] font-semibold text-xs border border-[#EAD6D9] cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-white hover:bg-neutral-100 text-[#5A4A43] font-semibold text-xs border border-[#C6BDAC] cursor-pointer"
               >
                 Cancelar
               </button>

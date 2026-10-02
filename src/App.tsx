@@ -13,6 +13,11 @@ import { PromoModal } from './components/PromoModal';
 import { CookieBanner } from './components/CookieBanner';
 import { CookieSettingsModal } from './components/CookieSettingsModal';
 import { CookiePolicyModal } from './components/CookiePolicyModal';
+import { DataTreatmentPolicyModal } from './components/legal/DataTreatmentPolicyModal';
+import { PrivacyNoticeModal } from './components/legal/PrivacyNoticeModal';
+import { TermsAndConditionsModal } from './components/legal/TermsAndConditionsModal';
+import { CancellationPolicyModal } from './components/legal/CancellationPolicyModal';
+import { enableAnalytics, disableAnalytics, trackPageView, trackBookingConfirmed } from './services/analyticsService';
 import { HomeScreen } from './screens/HomeScreen';
 import { BookingScreen } from './screens/BookingScreen';
 import { SpecialistsScreen } from './screens/SpecialistsScreen';
@@ -52,7 +57,6 @@ import {
   getActiveSession
 } from './services/sessionManager';
 import {
-  INITIAL_APPOINTMENTS,
   NOTIFICATIONS,
   SERVICES,
   INITIAL_SERVICE_CATEGORIES,
@@ -137,20 +141,53 @@ export default function App() {
     };
   }, []);
 
-  // System users list
-  const [systemUsers, setSystemUsers] = useState<SystemUser[]>(() => {
+  // Cookie Management State (declared early for analytics effect)
+  const [cookieConsent, setCookieConsent] = useState<CookiePreferences | null>(() => getCookieConsent());
+  const [isCookieBannerOpen, setIsCookieBannerOpen] = useState<boolean>(() => !hasConsentAnswered());
+  const [isCookieSettingsOpen, setIsCookieSettingsOpen] = useState<boolean>(false);
+  const [isCookiePolicyOpen, setIsCookiePolicyOpen] = useState<boolean>(false);
+
+  // Limpieza de datos demo en montaje y versionado de localStorage v2
+  useEffect(() => {
     try {
-      const saved = localStorage.getItem('pelu_system_users');
-      return saved ? JSON.parse(saved) : SYSTEM_USERS;
-    } catch {
-      return SYSTEM_USERS;
+      localStorage.removeItem('pelu_system_users');
+      localStorage.removeItem('aura_notifications');
+      localStorage.removeItem('aura_current_user');
+      localStorage.removeItem('pelu_services');
+      localStorage.removeItem('pelu_specialists');
+      localStorage.removeItem('pelu_service_categories');
+    } catch {}
+  }, []);
+
+  // Analytics consent and page view tracking
+  useEffect(() => {
+    // Si aún no hay decisión de consentimiento (primera visita), no interactuar con Analytics
+    if (!cookieConsent) {
+      return;
     }
-  });
+
+    if (cookieConsent.analytics) {
+      enableAnalytics().then(() => {
+        trackPageView(currentTab, window.location.hash || '#/' + currentTab);
+      });
+    } else {
+      disableAnalytics();
+    }
+  }, [cookieConsent]);
+
+  useEffect(() => {
+    if (cookieConsent?.analytics) {
+      trackPageView(currentTab, window.location.hash || '#/' + currentTab);
+    }
+  }, [currentTab, cookieConsent]);
+
+  // System users list (vacío en producción inicial)
+  const [systemUsers, setSystemUsers] = useState<SystemUser[]>([]);
 
   // Services catalog list (SuperAdmin editable)
   const [services, setServices] = useState<Service[]>(() => {
     try {
-      const saved = localStorage.getItem('pelu_services');
+      const saved = localStorage.getItem('pelu_v2_services');
       return saved ? JSON.parse(saved) : SERVICES;
     } catch {
       return SERVICES;
@@ -160,7 +197,7 @@ export default function App() {
   // Service categories list (SuperAdmin editable)
   const [serviceCategories, setServiceCategories] = useState<ServiceCategory[]>(() => {
     try {
-      const saved = localStorage.getItem('pelu_service_categories');
+      const saved = localStorage.getItem('pelu_v2_service_categories');
       return saved ? JSON.parse(saved) : INITIAL_SERVICE_CATEGORIES;
     } catch {
       return INITIAL_SERVICE_CATEGORIES;
@@ -170,7 +207,7 @@ export default function App() {
   // Specialists / Manicuristas list (SuperAdmin editable)
   const [specialists, setSpecialists] = useState<Specialist[]>(() => {
     try {
-      const saved = localStorage.getItem('pelu_specialists');
+      const saved = localStorage.getItem('pelu_v2_specialists');
       return saved ? JSON.parse(saved) : SPECIALISTS;
     } catch {
       return SPECIALISTS;
@@ -180,59 +217,14 @@ export default function App() {
   // Login Modal state
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  // Appointments State with Firestore sync
-  const [appointments, setAppointments] = useState<Appointment[]>(INITIAL_APPOINTMENTS);
+  // Appointments State (datos en cero)
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
 
-  // Cuts Ledger State in COP
-  const [cuts, setCuts] = useState<SalonCutRecord[]>([
-    {
-      id: 'cut-01',
-      fecha: getColombiaDateISO(),
-      hora: '10:30 AM',
-      clienteNombre: 'Mariana Duque Valenzuela',
-      clienteTelefono: '+57 300 000 0001',
-      servicioNombre: 'Manicura Rusa Glazed Donut',
-      servicioPrecio: 95000,
-      especialistaId: 'valentina',
-      especialistaNombre: 'Valentina R.',
-      comisionPorcentaje: 50,
-      comisionEspecialista: 47500,
-      recaudoSalon: 47500,
-      propina: 10000,
-      metodoPago: 'efectivo',
-      sucursalId: 'chico'
-    },
-    {
-      id: 'cut-02',
-      fecha: getColombiaDateISO(),
-      hora: '01:15 PM',
-      clienteNombre: 'Dra. Carolina Restrepo',
-      clienteTelefono: '+57 300 000 0002',
-      servicioNombre: 'Soft Gel & Minimalist Pastel Art',
-      servicioPrecio: 145000,
-      especialistaId: 'camila',
-      especialistaNombre: 'Camila M.',
-      comisionPorcentaje: 50,
-      comisionEspecialista: 72500,
-      recaudoSalon: 72500,
-      propina: 15000,
-      metodoPago: 'nequi_daviplata',
-      sucursalId: 'chico'
-    }
-  ]);
+  // Cuts Ledger State (datos en cero)
+  const [cuts, setCuts] = useState<SalonCutRecord[]>([]);
 
-  // Expenses State in COP
-  const [expenses, setExpenses] = useState<ExpenseRecord[]>([
-    {
-      id: 'exp-01',
-      fecha: getColombiaDateISO(),
-      concepto: 'Kits desechables de esterilización & guantes de nitrilo',
-      categoria: 'insumos',
-      monto: 45000,
-      sucursalId: 'chico',
-      registradoPor: 'Lucía Santamaría'
-    }
-  ]);
+  // Expenses State (datos en cero)
+  const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
 
   // Cash Closes State
   const [cashCloses, setCashCloses] = useState<CashRegisterClose[]>([]);
@@ -240,15 +232,8 @@ export default function App() {
   // Slot Locks State (prevents double booking)
   const [slotLocks, setSlotLocks] = useState<SlotLock[]>([]);
 
-  // Notifications State
-  const [notifications, setNotifications] = useState<AppNotification[]>(() => {
-    try {
-      const saved = localStorage.getItem('aura_notifications');
-      return saved ? JSON.parse(saved) : NOTIFICATIONS;
-    } catch {
-      return NOTIFICATIONS;
-    }
-  });
+  // Notifications State (datos en cero)
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
   // Toast feedback
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -258,11 +243,11 @@ export default function App() {
   const [selectedServiceDetail, setSelectedServiceDetail] = useState<Service | null>(null);
   const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
 
-  // Cookie Management State
-  const [cookieConsent, setCookieConsent] = useState<CookiePreferences | null>(() => getCookieConsent());
-  const [isCookieBannerOpen, setIsCookieBannerOpen] = useState<boolean>(() => !hasConsentAnswered());
-  const [isCookieSettingsOpen, setIsCookieSettingsOpen] = useState<boolean>(false);
-  const [isCookiePolicyOpen, setIsCookiePolicyOpen] = useState<boolean>(false);
+  // Legal Modals State
+  const [isDataPolicyOpen, setIsDataPolicyOpen] = useState(false);
+  const [isPrivacyNoticeOpen, setIsPrivacyNoticeOpen] = useState(false);
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
+  const [isCancellationPolicyOpen, setIsCancellationPolicyOpen] = useState(false);
 
   // Booking pre-fills
   const [bookingService, setBookingService] = useState<Service | null>(null);
@@ -422,6 +407,7 @@ export default function App() {
   const handleBookingSuccess = (newAppointment: Appointment) => {
     setAppointments((prev) => [newAppointment, ...prev]);
     showToast(`¡Cita ${newAppointment.bookingCode} confirmada exitosamente!`);
+    trackBookingConfirmed(newAppointment.serviceId, BUSINESS_CONFIG.branchName);
   };
 
   const handleUpdateStatus = async (id: string, newStatus: Appointment['status']) => {
@@ -667,10 +653,10 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF4F5] text-[#1F1417] flex flex-col font-sans selection:bg-[#F4D9DC] selection:text-[#5E3D44]">
+    <div className="min-h-screen bg-[#F4EFE9] text-[#2B2420] flex flex-col font-sans selection:bg-[#C6BDAC]/50 selection:text-[#5E3D44]">
       {/* Background Subtle Accent Pattern */}
-      <div className="fixed inset-0 pointer-events-none -z-10 bg-[#FAF4F5]" aria-hidden="true">
-        <div className="absolute inset-0 bg-[radial-gradient(#EAD6D9_1px,transparent_1px)] [background-size:24px_24px] opacity-35" />
+      <div className="fixed inset-0 pointer-events-none -z-10 bg-[#F4EFE9]" aria-hidden="true">
+        <div className="absolute inset-0 bg-[radial-gradient(#C6BDAC_1px,transparent_1px)] [background-size:24px_24px] opacity-35" />
       </div>
 
       {/* Unified Header with exact user pill */}
@@ -713,6 +699,10 @@ export default function App() {
             isPublicView={!currentUser}
             services={services}
             specialists={specialists}
+            showToast={showToast}
+            onOpenDataPolicy={() => setIsDataPolicyOpen(true)}
+            onOpenPrivacyNotice={() => setIsPrivacyNoticeOpen(true)}
+            onOpenTerms={() => setIsTermsOpen(true)}
           />
         )}
 
@@ -802,28 +792,44 @@ export default function App() {
       </main>
 
       {/* Footer del Santuario con acceso a políticas y prueba de 404 */}
-      <footer className="mt-12 border-t border-[#EAD6D9]/70 bg-[#FAF4F5]/90 py-7 px-4 text-center text-xs text-[#644E53] space-y-2">
-        <div className="flex flex-wrap items-center justify-center gap-3 text-xs font-semibold">
-          <button onClick={() => setCurrentTab('servicios')} className="hover:text-[#1F1417] cursor-pointer">
+      <footer className="mt-12 border-t border-[#C6BDAC]/70 bg-[#F4EFE9]/90 py-7 px-4 text-center text-xs text-[#5A4A43] space-y-2">
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs font-semibold">
+          <button onClick={() => setCurrentTab('servicios')} className="hover:text-[#2B2420] cursor-pointer">
             Servicios &amp; Carta
           </button>
           <span>·</span>
-          <button onClick={() => setCurrentTab('reservar')} className="hover:text-[#1F1417] cursor-pointer">
+          <button onClick={() => setCurrentTab('reservar')} className="hover:text-[#2B2420] cursor-pointer">
             Reservas Online
           </button>
           <span>·</span>
-          <button onClick={() => setCurrentTab('especialistas')} className="hover:text-[#1F1417] cursor-pointer">
+          <button onClick={() => setCurrentTab('especialistas')} className="hover:text-[#2B2420] cursor-pointer">
             Especialistas
           </button>
           <span>·</span>
-          <button onClick={() => setIsCookiePolicyOpen(true)} className="hover:text-[#1F1417] cursor-pointer">
-            Políticas &amp; Cookies
+          <button onClick={() => setIsDataPolicyOpen(true)} className="hover:text-[#2B2420] cursor-pointer underline">
+            Política de Datos
+          </button>
+          <span>·</span>
+          <button onClick={() => setIsPrivacyNoticeOpen(true)} className="hover:text-[#2B2420] cursor-pointer underline">
+            Aviso de Privacidad
+          </button>
+          <span>·</span>
+          <button onClick={() => setIsTermsOpen(true)} className="hover:text-[#2B2420] cursor-pointer underline">
+            Términos y Condiciones
+          </button>
+          <span>·</span>
+          <button onClick={() => setIsCancellationPolicyOpen(true)} className="hover:text-[#2B2420] cursor-pointer underline">
+            Política de Cancelación
+          </button>
+          <span>·</span>
+          <button onClick={() => setIsCookiePolicyOpen(true)} className="hover:text-[#2B2420] cursor-pointer underline">
+            Política de Cookies
           </button>
           <span>·</span>
           <button
             onClick={() => setCurrentTab('404')}
             className={`cursor-pointer flex items-center gap-1 transition-colors ${
-              currentTab === '404' ? 'text-[#64444B] font-bold underline' : 'text-[#7D676B] hover:text-[#64444B]'
+              currentTab === '404' ? 'text-[#2B2420] font-bold underline' : 'text-[#5A4A43] hover:text-[#2B2420]'
             }`}
             title="Ver pantalla de error 404 personalizada"
           >
@@ -831,8 +837,8 @@ export default function App() {
             <span>Vista 404</span>
           </button>
         </div>
-        <p className="text-[11px] text-[#7D676B]">
-          © {new Date().getFullYear()} {BUSINESS_CONFIG.brandName} · Santuario de Belleza · {BUSINESS_CONFIG.address}, {BUSINESS_CONFIG.city} {BUSINESS_CONFIG.phoneFormatted ? `· WhatsApp ${BUSINESS_CONFIG.phoneFormatted}` : ''}
+        <p className="text-[11px] text-[#5A4A43]">
+          © {new Date().getFullYear()} {BUSINESS_CONFIG.brandName} · {BUSINESS_CONFIG.businessName} (NIT: {BUSINESS_CONFIG.nit}) · {BUSINESS_CONFIG.branchName} · {BUSINESS_CONFIG.address}, {BUSINESS_CONFIG.city}
         </p>
       </footer>
 
@@ -916,12 +922,34 @@ export default function App() {
         }}
       />
 
+      {/* Legal Modals */}
+      <DataTreatmentPolicyModal
+        isOpen={isDataPolicyOpen}
+        onClose={() => setIsDataPolicyOpen(false)}
+      />
+      <PrivacyNoticeModal
+        isOpen={isPrivacyNoticeOpen}
+        onClose={() => setIsPrivacyNoticeOpen(false)}
+        onOpenFullPolicy={() => {
+          setIsPrivacyNoticeOpen(false);
+          setIsDataPolicyOpen(true);
+        }}
+      />
+      <TermsAndConditionsModal
+        isOpen={isTermsOpen}
+        onClose={() => setIsTermsOpen(false)}
+      />
+      <CancellationPolicyModal
+        isOpen={isCancellationPolicyOpen}
+        onClose={() => setIsCancellationPolicyOpen(false)}
+      />
+
       {/* Floating Cookie Settings Trigger (Persistent) */}
       <button
         type="button"
         onClick={() => setIsCookieSettingsOpen(true)}
         title="Centro de Preferencias de Cookies"
-        className="fixed bottom-4 left-4 z-40 w-10 h-10 rounded-full bg-white/95 hover:bg-white text-[#7c5357] shadow-[0_4px_16px_rgba(28,28,24,0.18)] border border-[#e8b4b8]/60 flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer backdrop-blur-xs group"
+        className="fixed bottom-4 left-4 z-40 w-10 h-10 rounded-full bg-white/95 hover:bg-white text-[#5A4A43] shadow-[0_4px_16px_rgba(28,28,24,0.18)] border border-[#C6BDAC]/60 flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer backdrop-blur-xs group"
         aria-label="Abrir centro de preferencias de cookies"
       >
         <span className="material-symbols-outlined text-[20px] group-hover:rotate-12 transition-transform">cookie</span>

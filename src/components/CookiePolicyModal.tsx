@@ -26,7 +26,7 @@ export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({
     >
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
-      <div className="relative bg-[#FAF4F5] rounded-3xl w-full max-w-3xl max-h-[92vh] flex flex-col shadow-2xl border border-[#EAD6D9] overflow-hidden z-10 animate-in zoom-in-95 duration-200">
+      <div className="relative bg-[#F4EFE9] rounded-3xl w-full max-w-3xl max-h-[92vh] flex flex-col shadow-2xl border border-[#C6BDAC] overflow-hidden z-10 animate-in zoom-in-95 duration-200">
         {/* Banner de Advertencia Legal */}
         <div className="p-3 bg-amber-50 border-b border-amber-200 text-amber-900 text-[11px] flex items-center gap-2">
           <span className="material-symbols-outlined text-amber-700 text-[16px] shrink-0">gavel</span>
@@ -36,23 +36,23 @@ export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({
         </div>
 
         {/* Modal Header */}
-        <div className="p-5 sm:p-6 bg-white border-b border-[#EAD6D9]/70 flex items-center justify-between shrink-0">
+        <div className="p-5 sm:p-6 bg-white border-b border-[#C6BDAC]/70 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#64444B]/10 text-[#64444B] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-2xl bg-[#BB9C87]/10 text-[#2B2420] flex items-center justify-center">
               <span className="material-symbols-outlined text-[22px]">cookie</span>
             </div>
             <div>
-              <h2 id="cookie-policy-title" className="text-lg sm:text-xl font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
+              <h2 id="cookie-policy-title" className="text-lg sm:text-xl font-bold text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
                 Política de Cookies y Almacenamiento
               </h2>
-              <p className="text-xs text-[#644E53]">
+              <p className="text-xs text-[#5A4A43]">
                 {BUSINESS_CONFIG.brandName} · Conforme a la Política de Tratamiento de Datos Personales
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full hover:bg-[#F6E3E6] flex items-center justify-center text-[#644E53] cursor-pointer"
+            className="w-9 h-9 rounded-full hover:bg-[#C6BDAC]/40 flex items-center justify-center text-[#5A4A43] cursor-pointer"
             aria-label="Cerrar modal"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
@@ -60,10 +60,10 @@ export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({
         </div>
 
         {/* Modal Body */}
-        <div className="p-5 sm:p-8 overflow-y-auto space-y-6 text-[#644E53] text-xs sm:text-sm leading-relaxed text-justify">
+        <div className="p-5 sm:p-8 overflow-y-auto space-y-6 text-[#5A4A43] text-xs sm:text-sm leading-relaxed text-justify">
           <section className="space-y-2">
-            <h3 className="text-base font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif] flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#64444B] text-[18px]">info</span>
+            <h3 className="text-base font-bold text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif] flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#2B2420] text-[18px]">info</span>
               1. ¿Qué son las Cookies y qué elementos utiliza este sitio?
             </h3>
             <p>
@@ -75,8 +75,8 @@ export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({
           </section>
 
           <section className="space-y-2">
-            <h3 className="text-base font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif] flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#64444B] text-[18px]">category</span>
+            <h3 className="text-base font-bold text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif] flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#2B2420] text-[18px]">category</span>
               2. Clasificación de Elementos Utilizados
             </h3>
             <ul className="space-y-2.5 list-disc pl-5">
@@ -90,14 +90,14 @@ export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({
           </section>
 
           <section className="space-y-3">
-            <h3 className="text-base font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif] flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#64444B] text-[18px]">table_chart</span>
+            <h3 className="text-base font-bold text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif] flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#2B2420] text-[18px]">table_chart</span>
               3. Tabla de Elementos Técnicos del Sistema
             </h3>
-            <div className="border border-[#EAD6D9] rounded-2xl overflow-hidden shadow-2xs">
+            <div className="border border-[#C6BDAC] rounded-2xl overflow-hidden shadow-2xs">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#FAF4F5] text-[#1F1417] border-b border-[#EAD6D9] font-bold">
+                  <thead className="bg-[#F4EFE9] text-[#2B2420] border-b border-[#C6BDAC] font-bold">
                     <tr>
                       <th className="p-3">Nombre</th>
                       <th className="p-3">Tipo</th>
@@ -105,17 +105,17 @@ export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({
                       <th className="p-3">Duración</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#EAD6D9]/50 bg-white">
+                  <tbody className="divide-y divide-[#C6BDAC]/50 bg-white">
                     {COOKIE_CATALOG.map((c) => (
-                      <tr key={c.name} className="hover:bg-[#FAF4F5]/50">
-                        <td className="p-3 font-mono text-[11px] font-bold text-[#64444B]">{c.name}</td>
+                      <tr key={c.name} className="hover:bg-[#F4EFE9]/50">
+                        <td className="p-3 font-mono text-[11px] font-bold text-[#2B2420]">{c.name}</td>
                         <td className="p-3">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#FAF4F5] border border-[#EAD6D9]">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#F4EFE9] border border-[#C6BDAC]">
                             {c.type}
                           </span>
                         </td>
-                        <td className="p-3 text-[#644E53]">{c.purpose}</td>
-                        <td className="p-3 text-[#644E53] whitespace-nowrap">{c.duration}</td>
+                        <td className="p-3 text-[#5A4A43]">{c.purpose}</td>
+                        <td className="p-3 text-[#5A4A43] whitespace-nowrap">{c.duration}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -125,8 +125,8 @@ export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({
           </section>
 
           <section className="space-y-2">
-            <h3 className="text-base font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif] flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#64444B] text-[18px]">settings</span>
+            <h3 className="text-base font-bold text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif] flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#2B2420] text-[18px]">settings</span>
               4. ¿Cómo configurar o revocar tu consentimiento?
             </h3>
             <p>
@@ -138,7 +138,7 @@ export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({
                   onClose();
                   onOpenSettings();
                 }}
-                className="px-4 py-2 rounded-xl bg-[#64444B] hover:bg-[#52363C] text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
               >
                 <span className="material-symbols-outlined text-[16px]">tune</span>
                 <span>Abrir Centro de Preferencias</span>
@@ -148,14 +148,14 @@ export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 bg-white border-t border-[#EAD6D9]/70 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="p-4 bg-white border-t border-[#C6BDAC]/70 flex flex-wrap items-center justify-between gap-3 shrink-0">
           {onOpenDataPolicy && (
             <button
               onClick={() => {
                 onClose();
                 onOpenDataPolicy();
               }}
-              className="text-xs text-[#64444B] font-bold underline hover:text-[#52363C] cursor-pointer"
+              className="text-xs text-[#2B2420] font-bold underline hover:text-[#AA8A74] cursor-pointer"
             >
               Consultar Política de Tratamiento de Datos
             </button>
@@ -163,7 +163,7 @@ export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({
 
           <button
             onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-white hover:bg-[#FAF4F5] text-[#644E53] font-bold text-xs border border-[#EAD6D9] cursor-pointer ml-auto"
+            className="px-5 py-2 rounded-xl bg-white hover:bg-[#F4EFE9] text-[#5A4A43] font-bold text-xs border border-[#C6BDAC] cursor-pointer ml-auto"
           >
             Cerrar
           </button>

@@ -23,35 +23,35 @@ export const PrivacyNoticeModal: React.FC<PrivacyNoticeModalProps> = ({
     >
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
-      <div className="relative w-full max-w-lg bg-[#FAF4F5] rounded-3xl p-6 shadow-2xl border border-[#EAD6D9] z-10 flex flex-col space-y-4 animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-lg bg-[#F4EFE9] rounded-3xl p-6 shadow-2xl border border-[#C6BDAC] z-10 flex flex-col space-y-4 animate-in zoom-in-95 duration-200">
         <div className="px-3 py-1 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] flex items-center gap-1.5">
           <span className="material-symbols-outlined text-[15px] text-amber-700">gavel</span>
           <span>BORRADOR PENDIENTE REVISIÓN LEGAL</span>
         </div>
 
-        <div className="flex items-start justify-between border-b border-[#EAD6D9]/70 pb-3">
+        <div className="flex items-start justify-between border-b border-[#C6BDAC]/70 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#64444B]/10 text-[#64444B] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-[#BB9C87]/10 text-[#2B2420] flex items-center justify-center">
               <span className="material-symbols-outlined text-[18px]">verified_user</span>
             </div>
             <div>
-              <h3 id="privacy-notice-title" className="font-bold text-base text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
+              <h3 id="privacy-notice-title" className="font-bold text-base text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
                 Aviso de Privacidad
               </h3>
-              <p className="text-xs text-[#644E53]">
+              <p className="text-xs text-[#5A4A43]">
                 {BUSINESS_CONFIG.brandName} · {BUSINESS_CONFIG.privacyNoticeVersion}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-[#F6E3E6] flex items-center justify-center text-[#644E53] cursor-pointer"
+            className="w-8 h-8 rounded-full hover:bg-[#C6BDAC]/40 flex items-center justify-center text-[#5A4A43] cursor-pointer"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
 
-        <div className="space-y-3 text-xs text-[#644E53] leading-relaxed">
+        <div className="space-y-3 text-xs text-[#5A4A43] leading-relaxed">
           <p>
             <strong>{BUSINESS_CONFIG.businessName}</strong> (en adelante <strong>"{BUSINESS_CONFIG.brandName}"</strong>), con NIT {BUSINESS_CONFIG.nit}, con domicilio en {BUSINESS_CONFIG.address}, {BUSINESS_CONFIG.city}, en calidad de Responsable del Tratamiento de datos personales, informa:
           </p>
@@ -72,20 +72,20 @@ export const PrivacyNoticeModal: React.FC<PrivacyNoticeModalProps> = ({
           </p>
         </div>
 
-        <div className="pt-3 border-t border-[#EAD6D9]/70 flex items-center justify-between gap-2">
+        <div className="pt-3 border-t border-[#C6BDAC]/70 flex items-center justify-between gap-2">
           <button
             onClick={() => {
               onClose();
               onOpenFullPolicy();
             }}
-            className="text-xs text-[#64444B] font-bold underline hover:text-[#52363C] cursor-pointer"
+            className="text-xs text-[#2B2420] font-bold underline hover:text-[#AA8A74] cursor-pointer"
           >
             Ver Política Completa de Datos
           </button>
 
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-[#64444B] hover:bg-[#52363C] text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold font-bold text-xs shadow-xs transition-all cursor-pointer"
           >
             Cerrar
           </button>

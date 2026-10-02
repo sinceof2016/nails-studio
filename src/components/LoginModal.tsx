@@ -67,25 +67,25 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         className="fixed inset-0"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-md bg-[#FAF4F5] rounded-3xl p-6 sm:p-7 shadow-2xl border border-[#EAD6D9] z-10 space-y-5 animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-md bg-[#F4EFE9] rounded-3xl p-6 sm:p-7 shadow-2xl border border-[#C6BDAC] z-10 space-y-5 animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-[#EAD6D9]/50 pb-3">
+        <div className="flex items-start justify-between border-b border-[#C6BDAC]/50 pb-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#64444B]/15 border border-[#64444B]/30 flex items-center justify-center text-[#64444B] shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-[#BB9C87]/15 border border-[#BB9C87]/30 flex items-center justify-center text-[#2B2420] shrink-0">
               <span className="material-symbols-outlined text-[22px]">lock</span>
             </div>
             <div>
-              <h3 className="text-base font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif] leading-tight">
+              <h3 className="text-base font-bold text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif] leading-tight">
                 Acceso al Sistema
               </h3>
-              <p className="text-xs text-[#644E53] mt-0.5">
+              <p className="text-xs text-[#5A4A43] mt-0.5">
                 Panel de gestión y administración de {BUSINESS_CONFIG.brandName}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-[#F6E3E6] flex items-center justify-center text-[#644E53] cursor-pointer"
+            className="w-8 h-8 rounded-full hover:bg-[#C6BDAC]/40 flex items-center justify-center text-[#5A4A43] cursor-pointer"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
@@ -93,18 +93,18 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
         {/* Current Active User Status */}
         {currentUser ? (
-          <div className="p-3.5 rounded-2xl bg-[#F6E3E6] border border-[#EAD6D9] flex items-center justify-between">
+          <div className="p-3.5 rounded-2xl bg-[#C6BDAC]/40 border border-[#C6BDAC] flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
               <img
                 src={currentUser.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200'}
                 alt={currentUser.nombre}
-                className="w-10 h-10 rounded-full object-cover ring-2 ring-[#C5838D]"
+                className="w-10 h-10 rounded-full object-cover ring-2 ring-[#918380]"
               />
               <div className="min-w-0">
-                <span className="text-xs font-bold text-[#1F1417] block truncate font-['Plus_Jakarta_Sans',sans-serif]">
+                <span className="text-xs font-bold text-[#2B2420] block truncate font-['Plus_Jakarta_Sans',sans-serif]">
                   {currentUser.nombre}
                 </span>
-                <span className="text-[10px] text-[#64444B] font-bold tracking-wider uppercase">
+                <span className="text-[10px] text-[#2B2420] font-bold tracking-wider uppercase">
                   ★ {currentUser.rol}
                 </span>
               </div>
@@ -126,7 +126,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
         {/* Form Login to Vault */}
         <div>
-          <span className="block text-xs font-bold uppercase tracking-wider text-[#644E53] mb-2 font-['Plus_Jakarta_Sans',sans-serif]">
+          <span className="block text-xs font-bold uppercase tracking-wider text-[#5A4A43] mb-2 font-['Plus_Jakarta_Sans',sans-serif]">
             {currentUser ? 'Cambiar a otra cuenta' : 'Ingreso con Credenciales'}
           </span>
 
@@ -137,7 +137,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               </div>
             )}
             <div>
-              <label className="block text-[11px] font-semibold text-[#644E53] mb-1">
+              <label className="block text-[11px] font-semibold text-[#5A4A43] mb-1">
                 Usuario o Correo
               </label>
               <input
@@ -146,12 +146,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 value={emailInput}
                 onChange={(e) => setEmailInput(e.target.value)}
                 placeholder="Ingresa tu correo o usuario"
-                className="w-full h-10 px-3.5 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/30"
+                className="w-full h-10 px-3.5 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/30"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-[#644E53] mb-1">
+              <label className="block text-[11px] font-semibold text-[#5A4A43] mb-1">
                 Contraseña
               </label>
               <input
@@ -160,14 +160,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
                 placeholder="Ingresa tu contraseña"
-                className="w-full h-10 px-3.5 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/30"
+                className="w-full h-10 px-3.5 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/30"
               />
             </div>
 
             <button
               type="submit"
               disabled={isValidating}
-              className="w-full h-10 rounded-xl bg-[#64444B] hover:bg-[#52363C] text-white text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+              className="w-full h-10 rounded-xl bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
             >
               <span className="material-symbols-outlined text-[16px]">key</span>
               <span>{isValidating ? 'Validando en Vault...' : 'Ingresar al Sistema'}</span>

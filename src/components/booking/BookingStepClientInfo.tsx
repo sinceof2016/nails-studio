@@ -19,6 +19,9 @@ interface BookingStepClientInfoProps {
   setClientNotes: (notes: string) => void;
   acceptedDataPolicy: boolean;
   setAcceptedDataPolicy: (val: boolean) => void;
+  dataPolicyError?: boolean;
+  checkboxRef?: React.RefObject<HTMLInputElement | null>;
+  onClearDataPolicyError?: () => void;
   onOpenDataPolicy?: () => void;
   onOpenPrivacyNotice?: () => void;
   onOpenTerms?: () => void;
@@ -43,6 +46,9 @@ export const BookingStepClientInfo: React.FC<BookingStepClientInfoProps> = ({
   setClientNotes,
   acceptedDataPolicy,
   setAcceptedDataPolicy,
+  dataPolicyError,
+  checkboxRef,
+  onClearDataPolicyError,
   onOpenDataPolicy,
   onOpenPrivacyNotice,
   onOpenTerms,
@@ -54,40 +60,40 @@ export const BookingStepClientInfo: React.FC<BookingStepClientInfoProps> = ({
   return (
     <div className="space-y-5 animate-in fade-in duration-150">
       {/* Summary Box */}
-      <div className="bg-white rounded-3xl p-6 border border-[#EAD6D9] shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-[#EAD6D9]/60 pb-3">
+      <div className="bg-white rounded-3xl p-6 border border-[#C6BDAC] shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-[#C6BDAC]/60 pb-3">
           <div>
-            <h3 className="text-base font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
+            <h3 className="text-base font-bold text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
               Resumen de tu Cita
             </h3>
-            <p className="text-[11px] text-[#644E53]">
+            <p className="text-[11px] text-[#5A4A43]">
               {BUSINESS_CONFIG.taxNotice}
             </p>
           </div>
           <div className="text-right">
-            <span className="text-lg font-bold text-[#64444B] font-mono block">
+            <span className="text-lg font-bold text-[#2B2420] font-mono block">
               {formatCOP(finalPrice)}
             </span>
-            <span className="text-[10px] text-[#7D676B]">Pago en sede al finalizar</span>
+            <span className="text-[10px] text-[#5A4A43]">Pago en sede al finalizar</span>
           </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
           <div>
-            <span className="text-[10px] text-[#7D676B] uppercase block">Servicio</span>
-            <strong className="text-[#1F1417] block">{selectedService?.name}</strong>
+            <span className="text-[10px] text-[#5A4A43] uppercase block">Servicio</span>
+            <strong className="text-[#2B2420] block">{selectedService?.name}</strong>
           </div>
           <div>
-            <span className="text-[10px] text-[#7D676B] uppercase block">Fecha &amp; Hora</span>
-            <strong className="text-[#1F1417] block">{selectedDateOption.full} · {selectedTime}</strong>
+            <span className="text-[10px] text-[#5A4A43] uppercase block">Fecha &amp; Hora</span>
+            <strong className="text-[#2B2420] block">{selectedDateOption.full} · {selectedTime}</strong>
           </div>
           <div>
-            <span className="text-[10px] text-[#7D676B] uppercase block">Especialista</span>
-            <strong className="text-[#64444B] block">{currentSpecialist?.name || 'Asignación Libre'}</strong>
+            <span className="text-[10px] text-[#5A4A43] uppercase block">Especialista</span>
+            <strong className="text-[#2B2420] block">{currentSpecialist?.name || 'Asignación Libre'}</strong>
           </div>
           <div>
-            <span className="text-[10px] text-[#7D676B] uppercase block">Sede</span>
-            <strong className="text-[#1F1417] block">{BUSINESS_CONFIG.branchName}</strong>
+            <span className="text-[10px] text-[#5A4A43] uppercase block">Sede</span>
+            <strong className="text-[#2B2420] block">{BUSINESS_CONFIG.branchName}</strong>
           </div>
         </div>
       </div>
@@ -101,12 +107,12 @@ export const BookingStepClientInfo: React.FC<BookingStepClientInfoProps> = ({
       )}
 
       {/* Client Details Form */}
-      <div className="bg-white rounded-3xl p-6 border border-[#EAD6D9] shadow-xs space-y-4">
+      <div className="bg-white rounded-3xl p-6 border border-[#C6BDAC] shadow-xs space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
+          <h3 className="text-base font-bold text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
             Datos para Confirmación de Reserva
           </h3>
-          <span className="text-[11px] text-[#64444B] bg-[#F6E3E6] px-2.5 py-1 rounded-full font-semibold flex items-center gap-1">
+          <span className="text-[11px] text-[#2B2420] bg-[#C6BDAC]/40 px-2.5 py-1 rounded-full font-semibold flex items-center gap-1">
             <span className="material-symbols-outlined text-[13px]">verified_user</span>
             Habeas Data Ley 1581
           </span>
@@ -114,7 +120,7 @@ export const BookingStepClientInfo: React.FC<BookingStepClientInfoProps> = ({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
           <div>
-            <label className="block font-semibold text-[#644E53] mb-1">Nombre Completo *</label>
+            <label className="block font-semibold text-[#5A4A43] mb-1">Nombre Completo *</label>
             <input
               type="text"
               required
@@ -123,13 +129,13 @@ export const BookingStepClientInfo: React.FC<BookingStepClientInfoProps> = ({
                 setClientName(e.target.value);
                 onClearError();
               }}
-              placeholder="Ej. Mariana Duque"
-              className="w-full h-10 px-3.5 rounded-xl bg-[#FAF4F5] border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/30"
+              placeholder="Ej. Camila Gómez"
+              className="w-full h-10 px-3.5 rounded-xl bg-[#F4EFE9] border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/30"
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-[#644E53] mb-1">Número de WhatsApp (+57) *</label>
+            <label className="block font-semibold text-[#5A4A43] mb-1">Número de WhatsApp (+57) *</label>
             <input
               type="text"
               required
@@ -138,13 +144,13 @@ export const BookingStepClientInfo: React.FC<BookingStepClientInfoProps> = ({
                 setClientPhone(e.target.value);
                 onClearError();
               }}
-              placeholder="+57 300 000 0000"
-              className="w-full h-10 px-3.5 rounded-xl bg-[#FAF4F5] border border-[#EAD6D9] text-xs font-mono text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/30"
+              placeholder="Ej. 300 123 4567"
+              className="w-full h-10 px-3.5 rounded-xl bg-[#F4EFE9] border border-[#C6BDAC] text-xs font-mono text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/30"
             />
           </div>
 
           <div className="sm:col-span-2">
-            <label className="block font-semibold text-[#644E53] mb-1">
+            <label className="block font-semibold text-[#5A4A43] mb-1">
               Observaciones del servicio (Opcional)
             </label>
             <input
@@ -155,7 +161,7 @@ export const BookingStepClientInfo: React.FC<BookingStepClientInfoProps> = ({
                 onClearError();
               }}
               placeholder="Ej. Esmalte anterior a retirar, preferencia de tono..."
-              className="w-full h-10 px-3.5 rounded-xl bg-[#FAF4F5] border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/30"
+              className="w-full h-10 px-3.5 rounded-xl bg-[#F4EFE9] border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/30"
             />
             {/* Advertencia expresa de salud y datos sensibles (Ley 1581) */}
             <div className="p-2.5 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-950 text-[11px] mt-2 flex items-start gap-1.5">
@@ -168,19 +174,29 @@ export const BookingStepClientInfo: React.FC<BookingStepClientInfoProps> = ({
         </div>
 
         {/* Casilla de Autorización de Tratamiento de Datos Personales (Ley 1581) */}
-        <div className="pt-2 border-t border-[#EAD6D9]/60">
-          <label className="flex items-start gap-3 p-3 rounded-2xl bg-[#FAF4F5] border border-[#EAD6D9] cursor-pointer hover:bg-[#F6E3E6]/40 transition-colors">
+        <div className="pt-2 border-t border-[#C6BDAC]/60">
+          <label
+            className={`flex items-start gap-3 p-3.5 rounded-2xl transition-all cursor-pointer ${
+              dataPolicyError
+                ? 'bg-rose-50/80 border-2 border-rose-500 ring-2 ring-rose-200'
+                : 'bg-[#F4EFE9] border border-[#C6BDAC] hover:bg-[#C6BDAC]/40/40'
+            }`}
+          >
             <input
+              ref={checkboxRef}
               type="checkbox"
               checked={acceptedDataPolicy}
+              aria-invalid={dataPolicyError ? 'true' : 'false'}
+              aria-describedby={dataPolicyError ? 'data-policy-error-msg' : undefined}
               onChange={(e) => {
                 setAcceptedDataPolicy(e.target.checked);
+                if (onClearDataPolicyError) onClearDataPolicyError();
                 onClearError();
               }}
-              className="mt-0.5 w-4 h-4 rounded text-[#64444B] focus:ring-[#64444B] accent-[#64444B] cursor-pointer shrink-0"
+              className="mt-0.5 w-4 h-4 rounded text-[#2B2420] focus:ring-[#2B2420] accent-[#2B2420] cursor-pointer shrink-0"
               required
             />
-            <span className="text-xs text-[#1F1417] leading-relaxed">
+            <span className="text-xs text-[#2B2420] leading-relaxed">
               <strong>Autorizo expresamente el tratamiento de mis datos personales</strong> conforme a la{' '}
               <button
                 type="button"
@@ -189,7 +205,7 @@ export const BookingStepClientInfo: React.FC<BookingStepClientInfoProps> = ({
                   e.stopPropagation();
                   if (onOpenDataPolicy) onOpenDataPolicy();
                 }}
-                className="text-[#64444B] font-bold underline hover:text-[#52363C] cursor-pointer"
+                className="text-[#2B2420] font-bold underline hover:text-[#AA8A74] cursor-pointer"
               >
                 Política de Tratamiento de Datos Personales
               </button>{' '}
@@ -201,20 +217,31 @@ export const BookingStepClientInfo: React.FC<BookingStepClientInfoProps> = ({
                   e.stopPropagation();
                   if (onOpenPrivacyNotice) onOpenPrivacyNotice();
                 }}
-                className="text-[#64444B] font-bold underline hover:text-[#52363C] cursor-pointer"
+                className="text-[#2B2420] font-bold underline hover:text-[#AA8A74] cursor-pointer"
               >
                 Aviso de Privacidad
               </button>{' '}
               de {BUSINESS_CONFIG.brandName}, para la gestión, confirmación y facturación de mi cita.
             </span>
           </label>
+
+          {dataPolicyError && (
+            <div
+              id="data-policy-error-msg"
+              role="alert"
+              className="mt-2 text-xs font-semibold text-rose-600 flex items-center gap-1.5 animate-in fade-in"
+            >
+              <span className="material-symbols-outlined text-[16px]">error</span>
+              <span>Debes aceptar el tratamiento de datos personales para confirmar tu reserva</span>
+            </div>
+          )}
         </div>
 
         {/* Notificación WhatsApp Transaccional */}
         <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2.5">
           <span className="material-symbols-outlined text-emerald-600 text-[20px] shrink-0">mark_chat_read</span>
           <span>
-            Se enviará una notificación transaccional con tu código de reserva ({BUSINESS_CONFIG.bookingCodePrefix}-XXXX) a tu número de WhatsApp.
+            Podrás enviar y confirmar los detalles de tu cita ({BUSINESS_CONFIG.bookingCodePrefix}-XXXX) directamente por WhatsApp al registrar tu reserva.
           </span>
         </div>
       </div>
@@ -223,16 +250,16 @@ export const BookingStepClientInfo: React.FC<BookingStepClientInfoProps> = ({
       <div className="flex items-center justify-between pt-2">
         <button
           onClick={onBack}
-          className="px-5 py-2.5 rounded-full bg-white border border-[#EAD6D9] text-[#644E53] text-xs font-semibold hover:bg-[#F6E3E6] cursor-pointer"
+          className="px-5 py-2.5 rounded-full bg-white border border-[#C6BDAC] text-[#5A4A43] text-xs font-semibold hover:bg-[#C6BDAC]/40 cursor-pointer"
         >
           Atrás
         </button>
         <button
           onClick={onConfirm}
           disabled={isSendingWhatsApp}
-          className="px-7 py-3.5 rounded-full bg-[#64444B] hover:bg-[#52363C] text-white font-bold text-xs sm:text-sm shadow-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer disabled:opacity-50"
+          className="px-7 py-3.5 rounded-full bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold font-bold text-xs sm:text-sm shadow-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer disabled:opacity-50"
         >
-          <span>{isSendingWhatsApp ? 'Enviando WhatsApp...' : 'Confirmar Reserva en COP'}</span>
+          <span>{isSendingWhatsApp ? 'Registrando cita...' : 'Confirmar Reserva en COP'}</span>
           <span className="material-symbols-outlined text-[18px]">check_circle</span>
         </button>
       </div>

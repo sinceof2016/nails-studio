@@ -12,7 +12,6 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Appointment, SalonCutRecord, ExpenseRecord, CashRegisterClose, SlotLock } from '../types';
-import { INITIAL_APPOINTMENTS } from '../data/mockData';
 
 const APPOINTMENTS_COLLECTION = 'appointments';
 const SLOT_LOCKS_COLLECTION = 'slot_locks';

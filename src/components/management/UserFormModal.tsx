@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SystemUser } from '../../types';
 import { validateOnlyPlainText, sanitizeToPlainText } from '../../utils/security';
+import { BUSINESS_CONFIG } from '../../config/businessConfig';
 
 interface UserFormModalProps {
   isOpen: boolean;
@@ -90,21 +91,21 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="relative w-full max-w-md bg-[#FAF4F5] rounded-3xl p-6 shadow-2xl border border-[#EAD6D9] space-y-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between border-b border-[#EAD6D9]/50 pb-3">
+      <div className="relative w-full max-w-md bg-[#F4EFE9] rounded-3xl p-6 shadow-2xl border border-[#C6BDAC] space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-[#C6BDAC]/50 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#64444B]/10 text-[#64444B] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-[#BB9C87]/10 text-[#2B2420] flex items-center justify-center">
               <span className="material-symbols-outlined text-[18px]">
                 {userToEdit ? 'manage_accounts' : 'person_add'}
               </span>
             </div>
-            <h3 className="font-bold text-sm sm:text-base text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
+            <h3 className="font-bold text-sm sm:text-base text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
               {userToEdit ? `Editar Usuario: ${userToEdit.nombre}` : 'Crear Nuevo Usuario'}
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-[#F6E3E6] flex items-center justify-center text-[#644E53] cursor-pointer"
+            className="w-8 h-8 rounded-full hover:bg-[#C6BDAC]/40 flex items-center justify-center text-[#5A4A43] cursor-pointer"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
@@ -119,31 +120,31 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           )}
 
           <div>
-            <label className="block font-semibold text-[#644E53] mb-1">Nombre Completo *</label>
+            <label className="block font-semibold text-[#5A4A43] mb-1">Nombre Completo *</label>
             <input
               type="text"
               required
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               placeholder="Ej. Carolina Medina"
-              className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/20"
+              className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20"
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-[#644E53] mb-1">Correo Electrónico *</label>
+            <label className="block font-semibold text-[#5A4A43] mb-1">Correo Electrónico *</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="usuario@auranailsspa.com"
-              className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/20"
+              placeholder="usuario@ejemplo.com"
+              className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20"
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-[#644E53] mb-1">
+            <label className="block font-semibold text-[#5A4A43] mb-1">
               {userToEdit ? 'Cambiar Contraseña (Opcional)' : 'Contraseña de Acceso *'}
             </label>
             <input
@@ -152,17 +153,17 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={userToEdit ? 'Dejar en blanco para no modificar' : 'Mínimo 6 caracteres'}
-              className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/20"
+              className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-[#644E53] mb-1">Rol de Acceso *</label>
+              <label className="block font-semibold text-[#5A4A43] mb-1">Rol de Acceso *</label>
               <select
                 value={rol}
                 onChange={(e) => setRol(e.target.value as any)}
-                className="w-full h-9 px-2 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/20"
+                className="w-full h-9 px-2 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20"
               >
                 <option value="SuperAdmin">SuperAdmin (Maestro)</option>
                 <option value="Administrador">Administrador</option>
@@ -171,42 +172,40 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
             </div>
 
             <div>
-              <label className="block font-semibold text-[#644E53] mb-1">Sede Asignada *</label>
+              <label className="block font-semibold text-[#5A4A43] mb-1">Sede Asignada *</label>
               <select
                 value={sucursal}
                 onChange={(e) => setSucursal(e.target.value)}
-                className="w-full h-9 px-2 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/20"
+                className="w-full h-9 px-2 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20"
               >
                 <option value="todas">Todas las Sedes</option>
-                <option value="chico">Sede Chicó</option>
-                <option value="usaquen">Sede Usaquén</option>
-                <option value="chapinero">Sede Chapinero</option>
+                <option value="chico">{BUSINESS_CONFIG.branchName}</option>
               </select>
             </div>
           </div>
 
           <div>
-            <label className="block font-semibold text-[#644E53] mb-1">URL de Foto / Avatar</label>
+            <label className="block font-semibold text-[#5A4A43] mb-1">URL de Foto / Avatar</label>
             <input
               type="url"
               value={avatar}
               onChange={(e) => setAvatar(e.target.value)}
               placeholder="https://..."
-              className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/20"
+              className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20"
             />
           </div>
 
-          <div className="pt-2 flex items-center justify-end gap-2 border-t border-[#EAD6D9]/50">
+          <div className="pt-2 flex items-center justify-end gap-2 border-t border-[#C6BDAC]/50">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-white hover:bg-neutral-100 text-[#644E53] font-semibold text-xs border border-[#EAD6D9] cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-white hover:bg-neutral-100 text-[#5A4A43] font-semibold text-xs border border-[#C6BDAC] cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-[#64444B] hover:bg-[#52363C] text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+              className="px-5 py-2 rounded-xl bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold font-bold text-xs shadow-xs transition-all cursor-pointer"
             >
               {userToEdit ? 'Guardar Cambios' : 'Crear Usuario'}
             </button>

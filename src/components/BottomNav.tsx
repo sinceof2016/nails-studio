@@ -33,7 +33,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   return (
     <nav
       aria-label="Navegación principal"
-      className="fixed bottom-0 w-full z-40 bg-[#fdf9f3]/95 backdrop-blur-xl border-t border-[#e8b4b8]/30 shadow-[0_-4px_24px_rgba(232,180,184,0.2)]"
+      className="fixed bottom-0 w-full z-40 bg-[#F4EFE9]/95 backdrop-blur-xl border-t border-[#C6BDAC]/30 shadow-[0_-4px_24px_rgba(232,180,184,0.2)]"
     >
       <div className="w-full max-w-lg mx-auto h-16 px-4 flex items-center justify-around">
         {tabs.map((tab) => {
@@ -44,14 +44,14 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               onClick={() => onNavigate(tab.id)}
               className={`flex flex-col items-center justify-center w-20 h-13 rounded-2xl transition-all duration-200 group relative cursor-pointer ${
                 isActive
-                  ? 'text-[#7c5357] font-semibold'
-                  : 'text-[#504444] hover:text-[#7c5357]'
+                  ? 'text-[#5A4A43] font-semibold'
+                  : 'text-[#5A4A43] hover:text-[#5A4A43]'
               }`}
             >
               <div
                 className={`w-11 h-7 rounded-full flex items-center justify-center transition-all duration-200 relative ${
                   isActive
-                    ? 'bg-[#e8b4b8]/40 scale-105'
+                    ? 'bg-[#C6BDAC]/40/40 scale-105'
                     : 'group-hover:bg-[#ebe8e2]/50'
                 }`}
               >

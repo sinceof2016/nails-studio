@@ -36,7 +36,7 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
       <div className="p-8 text-center bg-white rounded-3xl border border-rose-200 text-rose-800">
         <span className="material-symbols-outlined text-[48px] text-rose-600 mb-2">lock</span>
         <h3 className="text-lg font-bold">Acceso Denegado</h3>
-        <p className="text-xs text-[#644E53] mt-1">
+        <p className="text-xs text-[#5A4A43] mt-1">
           El usuario administrador no tiene permisos para acceder a la Consola de API REST ni a la configuración del Gateway.
         </p>
       </div>
@@ -231,8 +231,8 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
     }
   };
 
-  const curlCommand = `curl -X GET "https://auranailsspa.com/api/v1/citas/activas" \\
-  -H "X-API-Key: ${kmsData?.primaryKey.rawSecret || 'aura_live_k1_8f9c2d1e0b4a736458291a7e4b'}" \\
+  const curlCommand = `curl -X GET "https://lapeluspa.com/api/v1/citas/activas" \\
+  -H "X-API-Key: ${kmsData?.primaryKey.rawSecret || 'pelu_live_k1_8f9c2d1e0b4a736458291a7e4b'}" \\
   -H "Content-Type: application/json"`;
 
   const copyCurlToClipboard = () => {
@@ -245,39 +245,39 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
     <div className="w-full space-y-6 pb-12 animate-in fade-in duration-200">
       
       {/* Banner Principal con Colores Pasteles Suaves */}
-      <div className="rounded-3xl bg-gradient-to-r from-[#FAF4F5] via-[#F6E3E6] to-[#F7E5DE] p-6 sm:p-8 text-[#1F1417] border border-[#EAD6D9]/80 shadow-xs relative overflow-hidden">
-        <div className="absolute -right-8 -bottom-8 w-44 h-44 rounded-full bg-[#E8B4B8]/20 blur-2xl pointer-events-none" />
+      <div className="rounded-3xl bg-gradient-to-r from-[#F4EFE9] via-[#C6BDAC]/30 to-[#F4EFE9] p-6 sm:p-8 text-[#2B2420] border border-[#C6BDAC]/80 shadow-xs relative overflow-hidden">
+        <div className="absolute -right-8 -bottom-8 w-44 h-44 rounded-full bg-[#C6BDAC]/40/20 blur-2xl pointer-events-none" />
         <div className="relative z-10">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#64444B]/10 text-[#64444B] text-xs font-semibold mb-2 border border-[#64444B]/20">
-            <span className="material-symbols-outlined text-[15px] text-[#64444B]">shield_lock</span>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#BB9C87]/10 text-[#2B2420] text-xs font-semibold mb-2 border border-[#BB9C87]/20">
+            <span className="material-symbols-outlined text-[15px] text-[#2B2420]">shield_lock</span>
             Consola Exclusiva de Seguridad &amp; Control de Llaves · David Orjuela
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#1F1417]">
+          <h2 className="text-2xl sm:text-3xl font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#2B2420]">
             Servicio de Control de Llaves (KMS) &amp; Gateway
           </h2>
-          <p className="text-xs sm:text-sm text-[#644E53] mt-1 max-w-xl">
+          <p className="text-xs sm:text-sm text-[#5A4A43] mt-1 max-w-xl">
             Gestión criptográfica con protocolo de <strong>Rotación Doble (Dual Key Rotation)</strong> con cero tiempo de inactividad, bóveda de secretos y UltraMsg WhatsApp Gateway.
           </p>
         </div>
       </div>
 
       {/* SECCIÓN 1: SERVICIO DE CONTROL DE LLAVES (KMS) CON ROTACIÓN DOBLE */}
-      <div className="bg-white rounded-3xl p-6 border border-[#EAD6D9]/80 shadow-xs space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#EAD6D9]/50 pb-4">
+      <div className="bg-white rounded-3xl p-6 border border-[#C6BDAC]/80 shadow-xs space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#C6BDAC]/50 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#64444B]/10 border border-[#64444B]/25 flex items-center justify-center text-[#64444B]">
+            <div className="w-12 h-12 rounded-2xl bg-[#BB9C87]/10 border border-[#BB9C87]/25 flex items-center justify-center text-[#2B2420]">
               <span className="material-symbols-outlined text-[28px]">key</span>
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-base text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
+                <h3 className="font-bold text-base text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
                   Motor de Control de Llaves Criptográficas (KMS)
                 </h3>
                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-bold border border-emerald-200">
                   Protocolo Doble Llave Activo
                 </span>
               </div>
-              <p className="text-xs text-[#644E53]">
+              <p className="text-xs text-[#5A4A43]">
                 Mantiene dos llaves vigentes en simultáneo para garantizar rotación sin desconectar clientes ni integraciones POS.
               </p>
             </div>
@@ -287,7 +287,7 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
             <button
               onClick={handleExecuteSwap}
               disabled={isSwapping}
-              className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#F6E3E6] border border-[#EAD6D9] text-[#1F1417] text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#C6BDAC]/40 border border-[#C6BDAC] text-[#2B2420] text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               title="Intercambia roles entre la Llave Primaria y Secundaria de forma instantánea"
             >
               <span className={`material-symbols-outlined text-[16px] ${isSwapping ? 'animate-spin' : ''}`}>
@@ -299,7 +299,7 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
             <button
               onClick={handleExecuteRotation}
               disabled={isRotating}
-              className="px-4 py-2 rounded-xl bg-[#64444B] hover:bg-[#52363C] text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-50 active:scale-95"
+              className="px-4 py-2 rounded-xl bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-50 active:scale-95"
             >
               <span className={`material-symbols-outlined text-[16px] ${isRotating ? 'animate-spin' : ''}`}>
                 autorenew
@@ -313,11 +313,11 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           
           {/* LLAVE PRIMARIA */}
-          <div className="p-5 rounded-2xl bg-[#FAF4F5] border-2 border-[#64444B]/40 space-y-3 relative overflow-hidden">
+          <div className="p-5 rounded-2xl bg-[#F4EFE9] border-2 border-[#BB9C87]/40 space-y-3 relative overflow-hidden">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs font-bold uppercase tracking-wider text-[#64444B]">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#2B2420]">
                   Llave Primaria (Tráfico Principal)
                 </span>
               </div>
@@ -327,9 +327,9 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
             </div>
 
             <div>
-              <span className="text-[11px] text-[#7D676B] block">ID de Llave: {kmsData?.primaryKey.id}</span>
-              <div className="flex items-center justify-between mt-1 bg-white p-2.5 rounded-xl border border-[#EAD6D9]">
-                <code className="text-xs font-mono font-bold text-[#1F1417]">
+              <span className="text-[11px] text-[#5A4A43] block">ID de Llave: {kmsData?.primaryKey.id}</span>
+              <div className="flex items-center justify-between mt-1 bg-white p-2.5 rounded-xl border border-[#C6BDAC]">
+                <code className="text-xs font-mono font-bold text-[#2B2420]">
                   {revealPrimary
                     ? kmsData?.primaryKey.rawSecret
                     : kmsData?.primaryKey.maskedSecret}
@@ -337,7 +337,7 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setRevealPrimary(!revealPrimary)}
-                    className="p-1 text-[#7D676B] hover:text-[#1F1417] cursor-pointer"
+                    className="p-1 text-[#5A4A43] hover:text-[#2B2420] cursor-pointer"
                     title={revealPrimary ? 'Ocultar' : 'Revelar'}
                   >
                     <span className="material-symbols-outlined text-[16px]">
@@ -351,7 +351,7 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
                         'Llave Primaria'
                       )
                     }
-                    className="p-1 text-[#7D676B] hover:text-[#64444B] cursor-pointer"
+                    className="p-1 text-[#5A4A43] hover:text-[#2B2420] cursor-pointer"
                     title="Copiar Llave Primaria"
                   >
                     <span className="material-symbols-outlined text-[16px]">
@@ -362,14 +362,14 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-[11px] text-[#644E53] pt-1">
+            <div className="grid grid-cols-2 gap-2 text-[11px] text-[#5A4A43] pt-1">
               <div>
-                <span className="text-[10px] text-[#7D676B] block">Algoritmo</span>
-                <span className="font-semibold text-[#1F1417]">AES-256-GCM / SHA-256</span>
+                <span className="text-[10px] text-[#5A4A43] block">Algoritmo</span>
+                <span className="font-semibold text-[#2B2420]">AES-256-GCM / SHA-256</span>
               </div>
               <div>
-                <span className="text-[10px] text-[#7D676B] block">Emisión</span>
-                <span className="font-semibold text-[#1F1417]">
+                <span className="text-[10px] text-[#5A4A43] block">Emisión</span>
+                <span className="font-semibold text-[#2B2420]">
                   {kmsData?.primaryKey.createdAt
                     ? new Date(kmsData.primaryKey.createdAt).toLocaleDateString('es-CO')
                     : 'Reciente'}
@@ -377,17 +377,17 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
               </div>
             </div>
 
-            <div className="text-[10px] font-mono text-[#7D676B] truncate bg-white/60 p-1.5 rounded-lg border border-[#EAD6D9]/50">
+            <div className="text-[10px] font-mono text-[#5A4A43] truncate bg-white/60 p-1.5 rounded-lg border border-[#C6BDAC]/50">
               Fingerprint: {kmsData?.primaryKey.fingerprint.slice(0, 32)}...
             </div>
           </div>
 
           {/* LLAVE SECUNDARIA (TRANSICIÓN / PERÍODO DE GRACIA) */}
-          <div className="p-5 rounded-2xl bg-[#FAF4F5] border border-[#EAD6D9] space-y-3 relative overflow-hidden">
+          <div className="p-5 rounded-2xl bg-[#F4EFE9] border border-[#C6BDAC] space-y-3 relative overflow-hidden">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                <span className="text-xs font-bold uppercase tracking-wider text-[#644E53]">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#5A4A43]">
                   Llave Secundaria (Transición / Gracia)
                 </span>
               </div>
@@ -397,9 +397,9 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
             </div>
 
             <div>
-              <span className="text-[11px] text-[#7D676B] block">ID de Llave: {kmsData?.secondaryKey.id}</span>
-              <div className="flex items-center justify-between mt-1 bg-white p-2.5 rounded-xl border border-[#EAD6D9]">
-                <code className="text-xs font-mono font-bold text-[#644E53]">
+              <span className="text-[11px] text-[#5A4A43] block">ID de Llave: {kmsData?.secondaryKey.id}</span>
+              <div className="flex items-center justify-between mt-1 bg-white p-2.5 rounded-xl border border-[#C6BDAC]">
+                <code className="text-xs font-mono font-bold text-[#5A4A43]">
                   {revealSecondary
                     ? kmsData?.secondaryKey.rawSecret
                     : kmsData?.secondaryKey.maskedSecret}
@@ -407,7 +407,7 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setRevealSecondary(!revealSecondary)}
-                    className="p-1 text-[#7D676B] hover:text-[#1F1417] cursor-pointer"
+                    className="p-1 text-[#5A4A43] hover:text-[#2B2420] cursor-pointer"
                     title={revealSecondary ? 'Ocultar' : 'Revelar'}
                   >
                     <span className="material-symbols-outlined text-[16px]">
@@ -421,7 +421,7 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
                         'Llave Secundaria'
                       )
                     }
-                    className="p-1 text-[#7D676B] hover:text-[#64444B] cursor-pointer"
+                    className="p-1 text-[#5A4A43] hover:text-[#2B2420] cursor-pointer"
                     title="Copiar Llave Secundaria"
                   >
                     <span className="material-symbols-outlined text-[16px]">
@@ -432,28 +432,28 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-[11px] text-[#644E53] pt-1">
+            <div className="grid grid-cols-2 gap-2 text-[11px] text-[#5A4A43] pt-1">
               <div>
-                <span className="text-[10px] text-[#7D676B] block">Propósito</span>
-                <span className="font-semibold text-[#1F1417]">Failover &amp; Cero Caídas</span>
+                <span className="text-[10px] text-[#5A4A43] block">Propósito</span>
+                <span className="font-semibold text-[#2B2420]">Failover &amp; Cero Caídas</span>
               </div>
               <div>
-                <span className="text-[10px] text-[#7D676B] block">Estado de Rotación</span>
+                <span className="text-[10px] text-[#5A4A43] block">Estado de Rotación</span>
                 <span className="font-semibold text-amber-700">Aceptada en Headers</span>
               </div>
             </div>
 
-            <div className="text-[10px] font-mono text-[#7D676B] truncate bg-white/60 p-1.5 rounded-lg border border-[#EAD6D9]/50">
+            <div className="text-[10px] font-mono text-[#5A4A43] truncate bg-white/60 p-1.5 rounded-lg border border-[#C6BDAC]/50">
               Fingerprint: {kmsData?.secondaryKey.fingerprint.slice(0, 32)}...
             </div>
           </div>
         </div>
 
         {/* Verificador de Llaves en Tiempo Real */}
-        <div className="p-4 rounded-2xl bg-[#FAF4F5] border border-[#EAD6D9] space-y-3">
+        <div className="p-4 rounded-2xl bg-[#F4EFE9] border border-[#C6BDAC] space-y-3">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#64444B] text-[18px]">verified_user</span>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[#1F1417]">
+            <span className="material-symbols-outlined text-[#2B2420] text-[18px]">verified_user</span>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[#2B2420]">
               Verificador Criptográfico de Llaves en Vivo
             </h4>
           </div>
@@ -464,12 +464,12 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
               value={testCandidateKey}
               onChange={(e) => setTestCandidateKey(e.target.value)}
               placeholder="Pega cualquier API Key aquí para comprobar su validez en el KMS..."
-              className="flex-1 h-10 px-3.5 rounded-xl bg-white border border-[#EAD6D9] text-xs font-mono text-[#1F1417] focus:outline-none focus:ring-1 focus:ring-[#64444B]"
+              className="flex-1 h-10 px-3.5 rounded-xl bg-white border border-[#C6BDAC] text-xs font-mono text-[#2B2420] focus:outline-none focus:ring-1 focus:ring-[#2B2420]"
             />
             <button
               onClick={handleVerifyCandidateKey}
               disabled={verifyingKey || !testCandidateKey.trim()}
-              className="px-4 py-2 rounded-xl bg-[#64444B] hover:bg-[#52363C] text-white text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shrink-0"
+              className="px-4 py-2 rounded-xl bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shrink-0"
             >
               {verifyingKey ? 'Comprobando...' : 'Comprobar en KMS'}
             </button>
@@ -496,12 +496,12 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
         {/* Libro Mayor de Auditoría de Rotaciones */}
         {kmsData?.auditTrail && kmsData.auditTrail.length > 0 && (
           <div className="space-y-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[#644E53]">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[#5A4A43]">
               Libro Mayor de Auditoría de Rotaciones (KMS Ledger)
             </h4>
-            <div className="overflow-x-auto rounded-2xl border border-[#EAD6D9]">
+            <div className="overflow-x-auto rounded-2xl border border-[#C6BDAC]">
               <table className="w-full text-left text-xs">
-                <thead className="bg-[#FAF4F5] text-[#644E53] font-semibold border-b border-[#EAD6D9]">
+                <thead className="bg-[#F4EFE9] text-[#5A4A43] font-semibold border-b border-[#C6BDAC]">
                   <tr>
                     <th className="p-3">Marca de Tiempo</th>
                     <th className="p-3">Acción Criptográfica</th>
@@ -509,19 +509,19 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
                     <th className="p-3">Detalle</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#EAD6D9]/50 bg-white">
+                <tbody className="divide-y divide-[#C6BDAC]/50 bg-white">
                   {kmsData.auditTrail.map((record) => (
-                    <tr key={record.id} className="hover:bg-[#FAF4F5]/60 transition-colors">
-                      <td className="p-3 font-mono text-[11px] text-[#7D676B]">
+                    <tr key={record.id} className="hover:bg-[#F4EFE9]/60 transition-colors">
+                      <td className="p-3 font-mono text-[11px] text-[#5A4A43]">
                         {new Date(record.timestamp).toLocaleString('es-CO')}
                       </td>
                       <td className="p-3">
-                        <span className="px-2 py-0.5 rounded-full bg-[#64444B]/10 text-[#64444B] font-bold text-[10px]">
+                        <span className="px-2 py-0.5 rounded-full bg-[#BB9C87]/10 text-[#2B2420] font-bold text-[10px]">
                           {record.action}
                         </span>
                       </td>
-                      <td className="p-3 font-semibold text-[#1F1417]">{record.triggeredBy}</td>
-                      <td className="p-3 text-[#644E53]">{record.details}</td>
+                      <td className="p-3 font-semibold text-[#2B2420]">{record.triggeredBy}</td>
+                      <td className="p-3 text-[#5A4A43]">{record.details}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -532,23 +532,23 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
       </div>
 
       {/* SECCIÓN 2: PROBADOR DE ENDPOINTS REST CON AUTENTICACIÓN KMS DUAL */}
-      <div className="bg-white rounded-3xl p-6 border border-[#EAD6D9]/80 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#EAD6D9]/50 pb-3">
+      <div className="bg-white rounded-3xl p-6 border border-[#C6BDAC]/80 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#C6BDAC]/50 pb-3">
           <div>
-            <h3 className="font-bold text-base text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
+            <h3 className="font-bold text-base text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
               Prueba de Endpoints REST con Llave Activa
             </h3>
-            <p className="text-xs text-[#644E53]">
+            <p className="text-xs text-[#5A4A43]">
               Selecciona con qué llave deseas autenticarte para verificar la respuesta del backend
             </p>
           </div>
 
-          <div className="flex items-center gap-1.5 bg-[#FAF4F5] p-1 rounded-xl border border-[#EAD6D9]">
-            <span className="text-[11px] font-semibold text-[#644E53] px-2">Autenticar con:</span>
+          <div className="flex items-center gap-1.5 bg-[#F4EFE9] p-1 rounded-xl border border-[#C6BDAC]">
+            <span className="text-[11px] font-semibold text-[#5A4A43] px-2">Autenticar con:</span>
             <button
               onClick={() => setKeyToUseForApi('primary')}
               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                keyToUseForApi === 'primary' ? 'bg-[#64444B] text-white shadow-2xs' : 'text-[#644E53]'
+                keyToUseForApi === 'primary' ? 'bg-[#BB9C87] text-[#2B2420] font-bold shadow-2xs' : 'text-[#5A4A43]'
               }`}
             >
               Primaria
@@ -556,7 +556,7 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
             <button
               onClick={() => setKeyToUseForApi('secondary')}
               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                keyToUseForApi === 'secondary' ? 'bg-amber-700 text-white shadow-2xs' : 'text-[#644E53]'
+                keyToUseForApi === 'secondary' ? 'bg-amber-700 text-white shadow-2xs' : 'text-[#5A4A43]'
               }`}
             >
               Secundaria
@@ -564,7 +564,7 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
             <button
               onClick={() => setKeyToUseForApi('invalid')}
               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                keyToUseForApi === 'invalid' ? 'bg-rose-700 text-white shadow-2xs' : 'text-[#644E53]'
+                keyToUseForApi === 'invalid' ? 'bg-rose-700 text-white shadow-2xs' : 'text-[#5A4A43]'
               }`}
             >
               Inválida
@@ -576,7 +576,7 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
           <button
             onClick={() => handleExecuteRestTest('citas')}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-              selectedEndpoint === 'citas' ? 'bg-[#64444B] text-white' : 'bg-[#F6E3E6] text-[#644E53]'
+              selectedEndpoint === 'citas' ? 'bg-[#BB9C87] text-[#2B2420] font-bold' : 'bg-[#C6BDAC]/40 text-[#5A4A43]'
             }`}
           >
             GET /api/v1/citas/activas
@@ -584,7 +584,7 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
           <button
             onClick={() => handleExecuteRestTest('caja')}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-              selectedEndpoint === 'caja' ? 'bg-[#64444B] text-white' : 'bg-[#F6E3E6] text-[#644E53]'
+              selectedEndpoint === 'caja' ? 'bg-[#BB9C87] text-[#2B2420] font-bold' : 'bg-[#C6BDAC]/40 text-[#5A4A43]'
             }`}
           >
             GET /api/v1/caja/balance
@@ -592,7 +592,7 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
           <button
             onClick={() => handleExecuteRestTest('whatsapp')}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-              selectedEndpoint === 'whatsapp' ? 'bg-[#64444B] text-white' : 'bg-[#F6E3E6] text-[#644E53]'
+              selectedEndpoint === 'whatsapp' ? 'bg-[#BB9C87] text-[#2B2420] font-bold' : 'bg-[#C6BDAC]/40 text-[#5A4A43]'
             }`}
           >
             GET /api/v1/whatsapp/status
@@ -600,7 +600,7 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
           <button
             onClick={() => handleExecuteRestTest('clientes')}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-              selectedEndpoint === 'clientes' ? 'bg-[#64444B] text-white' : 'bg-[#F6E3E6] text-[#644E53]'
+              selectedEndpoint === 'clientes' ? 'bg-[#BB9C87] text-[#2B2420] font-bold' : 'bg-[#C6BDAC]/40 text-[#5A4A43]'
             }`}
           >
             GET /api/v1/clientes/metricas
@@ -610,13 +610,13 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
         {apiResponse && (
           <div className="space-y-2 pt-2">
             {apiResponseHeaders && (
-              <div className="p-2 rounded-xl bg-[#F6E3E6] text-xs font-mono text-[#64444B]">
+              <div className="p-2 rounded-xl bg-[#C6BDAC]/40 text-xs font-mono text-[#2B2420]">
                 {apiResponseHeaders}
               </div>
             )}
             <div className="space-y-1">
-              <span className="text-[11px] font-semibold text-[#644E53]">Respuesta del Servidor:</span>
-              <pre className="p-3.5 rounded-2xl bg-[#FAF4F5] text-[#1F1417] text-xs font-mono overflow-x-auto border border-[#EAD6D9]">
+              <span className="text-[11px] font-semibold text-[#5A4A43]">Respuesta del Servidor:</span>
+              <pre className="p-3.5 rounded-2xl bg-[#F4EFE9] text-[#2B2420] text-xs font-mono overflow-x-auto border border-[#C6BDAC]">
                 {apiResponse}
               </pre>
             </div>
@@ -626,35 +626,35 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
         {/* cURL Example */}
         <div className="space-y-2 pt-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#644E53]">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#5A4A43]">
               Ejemplo de Consulta API Segura (cURL)
             </span>
             <button
               onClick={copyCurlToClipboard}
-              className="text-xs font-semibold text-[#64444B] hover:underline flex items-center gap-1 cursor-pointer"
+              className="text-xs font-semibold text-[#2B2420] hover:underline flex items-center gap-1 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[15px]">content_copy</span>
               <span>{copiedCurl ? '¡Copiado!' : 'Copiar cURL'}</span>
             </button>
           </div>
-          <pre className="p-3.5 rounded-2xl bg-[#FAF4F5] text-[#64444B] text-xs font-mono overflow-x-auto border border-[#EAD6D9]">
+          <pre className="p-3.5 rounded-2xl bg-[#F4EFE9] text-[#2B2420] text-xs font-mono overflow-x-auto border border-[#C6BDAC]">
             {curlCommand}
           </pre>
         </div>
       </div>
 
       {/* SECCIÓN 3: GATEWAY WHATSAPP ULTRAMSG */}
-      <div className="bg-white rounded-3xl p-6 border border-[#EAD6D9]/80 shadow-xs space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#EAD6D9]/50 pb-4">
+      <div className="bg-white rounded-3xl p-6 border border-[#C6BDAC]/80 shadow-xs space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#C6BDAC]/50 pb-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-800">
               <span className="material-symbols-outlined text-[28px]">chat</span>
             </div>
             <div>
-              <h3 className="font-bold text-base text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
+              <h3 className="font-bold text-base text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
                 UltraMsg Gateway &amp; Proxy Seguro
               </h3>
-              <p className="text-xs text-[#644E53]">
+              <p className="text-xs text-[#5A4A43]">
                 Envío automático de notificaciones a WhatsApp sin exponer credenciales en el cliente
               </p>
             </div>
@@ -662,7 +662,7 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsUltraMsgModalOpen(true)}
-              className="px-3.5 py-2 rounded-xl bg-[#64444B] hover:bg-[#52363C] text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
             >
               <span className="material-symbols-outlined text-[16px]">settings</span>
               <span>Configurar Disparos &amp; Plantillas</span>
@@ -676,59 +676,59 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
 
         {/* Masked Credentials Summary */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-          <div className="p-3.5 rounded-2xl bg-[#FAF4F5] border border-[#EAD6D9]/80">
-            <span className="text-[11px] font-semibold text-[#644E53] block mb-1">
+          <div className="p-3.5 rounded-2xl bg-[#F4EFE9] border border-[#C6BDAC]/80">
+            <span className="text-[11px] font-semibold text-[#5A4A43] block mb-1">
               Gateway Provider
             </span>
-            <span className="font-bold text-[#1F1417] block">UltraMsg Cloud API</span>
+            <span className="font-bold text-[#2B2420] block">UltraMsg Cloud API</span>
             <span className="text-[10px] text-emerald-700 font-semibold">✓ Conexión encriptada</span>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-[#FAF4F5] border border-[#EAD6D9]/80">
-            <span className="text-[11px] font-semibold text-[#644E53] block mb-1">
+          <div className="p-3.5 rounded-2xl bg-[#F4EFE9] border border-[#C6BDAC]/80">
+            <span className="text-[11px] font-semibold text-[#5A4A43] block mb-1">
               UltraMsg Instance ID
             </span>
-            <span className="font-mono font-bold text-[#1F1417] block">{gatewayStatus.instance}</span>
+            <span className="font-mono font-bold text-[#2B2420] block">{gatewayStatus.instance}</span>
             <span className="text-[10px] text-emerald-700 font-semibold">✓ Enrutado vía Proxy</span>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-[#FAF4F5] border border-[#EAD6D9]/80">
-            <span className="text-[11px] font-semibold text-[#644E53] block mb-1">
+          <div className="p-3.5 rounded-2xl bg-[#F4EFE9] border border-[#C6BDAC]/80">
+            <span className="text-[11px] font-semibold text-[#5A4A43] block mb-1">
               Token de Autenticación
             </span>
-            <span className="font-mono font-bold text-[#1F1417] block">••••••••••••••••</span>
+            <span className="font-mono font-bold text-[#2B2420] block">••••••••••••••••</span>
             <span className="text-[10px] text-emerald-700 font-semibold">✓ Oculto en Vault</span>
           </div>
         </div>
 
         {/* Interactive Live Message Tester */}
-        <div className="p-4 rounded-2xl bg-[#FAF4F5] border border-[#EAD6D9] space-y-3">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-[#64444B] font-['Plus_Jakarta_Sans',sans-serif]">
+        <div className="p-4 rounded-2xl bg-[#F4EFE9] border border-[#C6BDAC] space-y-3">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
             Disparador de Prueba de Gateway Seguro
           </h4>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div>
-              <label className="block font-semibold text-[#644E53] mb-1">
+              <label className="block font-semibold text-[#5A4A43] mb-1">
                 Teléfono de Destino (+57...)
               </label>
               <input
                 type="text"
                 value={testPhone}
                 onChange={(e) => setTestPhone(e.target.value)}
-                placeholder="+57 300 000 0000"
-                className="w-full h-10 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417]"
+                placeholder="Ej. 300 123 4567"
+                className="w-full h-10 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420]"
               />
             </div>
             <div>
-              <label className="block font-semibold text-[#644E53] mb-1">
+              <label className="block font-semibold text-[#5A4A43] mb-1">
                 Mensaje de Notificación
               </label>
               <input
                 type="text"
                 value={testMessage}
                 onChange={(e) => setTestMessage(e.target.value)}
-                className="w-full h-10 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417]"
+                className="w-full h-10 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420]"
               />
             </div>
           </div>
@@ -744,7 +744,7 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
             </button>
 
             {testResult && (
-              <span className="text-xs font-semibold text-[#64444B] animate-in fade-in">
+              <span className="text-xs font-semibold text-[#2B2420] animate-in fade-in">
                 {testResult}
               </span>
             )}
@@ -753,19 +753,19 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
       </div>
 
       {/* History Table */}
-      <div className="bg-white rounded-3xl p-6 border border-[#EAD6D9]/80 shadow-xs space-y-4">
-        <h3 className="font-bold text-base text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
+      <div className="bg-white rounded-3xl p-6 border border-[#C6BDAC]/80 shadow-xs space-y-4">
+        <h3 className="font-bold text-base text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
           Registro de Despachos WhatsApp Recientes ({history.length})
         </h3>
 
         {history.length === 0 ? (
-          <p className="text-xs text-[#7D676B] py-4 text-center">
+          <p className="text-xs text-[#5A4A43] py-4 text-center">
             Aún no se han enviado mensajes en esta sesión. Los disparos automáticos aparecerán aquí.
           </p>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-[#EAD6D9]/70">
+          <div className="overflow-x-auto rounded-2xl border border-[#C6BDAC]/70">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#FAF4F5] text-[#644E53] font-semibold border-b border-[#EAD6D9]/70">
+              <thead className="bg-[#F4EFE9] text-[#5A4A43] font-semibold border-b border-[#C6BDAC]/70">
                 <tr>
                   <th className="p-3">Hora</th>
                   <th className="p-3">Destinatario</th>
@@ -774,14 +774,14 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
                   <th className="p-3">Gateway</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#EAD6D9]/40 bg-white">
+              <tbody className="divide-y divide-[#C6BDAC]/40 bg-white">
                 {history.map((record) => (
-                  <tr key={record.id} className="hover:bg-[#FAF4F5]/50 transition-colors">
-                    <td className="p-3 font-mono text-[11px] text-[#7D676B]">
+                  <tr key={record.id} className="hover:bg-[#F4EFE9]/50 transition-colors">
+                    <td className="p-3 font-mono text-[11px] text-[#5A4A43]">
                       {record.fechaHora ? record.fechaHora.slice(11, 16) : '--:--'}
                     </td>
-                    <td className="p-3 font-semibold text-[#1F1417]">{record.destinatario}</td>
-                    <td className="p-3 text-[#644E53] max-w-xs truncate">{record.mensaje}</td>
+                    <td className="p-3 font-semibold text-[#2B2420]">{record.destinatario}</td>
+                    <td className="p-3 text-[#5A4A43] max-w-xs truncate">{record.mensaje}</td>
                     <td className="p-3">
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -795,7 +795,7 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
                         {record.estado.toUpperCase()}
                       </span>
                     </td>
-                    <td className="p-3 font-mono text-[11px] text-[#64444B]">
+                    <td className="p-3 font-mono text-[11px] text-[#2B2420]">
                       {record.detallesHttp || 'UltraMsg Proxy'}
                     </td>
                   </tr>

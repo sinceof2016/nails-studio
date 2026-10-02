@@ -25,12 +25,12 @@ export const NewExpenseModal: React.FC<NewExpenseModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="relative w-full max-w-sm bg-[#FAF4F5] rounded-3xl p-6 shadow-2xl border border-[#EAD6D9] space-y-3.5">
-        <div className="flex items-center justify-between border-b border-[#EAD6D9]/50 pb-2">
+      <div className="relative w-full max-w-sm bg-[#F4EFE9] rounded-3xl p-6 shadow-2xl border border-[#C6BDAC] space-y-3.5">
+        <div className="flex items-center justify-between border-b border-[#C6BDAC]/50 pb-2">
           <h3 className="font-bold text-sm text-[#ba1a1a]">Registrar Egreso / Gasto de Caja Menor</h3>
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded-full hover:bg-[#F6E3E6] flex items-center justify-center text-[#644E53]"
+            className="w-7 h-7 rounded-full hover:bg-[#C6BDAC]/40 flex items-center justify-center text-[#5A4A43]"
           >
             <span className="material-symbols-outlined text-[18px]">close</span>
           </button>
@@ -44,19 +44,19 @@ export const NewExpenseModal: React.FC<NewExpenseModalProps> = ({
 
         <form onSubmit={onSubmit} className="space-y-3 text-xs">
           <div>
-            <label className="block font-semibold text-[#644E53] mb-1">Concepto del Gasto</label>
+            <label className="block font-semibold text-[#5A4A43] mb-1">Concepto del Gasto</label>
             <input
               type="text"
               required
               value={expenseConcept}
               onChange={(e) => setExpenseConcept(e.target.value)}
               placeholder="Ej. Insumos desechables o esterilización"
-              className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417]"
+              className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420]"
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-[#644E53] mb-1">Monto en COP ($)</label>
+            <label className="block font-semibold text-[#5A4A43] mb-1">Monto en COP ($)</label>
             <input
               type="number"
               step="1000"

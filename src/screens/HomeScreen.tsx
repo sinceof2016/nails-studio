@@ -50,21 +50,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   return (
     <div className="w-full space-y-6 pb-12 animate-in fade-in duration-200">
       {/* Top Banner: Protocolo Signature & Ritual de Bienestar (Full Width) */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#F4D9DC] via-[#F8E7E9] to-[#FFFBFB] p-6 sm:p-8 md:p-10 shadow-[0_8px_24px_-4px_rgba(234,185,189,0.3)] border border-[#E8CFD3] flex flex-col justify-between">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#C6BDAC]/35 via-[#F4EFE9] to-white p-6 sm:p-8 md:p-10 shadow-[0_8px_24px_-4px_rgba(234,185,189,0.3)] border border-[#C6BDAC] flex flex-col justify-between">
         <div className="absolute -right-10 -bottom-10 w-60 h-60 rounded-full bg-white/50 blur-2xl pointer-events-none" />
         <div className="relative z-10 space-y-3 max-w-3xl">
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/95 text-[#5E3D44] text-xs font-semibold backdrop-blur-md shadow-2xs border border-[#E8CFD3] font-['Plus_Jakarta_Sans',sans-serif]">
-            <span className="material-symbols-outlined text-[15px] text-[#64444B] fill">
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/95 text-[#5E3D44] text-xs font-semibold backdrop-blur-md shadow-2xs border border-[#C6BDAC] font-['Plus_Jakarta_Sans',sans-serif]">
+            <span className="material-symbols-outlined text-[15px] text-[#2B2420] fill">
               auto_awesome
             </span>
-            Protocolo Signature · {BUSINESS_CONFIG.brandName} Chicó
+            Protocolo Signature · {BUSINESS_CONFIG.brandName}
           </div>
 
-          <h2 className="text-2xl sm:text-4xl text-[#1F1417] font-bold tracking-tight font-['Plus_Jakarta_Sans',sans-serif] leading-tight">
+          <h2 className="text-2xl sm:text-4xl text-[#2B2420] font-bold tracking-tight font-['Plus_Jakarta_Sans',sans-serif] leading-tight">
             El Ritual de Manicura Rusa &amp; Bienestar Clínico
           </h2>
 
-          <p className="text-sm sm:text-base text-[#644E53] leading-relaxed">
+          <p className="text-sm sm:text-base text-[#5A4A43] leading-relaxed">
             Un santuario de belleza y salud ungueal de alta precisión. Combinamos esterilización hospitalaria en autoclave a 134°C, limpieza en seco con tecnología de fresas diamantadas y nutrición regenerativa con aceites botánicos orgánicos para unas uñas impecables y saludables.
           </p>
         </div>
@@ -72,23 +72,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <div className="relative z-10 pt-6 flex flex-wrap items-center gap-4">
           <button
             onClick={onOpenPromo}
-            className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-[#64444B] text-white text-xs sm:text-sm font-semibold shadow-[0_4px_16px_rgba(100,68,75,0.25)] hover:bg-[#52363C] active:scale-95 transition-all cursor-pointer"
+            className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-[#BB9C87] text-[#2B2420] font-bold text-xs sm:text-sm font-semibold shadow-[0_4px_16px_rgba(100,68,75,0.25)] hover:bg-[#AA8A74] active:scale-95 transition-all cursor-pointer"
           >
             <span>Conocer Nuestro Ritual</span>
             <span className="material-symbols-outlined text-[17px] ml-1.5">local_florist</span>
           </button>
           <span className="text-xs sm:text-sm text-[#5E3D44] font-medium flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-[18px] text-[#64444B]">verified</span>
-            Sede Chicó · Atención personalizada en cabina privada · Reserva en línea
+            <span className="material-symbols-outlined text-[18px] text-[#2B2420]">verified</span>
+            {BUSINESS_CONFIG.branchName} · Atención personalizada en cabina privada · Reserva en línea
           </span>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-[#EAD6D9] shadow-xs space-y-4">
+      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-[#C6BDAC] shadow-xs space-y-4">
         {/* Search Input Bar */}
         <div className="relative flex items-center">
-          <span className="material-symbols-outlined absolute left-4 text-[#7D676B] text-[20px]">
+          <span className="material-symbols-outlined absolute left-4 text-[#5A4A43] text-[20px]">
             search
           </span>
           <input
@@ -96,12 +96,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar por tratamiento, esmaltado, técnica rusa o spa..."
-            className="w-full h-11 pl-11 pr-10 rounded-full bg-[#FAF4F5] border border-[#EAD6D9] text-xs sm:text-sm text-[#1F1417] placeholder-[#7D676B] focus:outline-none focus:ring-2 focus:ring-[#64444B]/30 transition-all"
+            className="w-full h-11 pl-11 pr-10 rounded-full bg-[#F4EFE9] border border-[#C6BDAC] text-xs sm:text-sm text-[#2B2420] placeholder-[#5A4A43] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/30 transition-all"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3.5 text-[#7D676B] hover:text-[#1F1417]"
+              className="absolute right-3.5 text-[#5A4A43] hover:text-[#2B2420]"
             >
               <span className="material-symbols-outlined text-[18px]">close</span>
             </button>
@@ -118,8 +118,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 onClick={() => setActiveCategory(cat.id)}
                 className={`px-4 py-2 rounded-full text-xs font-semibold font-['Plus_Jakarta_Sans',sans-serif] whitespace-nowrap transition-all duration-150 cursor-pointer ${
                   isSelected
-                    ? 'bg-[#64444B] text-white shadow-xs'
-                    : 'bg-[#F6E3E6] text-[#644E53] hover:text-[#1F1417] hover:bg-[#EED5D9]'
+                    ? 'bg-[#BB9C87] text-[#2B2420] font-bold shadow-xs'
+                    : 'bg-[#C6BDAC]/40 text-[#5A4A43] hover:text-[#2B2420] hover:bg-[#C6BDAC]/50'
                 }`}
               >
                 {cat.label}
@@ -132,26 +132,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* Section Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#64444B]" />
-          <h3 className="text-xl sm:text-2xl text-[#1F1417] font-bold tracking-tight font-['Plus_Jakarta_Sans',sans-serif]">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#BB9C87]" />
+          <h3 className="text-xl sm:text-2xl text-[#2B2420] font-bold tracking-tight font-['Plus_Jakarta_Sans',sans-serif]">
             Carta de Tratamientos &amp; Servicios
           </h3>
         </div>
-        <span className="text-xs sm:text-sm text-[#64444B] font-semibold font-['Plus_Jakarta_Sans',sans-serif]">
+        <span className="text-xs sm:text-sm text-[#2B2420] font-semibold font-['Plus_Jakarta_Sans',sans-serif]">
           {filteredServices.length} {filteredServices.length === 1 ? 'servicio disponible' : 'servicios disponibles'}
         </span>
       </div>
 
       {/* Services Grid: Fully Responsive */}
       {filteredServices.length === 0 ? (
-        <div className="p-12 text-center bg-white rounded-3xl border border-[#EAD6D9]">
-          <span className="material-symbols-outlined text-[#64444B] text-[44px] mb-2">
+        <div className="p-12 text-center bg-white rounded-3xl border border-[#C6BDAC]">
+          <span className="material-symbols-outlined text-[#2B2420] text-[44px] mb-2">
             spa
           </span>
-          <p className="text-base font-semibold text-[#1F1417]">
+          <p className="text-base font-semibold text-[#2B2420]">
             No encontramos servicios con ese criterio de búsqueda
           </p>
-          <p className="text-xs text-[#644E53] mt-1">
+          <p className="text-xs text-[#5A4A43] mt-1">
             Prueba con otra palabra o selecciona "Todos los Servicios".
           </p>
           <button
@@ -159,7 +159,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               setActiveCategory('todos');
               setSearchQuery('');
             }}
-            className="mt-4 px-5 py-2 rounded-full bg-[#64444B] text-white text-xs font-semibold shadow-xs"
+            className="mt-4 px-5 py-2 rounded-full bg-[#BB9C87] text-[#2B2420] font-bold text-xs font-semibold shadow-xs"
           >
             Ver todos los servicios
           </button>
@@ -169,12 +169,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           {filteredServices.map((service) => (
             <div
               key={service.id}
-              className="rounded-3xl bg-white p-5 shadow-[0_6px_20px_-4px_rgba(234,185,189,0.2)] border border-[#EAD6D9] flex flex-col justify-between transition-all hover:shadow-[0_12px_28px_-4px_rgba(234,185,189,0.35)] group"
+              className="rounded-3xl bg-white p-5 shadow-[0_6px_20px_-4px_rgba(234,185,189,0.2)] border border-[#C6BDAC] flex flex-col justify-between transition-all hover:shadow-[0_12px_28px_-4px_rgba(234,185,189,0.35)] group"
             >
               <div>
                 {/* Card Image Banner */}
                 <div
-                  className="relative w-full h-48 rounded-2xl overflow-hidden bg-[#FAF4F5] cursor-pointer mb-4"
+                  className="relative w-full h-48 rounded-2xl overflow-hidden bg-[#F4EFE9] cursor-pointer mb-4"
                   onClick={() => onOpenServiceDetail(service)}
                 >
                   <img
@@ -185,12 +185,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   />
 
                   {/* Rating Badge */}
-                  <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md text-[#1F1417] text-xs font-semibold flex items-center gap-1 shadow-sm">
+                  <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md text-[#2B2420] text-xs font-semibold flex items-center gap-1 shadow-sm">
                     <span className="material-symbols-outlined text-[14px] text-[#c59b27] fill">
                       star
                     </span>
                     {service.rating}{' '}
-                    <span className="text-[#644E53] font-normal">
+                    <span className="text-[#5A4A43] font-normal">
                       ({service.reviewsCount})
                     </span>
                   </div>
@@ -199,12 +199,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   <div
                     className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-semibold shadow-xs ${
                       service.tagType === 'top'
-                        ? 'bg-[#F4D9DC] text-[#5E3D44]'
+                        ? 'bg-[#C6BDAC]/50 text-[#5E3D44]'
                         : service.tagType === 'relax'
-                        ? 'bg-[#F6E3E6] text-[#64444B]'
+                        ? 'bg-[#C6BDAC]/40 text-[#2B2420]'
                         : service.tagType === 'trend'
-                        ? 'bg-[#FBE8EA] text-[#52363C]'
-                        : 'bg-[#FAF4F5] text-[#1F1417]'
+                        ? 'bg-[#F4EFE9] text-[#AA8A74]'
+                        : 'bg-[#F4EFE9] text-[#2B2420]'
                     }`}
                   >
                     {service.tag}
@@ -217,23 +217,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   onClick={() => onOpenServiceDetail(service)}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <h4 className="text-base sm:text-lg text-[#1F1417] font-bold font-['Plus_Jakarta_Sans',sans-serif] group-hover:text-[#64444B] transition-colors leading-snug">
+                    <h4 className="text-base sm:text-lg text-[#2B2420] font-bold font-['Plus_Jakarta_Sans',sans-serif] group-hover:text-[#2B2420] transition-colors leading-snug">
                       {service.name}
                     </h4>
                   </div>
-                  <div className="text-lg font-bold text-[#64444B] font-mono">
+                  <div className="text-lg font-bold text-[#2B2420] font-mono">
                     {formatCOP(service.price)}
                   </div>
-                  <p className="text-xs text-[#644E53] leading-relaxed line-clamp-2">
+                  <p className="text-xs text-[#5A4A43] leading-relaxed line-clamp-2">
                     {service.description}
                   </p>
                 </div>
               </div>
 
               {/* Card Footer: Duration & CTA */}
-              <div className="pt-3 border-t border-[#EAD6D9]/60 flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-[#644E53] text-xs">
-                  <span className="material-symbols-outlined text-[16px] text-[#64444B]">
+              <div className="pt-3 border-t border-[#C6BDAC]/60 flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-[#5A4A43] text-xs">
+                  <span className="material-symbols-outlined text-[16px] text-[#2B2420]">
                     schedule
                   </span>
                   <span>{service.durationMinutes} min</span>
@@ -241,7 +241,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
                 <button
                   onClick={() => onQuickBook(service)}
-                  className="px-4 py-2 rounded-full bg-[#64444B] hover:bg-[#52363C] text-white text-xs font-semibold transition-all duration-200 active:scale-95 shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  className="px-4 py-2 rounded-full bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold text-xs font-semibold transition-all duration-200 active:scale-95 shadow-xs flex items-center gap-1.5 cursor-pointer"
                 >
                   <span>Reservar</span>
                   <span className="material-symbols-outlined text-[15px]">
@@ -255,15 +255,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       )}
 
       {/* Specialists Spotlight Section */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EAD6D9] shadow-xs space-y-4">
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#C6BDAC] shadow-xs space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#64444B]" />
-            <h3 className="text-xl sm:text-2xl text-[#1F1417] font-bold tracking-tight font-['Plus_Jakarta_Sans',sans-serif]">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#BB9C87]" />
+            <h3 className="text-xl sm:text-2xl text-[#2B2420] font-bold tracking-tight font-['Plus_Jakarta_Sans',sans-serif]">
               Especialistas del Santuario
             </h3>
           </div>
-          <span className="text-xs sm:text-sm text-[#64444B] font-medium">
+          <span className="text-xs sm:text-sm text-[#2B2420] font-medium">
             Equipo certificado
           </span>
         </div>
@@ -273,7 +273,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <div
               key={specialist.id}
               onClick={() => onOpenSpecialist(specialist)}
-              className="flex items-center gap-3.5 p-4 rounded-2xl bg-[#FAF4F5] border border-[#EAD6D9] hover:border-[#64444B]/40 cursor-pointer transition-all hover:bg-white shadow-2xs group"
+              className="flex items-center gap-3.5 p-4 rounded-2xl bg-[#F4EFE9] border border-[#C6BDAC] hover:border-[#BB9C87]/40 cursor-pointer transition-all hover:bg-white shadow-2xs group"
             >
               <img
                 src={specialist.avatar}
@@ -281,13 +281,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 className="w-14 h-14 rounded-full object-cover ring-2 ring-[#E8CFD3] group-hover:scale-105 transition-transform shrink-0"
               />
               <div className="min-w-0">
-                <h4 className="text-sm font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif] truncate">
+                <h4 className="text-sm font-bold text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif] truncate">
                   {specialist.name}
                 </h4>
-                <p className="text-xs text-[#64444B] font-semibold truncate">{specialist.role}</p>
-                <div className="flex items-center gap-1 text-[11px] text-[#644E53] mt-0.5">
+                <p className="text-xs text-[#2B2420] font-semibold truncate">{specialist.role}</p>
+                <div className="flex items-center gap-1 text-[11px] text-[#5A4A43] mt-0.5">
                   <span className="material-symbols-outlined text-[13px] text-[#c59b27] fill">star</span>
-                  <span className="font-bold text-[#1F1417]">{specialist.rating}</span>
+                  <span className="font-bold text-[#2B2420]">{specialist.rating}</span>
                   <span>({specialist.reviewsCount})</span>
                 </div>
               </div>
@@ -297,29 +297,29 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       </div>
 
       {/* Spa Footer & Privacy / Cookie Links */}
-      <footer className="pt-6 pb-2 text-center text-xs text-[#7D676B] space-y-3">
-        <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-[#644E53]">
+      <footer className="pt-6 pb-2 text-center text-xs text-[#5A4A43] space-y-3">
+        <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-[#5A4A43]">
           <button
             type="button"
             onClick={onOpenCookieSettings}
-            className="hover:text-[#64444B] transition-colors flex items-center gap-1 cursor-pointer"
+            className="hover:text-[#2B2420] transition-colors flex items-center gap-1 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[16px] text-[#64444B]">cookie</span>
+            <span className="material-symbols-outlined text-[16px] text-[#2B2420]">cookie</span>
             <span>Configuración de Cookies</span>
           </button>
           <span>•</span>
           <button
             type="button"
             onClick={onOpenCookiePolicy}
-            className="hover:text-[#64444B] transition-colors flex items-center gap-1 cursor-pointer"
+            className="hover:text-[#2B2420] transition-colors flex items-center gap-1 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[16px] text-[#64444B]">policy</span>
+            <span className="material-symbols-outlined text-[16px] text-[#2B2420]">policy</span>
             <span>Política de Cookies &amp; Privacidad</span>
           </button>
           <span>•</span>
-          <span className="text-[#7D676B]">Sede Chicó · Bogotá D.C.</span>
+          <span className="text-[#5A4A43]">{BUSINESS_CONFIG.branchName} · {BUSINESS_CONFIG.city}</span>
         </div>
-        <p className="text-[11px] text-[#7D676B]">
+        <p className="text-[11px] text-[#5A4A43]">
           © {new Date().getFullYear()} {BUSINESS_CONFIG.brandName}. Todos los derechos reservados.
         </p>
       </footer>

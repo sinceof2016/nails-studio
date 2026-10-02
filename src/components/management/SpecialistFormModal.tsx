@@ -114,19 +114,19 @@ export const SpecialistFormModal: React.FC<SpecialistFormModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg bg-[#FAF4F5] rounded-3xl p-6 shadow-2xl border border-[#EAD6D9] space-y-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between border-b border-[#EAD6D9]/50 pb-3">
+      <div className="relative w-full max-w-lg bg-[#F4EFE9] rounded-3xl p-6 shadow-2xl border border-[#C6BDAC] space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-[#C6BDAC]/50 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#64444B]/10 text-[#64444B] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-[#BB9C87]/10 text-[#2B2420] flex items-center justify-center">
               <span className="material-symbols-outlined text-[18px]">brush</span>
             </div>
-            <h3 className="font-bold text-sm sm:text-base text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
+            <h3 className="font-bold text-sm sm:text-base text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
               {specialistToEdit ? `Editar Manicurista: ${specialistToEdit.name}` : 'Registrar Nueva Manicurista'}
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-[#F6E3E6] flex items-center justify-center text-[#644E53] cursor-pointer"
+            className="w-8 h-8 rounded-full hover:bg-[#C6BDAC]/40 flex items-center justify-center text-[#5A4A43] cursor-pointer"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
@@ -142,33 +142,33 @@ export const SpecialistFormModal: React.FC<SpecialistFormModalProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-[#644E53] mb-1">Nombre Completo / Firma *</label>
+              <label className="block font-semibold text-[#5A4A43] mb-1">Nombre Completo / Firma *</label>
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Ej. Valentina R."
-                className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/20"
+                className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-[#644E53] mb-1">Cargo / Especialidad *</label>
+              <label className="block font-semibold text-[#5A4A43] mb-1">Cargo / Especialidad *</label>
               <input
                 type="text"
                 required
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 placeholder="Ej. Master Manicurista Rusa"
-                className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/20"
+                className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-[#644E53] mb-1">Comisión (%) para Liquidación *</label>
+              <label className="block font-semibold text-[#5A4A43] mb-1">Comisión (%) para Liquidación *</label>
               <div className="relative">
                 <input
                   type="number"
@@ -178,26 +178,26 @@ export const SpecialistFormModal: React.FC<SpecialistFormModalProps> = ({
                   value={commissionRate}
                   onChange={(e) => setCommissionRate(Number(e.target.value))}
                   placeholder="50"
-                  className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/20"
+                  className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20"
                 />
-                <span className="absolute right-3 top-2 text-xs text-[#644E53] font-bold">%</span>
+                <span className="absolute right-3 top-2 text-xs text-[#5A4A43] font-bold">%</span>
               </div>
             </div>
 
             <div>
-              <label className="block font-semibold text-[#644E53] mb-1">URL de Foto de Perfil</label>
+              <label className="block font-semibold text-[#5A4A43] mb-1">URL de Foto de Perfil</label>
               <input
                 type="url"
                 value={avatar}
                 onChange={(e) => setAvatar(e.target.value)}
                 placeholder="https://..."
-                className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/20"
+                className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20"
               />
             </div>
           </div>
 
           <div>
-            <label className="block font-semibold text-[#644E53] mb-1.5">Días Disponibles para Citas</label>
+            <label className="block font-semibold text-[#5A4A43] mb-1.5">Días Disponibles para Citas</label>
             <div className="flex flex-wrap gap-1.5">
               {ALL_WEEK_DAYS.map((day) => {
                 const isSelected = availableDays.includes(day);
@@ -208,8 +208,8 @@ export const SpecialistFormModal: React.FC<SpecialistFormModalProps> = ({
                     onClick={() => handleToggleDay(day)}
                     className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-[#64444B] text-white shadow-2xs'
-                        : 'bg-white text-[#644E53] border border-[#EAD6D9] hover:bg-[#F6E3E6]/60'
+                        ? 'bg-[#BB9C87] text-[#2B2420] font-bold shadow-2xs'
+                        : 'bg-white text-[#5A4A43] border border-[#C6BDAC] hover:bg-[#C6BDAC]/40/60'
                     }`}
                   >
                     {day}
@@ -220,49 +220,49 @@ export const SpecialistFormModal: React.FC<SpecialistFormModalProps> = ({
           </div>
 
           <div>
-            <label className="block font-semibold text-[#644E53] mb-1">Especialidades (separadas por coma)</label>
+            <label className="block font-semibold text-[#5A4A43] mb-1">Especialidades (separadas por coma)</label>
             <input
               type="text"
               value={specialtiesText}
               onChange={(e) => setSpecialtiesText(e.target.value)}
               placeholder="Manicura Rusa, Glazed Nails, Kapping Gel, Soft Gel"
-              className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/20"
+              className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20"
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-[#644E53] mb-1">Certificaciones (separadas por coma)</label>
+            <label className="block font-semibold text-[#5A4A43] mb-1">Certificaciones (separadas por coma)</label>
             <input
               type="text"
               value={certificationsText}
               onChange={(e) => setCertificationsText(e.target.value)}
               placeholder="Russian Manicure Master E.Mi, Esterilización Hospitalaria"
-              className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/20"
+              className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20"
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-[#644E53] mb-1">Biografía Profesional</label>
+            <label className="block font-semibold text-[#5A4A43] mb-1">Biografía Profesional</label>
             <textarea
               rows={2}
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               placeholder="Experiencia, trayectoria, enfoque en salud ungueal..."
-              className="w-full p-2.5 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/20"
+              className="w-full p-2.5 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20"
             />
           </div>
 
-          <div className="pt-2 flex items-center justify-end gap-2 border-t border-[#EAD6D9]/50">
+          <div className="pt-2 flex items-center justify-end gap-2 border-t border-[#C6BDAC]/50">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-white hover:bg-neutral-100 text-[#644E53] font-semibold text-xs border border-[#EAD6D9] cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-white hover:bg-neutral-100 text-[#5A4A43] font-semibold text-xs border border-[#C6BDAC] cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-[#64444B] hover:bg-[#52363C] text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+              className="px-5 py-2 rounded-xl bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold font-bold text-xs shadow-xs transition-all cursor-pointer"
             >
               {specialistToEdit ? 'Guardar Cambios' : 'Registrar Manicurista'}
             </button>

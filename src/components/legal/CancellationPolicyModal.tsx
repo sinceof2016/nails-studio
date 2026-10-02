@@ -21,7 +21,7 @@ export const CancellationPolicyModal: React.FC<CancellationPolicyModalProps> = (
     >
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
-      <div className="relative w-full max-w-2xl max-h-[90vh] bg-[#FAF4F5] rounded-3xl p-5 sm:p-7 shadow-2xl border border-[#EAD6D9] z-10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-2xl max-h-[90vh] bg-[#F4EFE9] rounded-3xl p-5 sm:p-7 shadow-2xl border border-[#C6BDAC] z-10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Banner de Advertencia Legal */}
         <div className="mb-3 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] flex items-center gap-2">
           <span className="material-symbols-outlined text-amber-700 text-[16px] shrink-0">gavel</span>
@@ -31,21 +31,21 @@ export const CancellationPolicyModal: React.FC<CancellationPolicyModalProps> = (
         </div>
 
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-[#EAD6D9]/70 pb-3 shrink-0">
+        <div className="flex items-start justify-between border-b border-[#C6BDAC]/70 pb-3 shrink-0">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64444B] bg-[#F6E3E6] px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#2B2420] bg-[#C6BDAC]/40 px-2 py-0.5 rounded-full">
               Ley 1480 de 2011 · Transparencia
             </span>
-            <h2 id="cancellation-policy-title" className="text-lg sm:text-xl font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif] mt-1">
+            <h2 id="cancellation-policy-title" className="text-lg sm:text-xl font-bold text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif] mt-1">
               Política de Cancelación, Cambios y Reembolsos
             </h2>
-            <p className="text-xs text-[#644E53]">
+            <p className="text-xs text-[#5A4A43]">
               Versión: {BUSINESS_CONFIG.cancellationPolicyVersion} · {BUSINESS_CONFIG.brandName}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-[#F6E3E6] flex items-center justify-center text-[#644E53] cursor-pointer"
+            className="w-8 h-8 rounded-full hover:bg-[#C6BDAC]/40 flex items-center justify-center text-[#5A4A43] cursor-pointer"
             aria-label="Cerrar modal"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
@@ -53,10 +53,10 @@ export const CancellationPolicyModal: React.FC<CancellationPolicyModalProps> = (
         </div>
 
         {/* Scrollable Content */}
-        <div className="overflow-y-auto pr-1 my-4 space-y-4 text-xs text-[#644E53] leading-relaxed text-justify">
-          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#EAD6D9]/70">
-            <h3 className="font-bold text-[#1F1417] text-sm flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[#64444B] text-[16px]">event_busy</span>
+        <div className="overflow-y-auto pr-1 my-4 space-y-4 text-xs text-[#5A4A43] leading-relaxed text-justify">
+          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#C6BDAC]/70">
+            <h3 className="font-bold text-[#2B2420] text-sm flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[#2B2420] text-[16px]">event_busy</span>
               1. Cancelación y Reprogramación Oportuna
             </h3>
             <p>
@@ -74,9 +74,9 @@ export const CancellationPolicyModal: React.FC<CancellationPolicyModalProps> = (
             </p>
           </section>
 
-          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#EAD6D9]/70">
-            <h3 className="font-bold text-[#1F1417] text-sm flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[#64444B] text-[16px]">verified</span>
+          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#C6BDAC]/70">
+            <h3 className="font-bold text-[#2B2420] text-sm flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[#2B2420] text-[16px]">verified</span>
               3. Garantía del Servicio y Ajustes
             </h3>
             <p>
@@ -88,9 +88,9 @@ export const CancellationPolicyModal: React.FC<CancellationPolicyModalProps> = (
             </ul>
           </section>
 
-          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#EAD6D9]/70">
-            <h3 className="font-bold text-[#1F1417] text-sm flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[#64444B] text-[16px]">currency_exchange</span>
+          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#C6BDAC]/70">
+            <h3 className="font-bold text-[#2B2420] text-sm flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[#2B2420] text-[16px]">currency_exchange</span>
               4. Reembolsos
             </h3>
             <p>
@@ -100,10 +100,10 @@ export const CancellationPolicyModal: React.FC<CancellationPolicyModalProps> = (
         </div>
 
         {/* Footer Actions */}
-        <div className="pt-3 border-t border-[#EAD6D9]/70 flex items-center justify-end shrink-0">
+        <div className="pt-3 border-t border-[#C6BDAC]/70 flex items-center justify-end shrink-0">
           <button
             onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-[#64444B] hover:bg-[#52363C] text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+            className="px-5 py-2 rounded-xl bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold font-bold text-xs shadow-xs transition-all cursor-pointer"
           >
             Entendido y Cerrar
           </button>

@@ -21,7 +21,7 @@ export const DataTreatmentPolicyModal: React.FC<DataTreatmentPolicyModalProps> =
     >
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
-      <div className="relative w-full max-w-2xl max-h-[90vh] bg-[#FAF4F5] rounded-3xl p-5 sm:p-7 shadow-2xl border border-[#EAD6D9] z-10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-2xl max-h-[90vh] bg-[#F4EFE9] rounded-3xl p-5 sm:p-7 shadow-2xl border border-[#C6BDAC] z-10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Banner de Advertencia Legal */}
         <div className="mb-3 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] flex items-center gap-2">
           <span className="material-symbols-outlined text-amber-700 text-[16px] shrink-0">gavel</span>
@@ -31,21 +31,21 @@ export const DataTreatmentPolicyModal: React.FC<DataTreatmentPolicyModalProps> =
         </div>
 
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-[#EAD6D9]/70 pb-3 shrink-0">
+        <div className="flex items-start justify-between border-b border-[#C6BDAC]/70 pb-3 shrink-0">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64444B] bg-[#F6E3E6] px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#2B2420] bg-[#C6BDAC]/40 px-2 py-0.5 rounded-full">
               Habeas Data · Ley 1581 de 2012
             </span>
-            <h2 id="data-policy-title" className="text-lg sm:text-xl font-bold text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif] mt-1">
+            <h2 id="data-policy-title" className="text-lg sm:text-xl font-bold text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif] mt-1">
               Política de Tratamiento de Datos Personales
             </h2>
-            <p className="text-xs text-[#644E53]">
+            <p className="text-xs text-[#5A4A43]">
               Versión: {BUSINESS_CONFIG.dataPolicyVersion}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-[#F6E3E6] flex items-center justify-center text-[#644E53] cursor-pointer"
+            className="w-8 h-8 rounded-full hover:bg-[#C6BDAC]/40 flex items-center justify-center text-[#5A4A43] cursor-pointer"
             aria-label="Cerrar modal"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
@@ -53,10 +53,10 @@ export const DataTreatmentPolicyModal: React.FC<DataTreatmentPolicyModalProps> =
         </div>
 
         {/* Scrollable Content */}
-        <div className="overflow-y-auto pr-1 my-4 space-y-4 text-xs text-[#644E53] leading-relaxed text-justify">
-          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#EAD6D9]/70">
-            <h3 className="font-bold text-[#1F1417] text-sm flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[#64444B] text-[16px]">business</span>
+        <div className="overflow-y-auto pr-1 my-4 space-y-4 text-xs text-[#5A4A43] leading-relaxed text-justify">
+          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#C6BDAC]/70">
+            <h3 className="font-bold text-[#2B2420] text-sm flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[#2B2420] text-[16px]">business</span>
               1. Identificación del Responsable del Tratamiento
             </h3>
             <p>
@@ -71,9 +71,9 @@ export const DataTreatmentPolicyModal: React.FC<DataTreatmentPolicyModalProps> =
             </p>
           </section>
 
-          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#EAD6D9]/70">
-            <h3 className="font-bold text-[#1F1417] text-sm flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[#64444B] text-[16px]">database</span>
+          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#C6BDAC]/70">
+            <h3 className="font-bold text-[#2B2420] text-sm flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[#2B2420] text-[16px]">database</span>
               2. Datos Personales que se Recolectan
             </h3>
             <p>
@@ -100,9 +100,9 @@ export const DataTreatmentPolicyModal: React.FC<DataTreatmentPolicyModalProps> =
             </p>
           </section>
 
-          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#EAD6D9]/70">
-            <h3 className="font-bold text-[#1F1417] text-sm flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[#64444B] text-[16px]">target</span>
+          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#C6BDAC]/70">
+            <h3 className="font-bold text-[#2B2420] text-sm flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[#2B2420] text-[16px]">target</span>
               4. Finalidades del Tratamiento
             </h3>
             <ul className="list-disc list-inside space-y-1 pl-2">
@@ -112,14 +112,14 @@ export const DataTreatmentPolicyModal: React.FC<DataTreatmentPolicyModalProps> =
               <li>Atender peticiones, consultas, quejas y reclamos (PQRS).</li>
               <li>Cumplir con las obligaciones legales, tributarias y comerciales vigentes en Colombia.</li>
             </ul>
-            <p className="text-[11px] text-[#644E53] italic">
+            <p className="text-[11px] text-[#5A4A43] italic">
               * No se enviarán comunicaciones comerciales o publicitarias a menos que medie autorización expresa, previa e informada, respetando los horarios de contacto fijados por la Ley 2300 de 2023.
             </p>
           </section>
 
-          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#EAD6D9]/70">
-            <h3 className="font-bold text-[#1F1417] text-sm flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[#64444B] text-[16px]">security</span>
+          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#C6BDAC]/70">
+            <h3 className="font-bold text-[#2B2420] text-sm flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[#2B2420] text-[16px]">security</span>
               5. Derechos de los Titulares (Habeas Data)
             </h3>
             <p>Conforme al Artículo 8 de la Ley 1581 de 2012, el titular de los datos tiene derecho a:</p>
@@ -133,15 +133,15 @@ export const DataTreatmentPolicyModal: React.FC<DataTreatmentPolicyModalProps> =
             </ul>
           </section>
 
-          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#EAD6D9]/70">
-            <h3 className="font-bold text-[#1F1417] text-sm flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[#64444B] text-[16px]">contact_mail</span>
+          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#C6BDAC]/70">
+            <h3 className="font-bold text-[#2B2420] text-sm flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[#2B2420] text-[16px]">contact_mail</span>
               6. Procedimiento para Consultas y Reclamos
             </h3>
             <p>
               El titular o sus causahabientes pueden ejercer sus derechos enviando una solicitud formal al correo <strong>{BUSINESS_CONFIG.privacyEmail}</strong> o a la dirección física <strong>{BUSINESS_CONFIG.address}, {BUSINESS_CONFIG.city}</strong>.
             </p>
-            <div className="space-y-1.5 text-[11px] bg-[#FAF4F5] p-2.5 rounded-xl border border-[#EAD6D9]">
+            <div className="space-y-1.5 text-[11px] bg-[#F4EFE9] p-2.5 rounded-xl border border-[#C6BDAC]">
               <p>
                 <strong>Consultas:</strong> Serán atendidas en un término máximo de <strong>diez (10) días hábiles</strong> contados a partir de la fecha de recibo. Si no fuere posible, se informará al interesado antes del vencimiento con plazo adicional no superior a <strong>cinco (5) días hábiles</strong>. <em>(PENDIENTE REVISIÓN LEGAL)</em>.
               </p>
@@ -151,9 +151,9 @@ export const DataTreatmentPolicyModal: React.FC<DataTreatmentPolicyModalProps> =
             </div>
           </section>
 
-          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#EAD6D9]/70">
-            <h3 className="font-bold text-[#1F1417] text-sm flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[#64444B] text-[16px]">cloud_sync</span>
+          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#C6BDAC]/70">
+            <h3 className="font-bold text-[#2B2420] text-sm flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[#2B2420] text-[16px]">cloud_sync</span>
               7. Transmisión Internacional de Datos y Encargados
             </h3>
             <p>
@@ -165,9 +165,9 @@ export const DataTreatmentPolicyModal: React.FC<DataTreatmentPolicyModalProps> =
             </ul>
           </section>
 
-          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#EAD6D9]/70">
-            <h3 className="font-bold text-[#1F1417] text-sm flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[#64444B] text-[16px]">child_care</span>
+          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#C6BDAC]/70">
+            <h3 className="font-bold text-[#2B2420] text-sm flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[#2B2420] text-[16px]">child_care</span>
               8. Menores de Edad
             </h3>
             <p>
@@ -175,9 +175,9 @@ export const DataTreatmentPolicyModal: React.FC<DataTreatmentPolicyModalProps> =
             </p>
           </section>
 
-          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#EAD6D9]/70">
-            <h3 className="font-bold text-[#1F1417] text-sm flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[#64444B] text-[16px]">history</span>
+          <section className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#C6BDAC]/70">
+            <h3 className="font-bold text-[#2B2420] text-sm flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[#2B2420] text-[16px]">history</span>
               9. Periodo de Conservación y Vigencia
             </h3>
             <p>
@@ -187,13 +187,13 @@ export const DataTreatmentPolicyModal: React.FC<DataTreatmentPolicyModalProps> =
         </div>
 
         {/* Footer Actions */}
-        <div className="pt-3 border-t border-[#EAD6D9]/70 flex items-center justify-between shrink-0">
-          <span className="text-[11px] text-[#644E53]">
+        <div className="pt-3 border-t border-[#C6BDAC]/70 flex items-center justify-between shrink-0">
+          <span className="text-[11px] text-[#5A4A43]">
             {BUSINESS_CONFIG.brandName} · {BUSINESS_CONFIG.city}
           </span>
           <button
             onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-[#64444B] hover:bg-[#52363C] text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+            className="px-5 py-2 rounded-xl bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold font-bold text-xs shadow-xs transition-all cursor-pointer"
           >
             Entendido y Cerrar
           </button>

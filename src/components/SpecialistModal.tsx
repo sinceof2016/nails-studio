@@ -21,18 +21,18 @@ export const SpecialistModal: React.FC<SpecialistModalProps> = ({
         onClick={onClose}
         aria-hidden="true"
       />
-      <div className="relative w-full max-w-md bg-[#fdf9f3] rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col z-10 animate-in slide-in-from-bottom duration-300">
+      <div className="relative w-full max-w-md bg-[#F4EFE9] rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col z-10 animate-in slide-in-from-bottom duration-300">
         {/* Grab handle for touch ergonomics */}
         <div className="w-12 h-1.5 bg-[#d4c2c3] rounded-full mx-auto mt-3 mb-1 shrink-0" />
 
         {/* Header bar */}
-        <div className="px-5 pt-2 pb-3 flex items-center justify-between border-b border-[#e8b4b8]/20">
-          <span className="text-xs uppercase tracking-wider text-[#7c5357] font-semibold font-['Plus_Jakarta_Sans',sans-serif]">
+        <div className="px-5 pt-2 pb-3 flex items-center justify-between border-b border-[#C6BDAC]/20">
+          <span className="text-xs uppercase tracking-wider text-[#5A4A43] font-semibold font-['Plus_Jakarta_Sans',sans-serif]">
             Perfil de Especialista
           </span>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-[#ebe8e2] flex items-center justify-center text-[#504444] transition-colors"
+            className="w-8 h-8 rounded-full hover:bg-[#ebe8e2] flex items-center justify-center text-[#5A4A43] transition-colors"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
@@ -43,7 +43,7 @@ export const SpecialistModal: React.FC<SpecialistModalProps> = ({
           {/* Avatar and basic info */}
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="w-20 h-20 rounded-full overflow-hidden ring-2 ring-[#e8b4b8] ring-offset-2 ring-offset-[#fdf9f3] bg-[#ffdadc]">
+              <div className="w-20 h-20 rounded-full overflow-hidden ring-2 ring-[#C6BDAC] ring-offset-2 ring-offset-[#fdf9f3] bg-[#C6BDAC]/40">
                 <img
                   src={specialist.avatar}
                   alt={specialist.name}
@@ -56,20 +56,20 @@ export const SpecialistModal: React.FC<SpecialistModalProps> = ({
               />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-[#1c1c18] font-['Plus_Jakarta_Sans',sans-serif]">
+              <h3 className="text-xl font-bold text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
                 {specialist.name}
               </h3>
-              <p className="text-xs font-semibold text-[#7c5357]">
+              <p className="text-xs font-semibold text-[#5A4A43]">
                 {specialist.role}
               </p>
               <div className="flex items-center gap-1.5 mt-1.5">
-                <span className="material-symbols-outlined text-[#745849] text-[16px] fill">
+                <span className="material-symbols-outlined text-[#5A4A43] text-[16px] fill">
                   star
                 </span>
-                <span className="text-xs font-bold text-[#1c1c18]">
+                <span className="text-xs font-bold text-[#2B2420]">
                   {specialist.rating}
                 </span>
-                <span className="text-xs text-[#504444]">
+                <span className="text-xs text-[#5A4A43]">
                   ({specialist.reviewsCount} reseñas verificadas)
                 </span>
               </div>
@@ -77,18 +77,18 @@ export const SpecialistModal: React.FC<SpecialistModalProps> = ({
           </div>
 
           {/* Bio */}
-          <div className="p-3.5 rounded-2xl bg-white/80 border border-[#e8b4b8]/30 shadow-sm">
-            <h4 className="text-xs font-semibold text-[#1c1c18] mb-1 font-['Plus_Jakarta_Sans',sans-serif]">
+          <div className="p-3.5 rounded-2xl bg-white/80 border border-[#C6BDAC]/30 shadow-sm">
+            <h4 className="text-xs font-semibold text-[#2B2420] mb-1 font-['Plus_Jakarta_Sans',sans-serif]">
               Sobre mí
             </h4>
-            <p className="text-xs text-[#504444] leading-relaxed">
+            <p className="text-xs text-[#5A4A43] leading-relaxed">
               {specialist.bio}
             </p>
           </div>
 
           {/* Specialties */}
           <div>
-            <h4 className="text-xs font-semibold text-[#1c1c18] mb-2 font-['Plus_Jakarta_Sans',sans-serif]">
+            <h4 className="text-xs font-semibold text-[#2B2420] mb-2 font-['Plus_Jakarta_Sans',sans-serif]">
               Especialidades Destacadas
             </h4>
             <div className="flex flex-wrap gap-1.5">
@@ -105,12 +105,12 @@ export const SpecialistModal: React.FC<SpecialistModalProps> = ({
 
           {/* Certifications */}
           <div>
-            <h4 className="text-xs font-semibold text-[#1c1c18] mb-2 font-['Plus_Jakarta_Sans',sans-serif]">
+            <h4 className="text-xs font-semibold text-[#2B2420] mb-2 font-['Plus_Jakarta_Sans',sans-serif]">
               Certificaciones &amp; Higiene
             </h4>
             <div className="space-y-1.5">
               {specialist.certifications.map((cert, i) => (
-                <div key={i} className="flex items-center gap-2 text-xs text-[#504444]">
+                <div key={i} className="flex items-center gap-2 text-xs text-[#5A4A43]">
                   <span className="material-symbols-outlined text-[#52b788] text-[16px]">
                     verified
                   </span>
@@ -121,18 +121,18 @@ export const SpecialistModal: React.FC<SpecialistModalProps> = ({
           </div>
 
           {/* Days available */}
-          <div className="p-3 rounded-2xl bg-[#f7f3ed] border border-[#ebe8e2]">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-[#1c1c18] mb-1 font-['Plus_Jakarta_Sans',sans-serif]">
-              <span className="material-symbols-outlined text-[16px] text-[#7c5357]">
+          <div className="p-3 rounded-2xl bg-[#f7f3ed] border border-[#C6BDAC]">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-[#2B2420] mb-1 font-['Plus_Jakarta_Sans',sans-serif]">
+              <span className="material-symbols-outlined text-[16px] text-[#5A4A43]">
                 calendar_month
               </span>
               Días de atención en salón
             </div>
-            <div className="flex flex-wrap gap-1 text-[11px] text-[#504444]">
+            <div className="flex flex-wrap gap-1 text-[11px] text-[#5A4A43]">
               {specialist.availableDays.map((day, i) => (
                 <span
                   key={i}
-                  className="px-2 py-0.5 rounded-md bg-white border border-[#ebe8e2] font-medium"
+                  className="px-2 py-0.5 rounded-md bg-white border border-[#C6BDAC] font-medium"
                 >
                   {day}
                 </span>
@@ -142,7 +142,7 @@ export const SpecialistModal: React.FC<SpecialistModalProps> = ({
         </div>
 
         {/* Footer CTA */}
-        <div className="p-4 bg-white/90 border-t border-[#e8b4b8]/20 flex gap-2">
+        <div className="p-4 bg-white/90 border-t border-[#C6BDAC]/20 flex gap-2">
           <button
             onClick={() => {
               onBookWithSpecialist(specialist);

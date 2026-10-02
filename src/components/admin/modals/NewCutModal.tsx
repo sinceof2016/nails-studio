@@ -63,14 +63,14 @@ export const NewCutModal: React.FC<NewCutModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="relative w-full max-w-md bg-[#FAF4F5] rounded-3xl p-6 shadow-2xl border border-[#EAD6D9] space-y-3.5 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between border-b border-[#EAD6D9]/50 pb-2">
-          <h3 className="font-bold text-sm text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
+      <div className="relative w-full max-w-md bg-[#F4EFE9] rounded-3xl p-6 shadow-2xl border border-[#C6BDAC] space-y-3.5 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-[#C6BDAC]/50 pb-2">
+          <h3 className="font-bold text-sm text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
             Registrar Servicio Realizado en Caja (COP)
           </h3>
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded-full hover:bg-[#F6E3E6] flex items-center justify-center text-[#644E53]"
+            className="w-7 h-7 rounded-full hover:bg-[#C6BDAC]/40 flex items-center justify-center text-[#5A4A43]"
           >
             <span className="material-symbols-outlined text-[18px]">close</span>
           </button>
@@ -85,60 +85,60 @@ export const NewCutModal: React.FC<NewCutModalProps> = ({
         <form onSubmit={onSubmit} className="space-y-3 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <label className="block font-semibold text-[#644E53] mb-1">Nombre de la Clienta</label>
+              <label className="block font-semibold text-[#5A4A43] mb-1">Nombre de la Clienta</label>
               <input
                 type="text"
                 required
                 value={cutClientName}
                 onChange={(e) => setCutClientName(e.target.value)}
-                placeholder="Ej. Mariana Duque"
-                className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417]"
+                placeholder="Ej. Camila Gómez"
+                className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420]"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-[#644E53] mb-1">WhatsApp (+57)</label>
+              <label className="block font-semibold text-[#5A4A43] mb-1">WhatsApp (+57)</label>
               <input
                 type="text"
                 required
                 value={cutClientPhone}
                 onChange={(e) => setCutClientPhone(e.target.value)}
-                placeholder="+57 300 000 0000"
-                className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs font-mono text-[#1F1417]"
+                placeholder="Ej. 300 123 4567"
+                className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs font-mono text-[#2B2420]"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block font-semibold text-[#644E53] mb-1">Valor en COP ($)</label>
+              <label className="block font-semibold text-[#5A4A43] mb-1">Valor en COP ($)</label>
               <input
                 type="number"
                 step="1000"
                 required
                 value={cutServicePrice}
                 onChange={(e) => setCutServicePrice(Number(e.target.value))}
-                className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs font-mono font-bold text-[#64444B]"
+                className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs font-mono font-bold text-[#2B2420]"
               />
             </div>
             <div>
-              <label className="block font-semibold text-[#644E53] mb-1">Propina COP ($)</label>
+              <label className="block font-semibold text-[#5A4A43] mb-1">Propina COP ($)</label>
               <input
                 type="number"
                 step="1000"
                 value={cutTip}
                 onChange={(e) => setCutTip(Number(e.target.value))}
-                className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs font-mono text-emerald-700"
+                className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs font-mono text-emerald-700"
               />
             </div>
           </div>
 
           <div>
-            <label className="block font-semibold text-[#644E53] mb-1">Manicurista Asignada</label>
+            <label className="block font-semibold text-[#5A4A43] mb-1">Manicurista Asignada</label>
             <select
               value={cutSpecialistId}
               onChange={(e) => setCutSpecialistId(e.target.value)}
-              className="w-full h-9 px-2 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417]"
+              className="w-full h-9 px-2 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420]"
             >
               {specialists.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -150,15 +150,15 @@ export const NewCutModal: React.FC<NewCutModalProps> = ({
 
           {/* PAYMENT METHOD SELECTOR WITH SPLIT PAYMENT SUPPORT */}
           <div>
-            <label className="block font-semibold text-[#644E53] mb-1">Método de Pago</label>
+            <label className="block font-semibold text-[#5A4A43] mb-1">Método de Pago</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
               <button
                 type="button"
                 onClick={() => setCutPaymentMethod('efectivo')}
                 className={`p-2 rounded-xl text-center border font-bold text-[11px] cursor-pointer transition-all ${
                   cutPaymentMethod === 'efectivo'
-                    ? 'bg-[#64444B] text-white border-[#64444B]'
-                    : 'bg-white text-[#644E53] border-[#EAD6D9]'
+                    ? 'bg-[#BB9C87] text-[#2B2420] font-bold border-[#BB9C87]'
+                    : 'bg-white text-[#5A4A43] border-[#C6BDAC]'
                 }`}
               >
                 💵 Efectivo
@@ -169,8 +169,8 @@ export const NewCutModal: React.FC<NewCutModalProps> = ({
                 onClick={() => setCutPaymentMethod('nequi_daviplata')}
                 className={`p-2 rounded-xl text-center border font-bold text-[11px] cursor-pointer transition-all ${
                   cutPaymentMethod === 'nequi_daviplata'
-                    ? 'bg-[#64444B] text-white border-[#64444B]'
-                    : 'bg-white text-[#644E53] border-[#EAD6D9]'
+                    ? 'bg-[#BB9C87] text-[#2B2420] font-bold border-[#BB9C87]'
+                    : 'bg-white text-[#5A4A43] border-[#C6BDAC]'
                 }`}
               >
                 📱 Nequi/Davi
@@ -181,8 +181,8 @@ export const NewCutModal: React.FC<NewCutModalProps> = ({
                 onClick={() => setCutPaymentMethod('tarjeta_datafono')}
                 className={`p-2 rounded-xl text-center border font-bold text-[11px] cursor-pointer transition-all ${
                   cutPaymentMethod === 'tarjeta_datafono'
-                    ? 'bg-[#64444B] text-white border-[#64444B]'
-                    : 'bg-white text-[#644E53] border-[#EAD6D9]'
+                    ? 'bg-[#BB9C87] text-[#2B2420] font-bold border-[#BB9C87]'
+                    : 'bg-white text-[#5A4A43] border-[#C6BDAC]'
                 }`}
               >
                 💳 Datáfono
@@ -193,8 +193,8 @@ export const NewCutModal: React.FC<NewCutModalProps> = ({
                 onClick={() => setCutPaymentMethod('mixto')}
                 className={`p-2 rounded-xl text-center border font-bold text-[11px] cursor-pointer transition-all ${
                   cutPaymentMethod === 'mixto'
-                    ? 'bg-[#64444B] text-white border-[#64444B]'
-                    : 'bg-white text-[#644E53] border-[#EAD6D9]'
+                    ? 'bg-[#BB9C87] text-[#2B2420] font-bold border-[#BB9C87]'
+                    : 'bg-white text-[#5A4A43] border-[#C6BDAC]'
                 }`}
               >
                 ⚡ Pago Mixto
@@ -204,15 +204,15 @@ export const NewCutModal: React.FC<NewCutModalProps> = ({
 
           {/* SPLIT PAYMENT CONFIGURATION */}
           {cutPaymentMethod === 'mixto' && (
-            <div className="p-3.5 rounded-2xl bg-white border border-[#EAD6D9] space-y-2.5 animate-in fade-in">
-              <div className="flex items-center justify-between text-[11px] font-bold text-[#64444B]">
+            <div className="p-3.5 rounded-2xl bg-white border border-[#C6BDAC] space-y-2.5 animate-in fade-in">
+              <div className="flex items-center justify-between text-[11px] font-bold text-[#2B2420]">
                 <span>Desglose de Pago Dividido:</span>
                 <span>Total: {formatCOP(cutServicePrice + cutTip)}</span>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[10px] font-semibold text-[#644E53] mb-0.5">
+                  <label className="block text-[10px] font-semibold text-[#5A4A43] mb-0.5">
                     Monto Efectivo ($)
                   </label>
                   <input
@@ -220,31 +220,31 @@ export const NewCutModal: React.FC<NewCutModalProps> = ({
                     step="1000"
                     value={cutMontoEfectivo}
                     onChange={(e) => setCutMontoEfectivo(Number(e.target.value))}
-                    className="w-full h-8 px-2.5 rounded-lg bg-[#FAF4F5] border border-[#EAD6D9] text-xs font-mono font-bold text-[#1F1417]"
+                    className="w-full h-8 px-2.5 rounded-lg bg-[#F4EFE9] border border-[#C6BDAC] text-xs font-mono font-bold text-[#2B2420]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-semibold text-[#644E53] mb-0.5">
+                  <label className="block text-[10px] font-semibold text-[#5A4A43] mb-0.5">
                     Monto Digital ($)
                   </label>
                   <input
                     type="number"
                     readOnly
                     value={cutMontoDigital}
-                    className="w-full h-8 px-2.5 rounded-lg bg-gray-50 border border-[#EAD6D9] text-xs font-mono font-bold text-[#71547c]"
+                    className="w-full h-8 px-2.5 rounded-lg bg-gray-50 border border-[#C6BDAC] text-xs font-mono font-bold text-[#71547c]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-[#644E53] mb-0.5">
+                <label className="block text-[10px] font-semibold text-[#5A4A43] mb-0.5">
                   Canal Digital del Restante
                 </label>
                 <select
                   value={cutDigitalMethod}
                   onChange={(e) => setCutDigitalMethod(e.target.value as any)}
-                  className="w-full h-8 px-2 rounded-lg bg-[#FAF4F5] border border-[#EAD6D9] text-xs text-[#1F1417]"
+                  className="w-full h-8 px-2 rounded-lg bg-[#F4EFE9] border border-[#C6BDAC] text-xs text-[#2B2420]"
                 >
                   <option value="nequi_daviplata">Transferencia Nequi / Daviplata</option>
                   <option value="tarjeta_datafono">Tarjeta Débito/Crédito Datáfono</option>
@@ -274,7 +274,7 @@ export const NewCutModal: React.FC<NewCutModalProps> = ({
                     step="1000"
                     value={cutCashReceived}
                     onChange={(e) => setCutCashReceived(Number(e.target.value))}
-                    className="w-full h-8 px-2.5 rounded-lg bg-white border border-emerald-300 text-xs font-mono font-bold text-[#1F1417]"
+                    className="w-full h-8 px-2.5 rounded-lg bg-white border border-emerald-300 text-xs font-mono font-bold text-[#2B2420]"
                   />
                 </div>
 
@@ -323,7 +323,7 @@ export const NewCutModal: React.FC<NewCutModalProps> = ({
 
           <button
             type="submit"
-            className="w-full py-3 rounded-xl bg-[#64444B] hover:bg-[#52363C] text-white font-bold text-xs shadow-xs transition-all cursor-pointer active:scale-95"
+            className="w-full py-3 rounded-xl bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold font-bold text-xs shadow-xs transition-all cursor-pointer active:scale-95"
           >
             Guardar Cobro &amp; Enviar Recibo WhatsApp
           </button>

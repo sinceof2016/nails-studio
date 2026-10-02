@@ -78,19 +78,19 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="relative w-full max-w-md bg-[#FAF4F5] rounded-3xl p-6 shadow-2xl border border-[#EAD6D9] space-y-4">
-        <div className="flex items-center justify-between border-b border-[#EAD6D9]/50 pb-3">
+      <div className="relative w-full max-w-md bg-[#F4EFE9] rounded-3xl p-6 shadow-2xl border border-[#C6BDAC] space-y-4">
+        <div className="flex items-center justify-between border-b border-[#C6BDAC]/50 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#64444B]/10 text-[#64444B] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-[#BB9C87]/10 text-[#2B2420] flex items-center justify-center">
               <span className="material-symbols-outlined text-[18px]">category</span>
             </div>
-            <h3 className="font-bold text-sm sm:text-base text-[#1F1417] font-['Plus_Jakarta_Sans',sans-serif]">
+            <h3 className="font-bold text-sm sm:text-base text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
               {categoryToEdit ? `Editar Tipo: ${categoryToEdit.label}` : 'Nuevo Tipo / Categoría de Servicio'}
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-[#F6E3E6] flex items-center justify-center text-[#644E53] cursor-pointer"
+            className="w-8 h-8 rounded-full hover:bg-[#C6BDAC]/40 flex items-center justify-center text-[#5A4A43] cursor-pointer"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
@@ -105,7 +105,7 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
           )}
 
           <div>
-            <label className="block font-semibold text-[#644E53] mb-1">Nombre / Título del Tipo de Servicio *</label>
+            <label className="block font-semibold text-[#5A4A43] mb-1">Nombre / Título del Tipo de Servicio *</label>
             <input
               type="text"
               required
@@ -117,12 +117,12 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
                 }
               }}
               placeholder="Ej. Acrílico & Esculturales"
-              className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/20"
+              className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20"
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-[#644E53] mb-1">Identificador (Slug) *</label>
+            <label className="block font-semibold text-[#5A4A43] mb-1">Identificador (Slug) *</label>
             <input
               type="text"
               required
@@ -130,17 +130,17 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
               value={id}
               onChange={(e) => setId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
               placeholder="ej. acrilico-escultural"
-              className={`w-full h-9 px-3 rounded-xl border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none ${
+              className={`w-full h-9 px-3 rounded-xl border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none ${
                 categoryToEdit ? 'bg-neutral-100 cursor-not-allowed text-neutral-500' : 'bg-white'
               }`}
             />
             {categoryToEdit && (
-              <p className="text-[10px] text-[#644E53] mt-0.5">El slug es el identificador único del sistema y no se puede alterar.</p>
+              <p className="text-[10px] text-[#5A4A43] mt-0.5">El slug es el identificador único del sistema y no se puede alterar.</p>
             )}
           </div>
 
           <div>
-            <label className="block font-semibold text-[#644E53] mb-1.5">Icono Representativo</label>
+            <label className="block font-semibold text-[#5A4A43] mb-1.5">Icono Representativo</label>
             <div className="grid grid-cols-4 gap-2">
               {AVAILABLE_ICONS.map((ic) => (
                 <button
@@ -149,8 +149,8 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
                   onClick={() => setIcon(ic.id)}
                   className={`p-2 rounded-xl border flex flex-col items-center gap-1 transition-all cursor-pointer ${
                     icon === ic.id
-                      ? 'bg-[#64444B] text-white border-[#64444B] shadow-2xs'
-                      : 'bg-white text-[#644E53] border-[#EAD6D9] hover:bg-[#F6E3E6]/50'
+                      ? 'bg-[#BB9C87] text-[#2B2420] font-bold border-[#BB9C87] shadow-2xs'
+                      : 'bg-white text-[#5A4A43] border-[#C6BDAC] hover:bg-[#C6BDAC]/40/50'
                   }`}
                 >
                   <span className="material-symbols-outlined text-[18px]">{ic.id}</span>
@@ -161,27 +161,27 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
           </div>
 
           <div>
-            <label className="block font-semibold text-[#644E53] mb-1">Descripción Breve</label>
+            <label className="block font-semibold text-[#5A4A43] mb-1">Descripción Breve</label>
             <textarea
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Descripción del concepto o técnica para mostrar a los clientes"
-              className="w-full p-2.5 rounded-xl bg-white border border-[#EAD6D9] text-xs text-[#1F1417] focus:outline-none focus:ring-2 focus:ring-[#64444B]/20"
+              className="w-full p-2.5 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20"
             />
           </div>
 
-          <div className="pt-2 flex items-center justify-end gap-2 border-t border-[#EAD6D9]/50">
+          <div className="pt-2 flex items-center justify-end gap-2 border-t border-[#C6BDAC]/50">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-white hover:bg-neutral-100 text-[#644E53] font-semibold text-xs border border-[#EAD6D9] cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-white hover:bg-neutral-100 text-[#5A4A43] font-semibold text-xs border border-[#C6BDAC] cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-[#64444B] hover:bg-[#52363C] text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+              className="px-5 py-2 rounded-xl bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold font-bold text-xs shadow-xs transition-all cursor-pointer"
             >
               {categoryToEdit ? 'Guardar Cambios' : 'Crear Tipo de Servicio'}
             </button>

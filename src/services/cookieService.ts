@@ -7,11 +7,10 @@ import { CookiePreferences, CookieInfo } from '../types';
 import { BUSINESS_CONFIG } from '../config/businessConfig';
 
 export const COOKIE_CONSENT_KEY = 'pelu_cookie_consent';
-export const CURRENT_COOKIE_POLICY_VERSION = 'v1.0-2026-BORRADOR';
+export const CURRENT_COOKIE_POLICY_VERSION = 'v1.2-2026-ANALYTICS-CONSENT';
 
 /**
  * Catálogo técnico real de cookies y elementos de almacenamiento usados en la aplicación.
- * La Pelu SPA NO utiliza cookies de terceros para publicidad, píxeles de rastreo ni venta de datos.
  */
 export const COOKIE_CATALOG: CookieInfo[] = [
   // 1. Necesarias / Técnicas
@@ -48,6 +47,16 @@ export const COOKIE_CATALOG: CookieInfo[] = [
     provider: `${BUSINESS_CONFIG.brandName} (Local)`,
     duration: '30 días',
     type: 'LocalStorage'
+  },
+
+  // 3. Analítica (Google Analytics 4)
+  {
+    name: '_ga, _ga_<ID>',
+    category: 'analytics',
+    purpose: 'Google Analytics 4: Almacena identificador de sesión anónimo para métricas de uso y rendimiento de la plataforma.',
+    provider: 'Google LLC (EE.UU. / Transmisión internacional)',
+    duration: '2 años',
+    type: 'HTTP Cookie'
   }
 ];
 

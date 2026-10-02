@@ -13,6 +13,7 @@ import { validateOnlyPlainText, sanitizeToPlainText, validateColombianPhone } fr
 import { BUSINESS_CONFIG } from '../config/businessConfig';
 import { getColombiaDateISO, generateSecureId, generateBookingCode, formatDisplayDate } from '../utils/dateAndId';
 import { BookingConfirmationView } from '../components/booking/BookingConfirmationView';
+import { trackBeginBooking } from '../services/analyticsService';
 import { BookingStepService } from '../components/booking/BookingStepService';
 import { BookingStepDateTime } from '../components/booking/BookingStepDateTime';
 import { BookingStepCustomization } from '../components/booking/BookingStepCustomization';
@@ -33,6 +34,7 @@ interface BookingScreenProps {
   onOpenDataPolicy?: () => void;
   onOpenPrivacyNotice?: () => void;
   onOpenTerms?: () => void;
+  showToast?: (msg: string) => void;
 }
 
 export const BookingScreen: React.FC<BookingScreenProps> = ({
@@ -49,11 +51,13 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   specialists = SPECIALISTS,
   onOpenDataPolicy,
   onOpenPrivacyNotice,
-  onOpenTerms
+  onOpenTerms,
+  showToast
 }) => {
   const [step, setStep] = useState<number>(1);
   const bookingContainerRef = useRef<HTMLDivElement>(null);
   const stepperRef = useRef<HTMLDivElement>(null);
+  const dataPolicyCheckboxRef = useRef<HTMLInputElement>(null);
   const isFirstMount = useRef<boolean>(true);
 
   // Smooth scroll to the top of the booking section with sticky header offset
@@ -97,6 +101,9 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   }, [bookingConfirmed]);
 
   const goToStep = (nextStep: number) => {
+    if (nextStep === 2) {
+      trackBeginBooking(selectedService?.name || 'Servicio');
+    }
     setStep(nextStep);
     setTimeout(scrollToBookingTop, 20);
   };
@@ -127,15 +134,25 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
     }
   );
 
-  const [selectedTime, setSelectedTime] = useState<string>('11:00 AM');
+  const [selectedTime, setSelectedTime] = useState<string>('');
   const [selectedPolish, setSelectedPolish] = useState<string>('Hailey Glazed Pearl');
   const [selectedShape, setSelectedShape] = useState<string>('Almendra Suave');
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
-  const [clientName, setClientName] = useState<string>('Mariana Duque');
+  const [clientName, setClientName] = useState<string>('');
   const [clientPhone, setClientPhone] = useState<string>('');
   const [clientEmail, setClientEmail] = useState<string>('');
   const [clientNotes, setClientNotes] = useState<string>('');
   const [acceptedDataPolicy, setAcceptedDataPolicy] = useState<boolean>(false);
+  const [dataPolicyError, setDataPolicyError] = useState<boolean>(false);
+  const [localToast, setLocalToast] = useState<string | null>(null);
+
+  // Auto-dismiss local toast
+  useEffect(() => {
+    if (localToast) {
+      const timer = setTimeout(() => setLocalToast(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [localToast]);
 
   // Active Redirection Assistant state when clicking on a busy slot
   const [redirectionSlot, setRedirectionSlot] = useState<string | null>(null);
@@ -235,9 +252,31 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       }
     }
 
+    // Validar nombre obligatorio
+    if (!clientName.trim()) {
+      setFormError('El nombre completo es obligatorio para confirmar tu reserva.');
+      return;
+    }
+
+    // Validar horario obligatorio
+    if (!selectedTime) {
+      setFormError('Por favor selecciona un horario disponible en el paso 2.');
+      return;
+    }
+
     // B3: Autorización obligatoria de tratamiento de datos personales (Ley 1581 de 2012)
     if (!acceptedDataPolicy) {
-      setFormError('Debes autorizar el tratamiento de tus datos personales conforme a la Política de Privacidad para poder confirmar tu cita.');
+      setDataPolicyError(true);
+      const errorMsg = 'Debes aceptar el tratamiento de datos personales para confirmar tu reserva';
+      setFormError(errorMsg);
+      if (showToast) {
+        showToast(errorMsg);
+      }
+      setLocalToast(errorMsg);
+      setTimeout(() => {
+        dataPolicyCheckboxRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        dataPolicyCheckboxRef.current?.focus();
+      }, 50);
       return;
     }
 
@@ -370,18 +409,18 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   return (
     <div ref={bookingContainerRef} className="max-w-4xl mx-auto space-y-6 pb-12 animate-in fade-in duration-200">
       {/* Header Banner */}
-      <div className="rounded-3xl bg-gradient-to-r from-[#F4D9DC] via-[#F8E7E9] to-[#FFFBFB] p-6 sm:p-7 border border-[#E8CFD3] shadow-xs relative overflow-hidden">
+      <div className="rounded-3xl bg-gradient-to-r from-[#C6BDAC]/35 via-[#F4EFE9] to-white p-6 sm:p-7 border border-[#C6BDAC] shadow-xs relative overflow-hidden">
         <div className="absolute -right-8 -bottom-8 w-40 h-40 rounded-full bg-white/50 blur-2xl pointer-events-none" />
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/95 text-[#5E3D44] text-xs font-semibold mb-2 border border-[#E8CFD3]">
-              <span className="material-symbols-outlined text-[15px] text-[#64444B]">event_available</span>
-              Santuario Chicó Calle 85 · Calendario en Tiempo Real
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/95 text-[#5E3D44] text-xs font-semibold mb-2 border border-[#C6BDAC]">
+              <span className="material-symbols-outlined text-[15px] text-[#2B2420]">event_available</span>
+              {BUSINESS_CONFIG.branchName} · Calendario en Tiempo Real
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#1F1417]">
+            <h1 className="text-2xl sm:text-3xl font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#2B2420]">
               Reserva de Turno
             </h1>
-            <p className="text-xs sm:text-sm text-[#644E53] mt-1 max-w-xl">
+            <p className="text-xs sm:text-sm text-[#5A4A43] mt-1 max-w-xl">
               Selecciona tu ritual de belleza, tu especialista favorita y un horario disponible en nuestro calendario local sincronizado.
             </p>
           </div>
@@ -389,7 +428,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
           {onNavigateToServices && (
             <button
               onClick={onNavigateToServices}
-              className="px-4 py-2 rounded-full bg-white hover:bg-[#F6E3E6] text-[#64444B] border border-[#EAD6D9] text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 shrink-0 cursor-pointer"
+              className="px-4 py-2 rounded-full bg-white hover:bg-[#C6BDAC]/40 text-[#2B2420] border border-[#C6BDAC] text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 shrink-0 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[16px]">spa</span>
               <span>Explorar Servicios</span>
@@ -399,7 +438,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       </div>
 
       {/* Booking Stepper */}
-      <div ref={stepperRef} className="bg-white rounded-3xl p-4 sm:p-5 border border-[#EAD6D9] shadow-xs scroll-mt-24">
+      <div ref={stepperRef} className="bg-white rounded-3xl p-4 sm:p-5 border border-[#C6BDAC] shadow-xs scroll-mt-24">
         <div className="grid grid-cols-4 gap-2 text-center text-xs">
           {[
             { num: 1, title: 'Servicio', icon: 'spa' },
@@ -420,10 +459,10 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                 disabled={s.num > step}
                 className={`py-2 px-2 rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer ${
                   isCurrent
-                    ? 'bg-[#64444B] text-white font-bold shadow-xs scale-[1.02]'
+                    ? 'bg-[#BB9C87] text-[#2B2420] font-bold font-bold shadow-xs scale-[1.02]'
                     : isCompleted
-                    ? 'bg-[#FAF4F5] text-[#64444B] font-semibold hover:bg-[#F6E3E6]'
-                    : 'bg-transparent text-[#7D676B] opacity-50 cursor-not-allowed'
+                    ? 'bg-[#F4EFE9] text-[#2B2420] font-semibold hover:bg-[#C6BDAC]/40'
+                    : 'bg-transparent text-[#5A4A43] opacity-50 cursor-not-allowed'
                 }`}
                 title={`Paso ${s.num}: ${s.title}`}
               >
@@ -504,16 +543,36 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
             setClientNotes={setClientNotes}
             acceptedDataPolicy={acceptedDataPolicy}
             setAcceptedDataPolicy={setAcceptedDataPolicy}
+            dataPolicyError={dataPolicyError}
+            checkboxRef={dataPolicyCheckboxRef}
+            onClearDataPolicyError={() => {
+              setDataPolicyError(false);
+              setLocalToast(null);
+            }}
             onOpenDataPolicy={onOpenDataPolicy}
             onOpenPrivacyNotice={onOpenPrivacyNotice}
             onOpenTerms={onOpenTerms}
             isSendingWhatsApp={isSendingWhatsApp}
-            onClearError={() => setFormError(null)}
+            onClearError={() => {
+              setFormError(null);
+              setDataPolicyError(false);
+            }}
             onBack={() => goToStep(3)}
             onConfirm={handleConfirmBooking}
           />
         )}
       </div>
+
+      {/* Floating alert toast for mobile and desktop */}
+      {localToast && (
+        <div
+          role="status"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-[#2B2420] text-white text-xs font-semibold shadow-2xl flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-3 max-w-[90vw]"
+        >
+          <span className="material-symbols-outlined text-rose-400 text-[20px] shrink-0">warning</span>
+          <span>{localToast}</span>
+        </div>
+      )}
     </div>
   );
 };
