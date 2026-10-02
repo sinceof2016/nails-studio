@@ -43,7 +43,7 @@ export const SpecialistModal: React.FC<SpecialistModalProps> = ({
           {/* Avatar and basic info */}
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="w-20 h-20 rounded-full overflow-hidden ring-2 ring-[#C6BDAC] ring-offset-2 ring-offset-[#fdf9f3] bg-[#C6BDAC]/40">
+              <div className="w-20 h-20 rounded-full overflow-hidden ring-2 ring-[#C6BDAC] ring-offset-2 ring-offset-[#F4EFE9] bg-[#C6BDAC]/40">
                 <img
                   src={specialist.avatar}
                   alt={specialist.name}
@@ -95,7 +95,7 @@ export const SpecialistModal: React.FC<SpecialistModalProps> = ({
               {specialist.specialties.map((spec, i) => (
                 <span
                   key={i}
-                  className="text-xs px-2.5 py-1 rounded-full bg-[#f5d0ff]/50 text-[#71547c] font-medium"
+                  className="text-xs px-2.5 py-1 rounded-full bg-[#C6BDAC]/30 text-[#2B2420] font-medium border border-[#C6BDAC]/50"
                 >
                   {spec}
                 </span>
@@ -121,7 +121,7 @@ export const SpecialistModal: React.FC<SpecialistModalProps> = ({
           </div>
 
           {/* Days available */}
-          <div className="p-3 rounded-2xl bg-[#f7f3ed] border border-[#C6BDAC]">
+          <div className="p-3 rounded-2xl bg-[#F4EFE9] border border-[#C6BDAC]">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-[#2B2420] mb-1 font-['Plus_Jakarta_Sans',sans-serif]">
               <span className="material-symbols-outlined text-[16px] text-[#5A4A43]">
                 calendar_month
@@ -148,7 +148,7 @@ export const SpecialistModal: React.FC<SpecialistModalProps> = ({
               onBookWithSpecialist(specialist);
               onClose();
             }}
-            className="w-full py-3 px-4 rounded-full bg-[#7c5357] hover:bg-[#674246] text-white font-semibold text-sm shadow-[0_4px_16px_rgba(124,83,87,0.25)] active:scale-95 transition-all flex items-center justify-center gap-2"
+            className="w-full py-3 px-4 rounded-full bg-primary hover:bg-[#AA8A74] text-on-primary font-bold text-sm shadow-xs active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>Reservar Cita con {specialist.name}</span>
             <span className="material-symbols-outlined text-[18px]">

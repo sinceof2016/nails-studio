@@ -653,7 +653,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4EFE9] text-[#2B2420] flex flex-col font-sans selection:bg-[#C6BDAC]/50 selection:text-[#5E3D44]">
+    <div className="min-h-screen bg-[#F4EFE9] text-[#2B2420] flex flex-col font-sans selection:bg-[#C6BDAC]/50 selection:text-[#2B2420]">
       {/* Background Subtle Accent Pattern */}
       <div className="fixed inset-0 pointer-events-none -z-10 bg-[#F4EFE9]" aria-hidden="true">
         <div className="absolute inset-0 bg-[radial-gradient(#C6BDAC_1px,transparent_1px)] [background-size:24px_24px] opacity-35" />

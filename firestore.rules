@@ -28,6 +28,13 @@ service cloud.firestore {
              getUserData().rol in ['SuperAdmin', 'Administrador'];
     }
 
+    // Comprueba existencia de perfil y rol SuperAdmin (único que gestiona usuarios)
+    function esSuperAdmin() {
+      return isSignedIn() &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             getUserData().rol == 'SuperAdmin';
+    }
+
     // Control de acceso estricto por sede: Administradores tienen acceso global,
     // el personal de caja solo accede a su sede asignada.
     function canAccessBranch(branchId) {
@@ -51,10 +58,12 @@ service cloud.firestore {
         'clientEmail', 'notes', 'polishColor', 'nailShape', 'selectedAddOns',
         'totalPrice', 'paymentMethod', 'montoEfectivo', 'montoDigital',
         'digitalMethod', 'tipAmount', 'status', 'bookingCode', 'createdAt',
-        'notifiedViaWhatsApp', 'branchId', 'isGroupBooking', 'groupGuestsCount'
+        'notifiedViaWhatsApp', 'branchId', 'isGroupBooking', 'groupGuestsCount',
+        'autorizacionDatos', 'autorizacionFecha', 'autorizacionVersion'
       ]) &&
       data.clientName is string && data.clientName.size() > 0 && data.clientName.size() <= 100 &&
       data.clientPhone is string && data.clientPhone.size() >= 7 && data.clientPhone.size() <= 25 &&
+      (esStaff() || data.get('autorizacionDatos', false) == true) &&
       data.serviceName is string && data.serviceName.size() <= 150 &&
       data.totalPrice is number && data.totalPrice >= 0 &&
       data.bookingCode is string && data.bookingCode.size() <= 30 &&
@@ -72,7 +81,8 @@ service cloud.firestore {
         'clientEmail', 'notes', 'polishColor', 'nailShape', 'selectedAddOns',
         'totalPrice', 'paymentMethod', 'montoEfectivo', 'montoDigital',
         'digitalMethod', 'tipAmount', 'status', 'bookingCode', 'createdAt',
-        'notifiedViaWhatsApp', 'branchId', 'isGroupBooking', 'groupGuestsCount'
+        'notifiedViaWhatsApp', 'branchId', 'isGroupBooking', 'groupGuestsCount',
+        'autorizacionDatos', 'autorizacionFecha', 'autorizacionVersion'
       ]) &&
       data.clientName is string && data.clientName.size() > 0 && data.clientName.size() <= 100 &&
       data.clientPhone is string && data.clientPhone.size() >= 7 && data.clientPhone.size() <= 25 &&
@@ -139,10 +149,10 @@ service cloud.firestore {
 
     // Colección: users (Perfiles y roles de personal)
     // Lee: El propio usuario autenticado o administradores.
-    // Crea / Actualiza / Borra: Solo administradores.
+    // Crea / Actualiza / Borra: Solo el SuperAdmin.
     match /users/{userId} {
       allow read: if isSignedIn() && (request.auth.uid == userId || esAdmin());
-      allow write: if esAdmin();
+      allow write: if esSuperAdmin();
     }
 
     // Colección: appointments (Citas y turnos del santuario)
@@ -151,7 +161,9 @@ service cloud.firestore {
     // Actualiza: Solo personal verificado (esStaff).
     // Borra: Solo administradores (esAdmin).
     match /appointments/{appointmentId} {
-      allow read: if esStaff();
+      allow list: if esStaff();
+      // El visitante solo puede 'consultar' un ID que todavía no existe (la reserva comprueba que esté libre); nunca lee una cita.
+      allow get: if esStaff() || resource == null;
       allow create: if isValidNewAppointment(request.resource.data);
       allow update: if isValidAppointmentUpdate(request.resource.data) && esStaff();
       allow delete: if esAdmin();
@@ -169,7 +181,13 @@ service cloud.firestore {
                        request.resource.data.appointmentId is string &&
                        request.resource.data.slot is string &&
                        request.resource.data.date is string &&
-                       request.resource.data.specialistId is string;
+                       request.resource.data.specialistId is string &&
+                       // el bloqueo solo nace junto con la cita nueva que lo origina (misma transacción)
+                       !exists(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)) &&
+                       existsAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)) &&
+                       getAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.date == request.resource.data.date &&
+                       getAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.time == request.resource.data.slot &&
+                       getAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.specialistId == request.resource.data.specialistId;
       allow update: if false;
       allow delete: if esStaff();
     }

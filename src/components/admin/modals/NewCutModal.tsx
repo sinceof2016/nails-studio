@@ -232,7 +232,7 @@ export const NewCutModal: React.FC<NewCutModalProps> = ({
                     type="number"
                     readOnly
                     value={cutMontoDigital}
-                    className="w-full h-8 px-2.5 rounded-lg bg-gray-50 border border-[#C6BDAC] text-xs font-mono font-bold text-[#71547c]"
+                    className="w-full h-8 px-2.5 rounded-lg bg-gray-50 border border-[#C6BDAC] text-xs font-mono font-bold text-[#2B2420]"
                   />
                 </div>
               </div>

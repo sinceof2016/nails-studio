@@ -156,9 +156,9 @@ export const ClientHistoryModal: React.FC<ClientHistoryModalProps> = ({
                       apt.status === 'confirmada'
                         ? 'bg-[#dce8dc] text-[#2d6a4f]'
                         : apt.status === 'en_preparacion'
-                        ? 'bg-[#f8d8ff] text-[#71547c]'
+                        ? 'bg-[#BB9C87]/20 text-[#2B2420] border border-[#BB9C87]/40'
                         : apt.status === 'completada'
-                        ? 'bg-[#f1ede7] text-[#5A4A43]'
+                        ? 'bg-[#F4EFE9] text-[#5A4A43]'
                         : 'bg-[#ffdad6] text-[#ba1a1a]'
                     }`}>
                       {apt.status === 'confirmada' && 'Confirmada'}

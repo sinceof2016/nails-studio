@@ -28,10 +28,10 @@ export const CookieBanner: React.FC<CookieBannerProps> = ({
       aria-label="Aviso de cookies y privacidad"
       className="fixed bottom-3 left-3 right-3 sm:left-6 sm:right-6 sm:bottom-6 z-50 max-w-4xl mx-auto animate-in slide-in-from-bottom-5 duration-300 pointer-events-auto"
     >
-      <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-[0_12px_40px_rgba(28,28,24,0.18)] border border-[#C6BDAC]/50 flex flex-col md:flex-row items-start md:items-center gap-5 justify-between">
+      <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-[0_12px_40px_rgba(43,36,32,0.12)] border border-[#C6BDAC]/50 flex flex-col md:flex-row items-start md:items-center gap-5 justify-between">
         {/* Left Side: Icon & Copy */}
         <div className="flex items-start gap-3.5 min-w-0">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#f8d8ff] to-[#ffdbc9] flex items-center justify-center text-[#5A4A43] shrink-0 shadow-2xs">
+          <div className="w-11 h-11 rounded-2xl bg-[#F4EFE9] border border-[#C6BDAC]/50 flex items-center justify-center text-[#5A4A43] shrink-0 shadow-2xs">
             <span className="material-symbols-outlined text-[24px]">cookie</span>
           </div>
           <div className="space-y-1">
@@ -48,7 +48,7 @@ export const CookieBanner: React.FC<CookieBannerProps> = ({
               <button
                 type="button"
                 onClick={onOpenSettings}
-                className="text-[#5A4A43] font-semibold underline hover:text-[#5d363a] transition-colors cursor-pointer"
+                className="text-[#5A4A43] font-semibold underline hover:text-[#2B2420] transition-colors cursor-pointer"
               >
                 personalizar tus preferencias
               </button>
@@ -56,7 +56,7 @@ export const CookieBanner: React.FC<CookieBannerProps> = ({
               <button
                 type="button"
                 onClick={onOpenPolicy}
-                className="text-[#5A4A43] font-semibold underline hover:text-[#5d363a] transition-colors cursor-pointer"
+                className="text-[#5A4A43] font-semibold underline hover:text-[#2B2420] transition-colors cursor-pointer"
               >
                 Política de Cookies
               </button>
@@ -70,21 +70,21 @@ export const CookieBanner: React.FC<CookieBannerProps> = ({
           <button
             type="button"
             onClick={onOpenSettings}
-            className="flex-1 sm:flex-none px-3.5 py-2.5 rounded-full bg-[#F4EFE9] hover:bg-[#F4EFE9] text-[#5A4A43] text-xs font-semibold border border-[#C6BDAC]/50 transition-all cursor-pointer text-center"
+            className="flex-1 sm:flex-none px-3.5 py-2.5 rounded-full bg-[#F4EFE9] hover:bg-[#C6BDAC]/20 text-[#5A4A43] text-xs font-semibold border border-[#C6BDAC]/50 transition-all cursor-pointer text-center"
           >
             Configurar
           </button>
           <button
             type="button"
             onClick={onRejectOptional}
-            className="flex-1 sm:flex-none px-4 py-2.5 rounded-full bg-white hover:bg-[#F4EFE9] text-[#5A4A43] text-xs font-semibold border border-[#7c5357]/30 transition-all cursor-pointer text-center"
+            className="flex-1 sm:flex-none px-4 py-2.5 rounded-full bg-white hover:bg-[#F4EFE9] text-[#5A4A43] text-xs font-semibold border border-[#918380]/40 transition-all cursor-pointer text-center"
           >
             Solo Necesarias
           </button>
           <button
             type="button"
             onClick={onAcceptAll}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#7c5357] hover:bg-[#674246] text-white text-xs font-semibold shadow-[0_4px_14px_rgba(124,83,87,0.25)] active:scale-95 transition-all cursor-pointer text-center"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-primary hover:bg-[#AA8A74] text-on-primary text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer text-center"
           >
             Aceptar Todas
           </button>

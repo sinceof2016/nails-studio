@@ -16,17 +16,17 @@ export const SpecialistsScreen: React.FC<SpecialistsScreenProps> = ({
   return (
     <div className="w-full space-y-6 pb-12 animate-in fade-in duration-200">
       {/* Hero Header */}
-      <div className="rounded-3xl bg-gradient-to-r from-[#7c5357] via-[#8c5f64] to-[#71547c] p-6 sm:p-8 text-white shadow-[0_10px_28px_-4px_rgba(124,83,87,0.35)] relative overflow-hidden">
+      <div className="rounded-3xl bg-gradient-to-r from-[#2B2420] via-[#3D332D] to-[#2B2420] p-6 sm:p-8 text-[#F4EFE9] shadow-md border border-[#5A4A43]/40 relative overflow-hidden">
         <div className="absolute -right-10 -bottom-10 w-48 h-48 rounded-full bg-white/10 blur-2xl pointer-events-none" />
         <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-[#ffdadc] text-xs font-semibold mb-3">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-[#BB9C87] text-xs font-semibold mb-3 border border-white/10">
             <span className="material-symbols-outlined text-[15px] fill">stars</span>
             Equipo Profesional Certificado
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold font-['Plus_Jakarta_Sans',sans-serif] tracking-tight text-white mb-2">
+          <h2 className="text-2xl sm:text-3xl font-bold font-['Plus_Jakarta_Sans',sans-serif] tracking-tight text-[#F4EFE9] mb-2">
             Maestras de Manicura, Nail Art &amp; Bienestar
           </h2>
-          <p className="text-sm text-white/85 leading-relaxed">
+          <p className="text-sm text-[#F4EFE9]/90 leading-relaxed">
             Cada una de nuestras especialistas cuenta con certificación internacional en técnica rusa, esterilización de grado médico y diseño personalizado. Elige a tu manicurista preferida para tu próxima cita.
           </p>
         </div>
@@ -37,7 +37,7 @@ export const SpecialistsScreen: React.FC<SpecialistsScreenProps> = ({
         {specialists.map((specialist) => (
           <div
             key={specialist.id}
-            className="bg-white rounded-3xl p-5 border border-[#C6BDAC]/30 shadow-[0_6px_20px_-4px_rgba(232,180,184,0.2)] hover:shadow-[0_12px_30px_-4px_rgba(232,180,184,0.35)] transition-all flex flex-col justify-between group"
+            className="bg-white rounded-3xl p-5 border border-[#C6BDAC]/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
           >
             <div>
               {/* Header: Avatar, Name, Rating */}
@@ -92,7 +92,7 @@ export const SpecialistsScreen: React.FC<SpecialistsScreenProps> = ({
               </div>
 
               {/* Available Days */}
-              <div className="p-3 rounded-2xl bg-[#f7f3ed] text-xs text-[#5A4A43] mb-4 flex items-center justify-between">
+              <div className="p-3 rounded-2xl bg-[#F4EFE9] text-xs text-[#5A4A43] mb-4 flex items-center justify-between border border-[#C6BDAC]/40">
                 <span className="text-[11px] font-medium flex items-center gap-1">
                   <span className="material-symbols-outlined text-[14px] text-[#5A4A43]">calendar_today</span>
                   Días de Atención:
@@ -102,10 +102,10 @@ export const SpecialistsScreen: React.FC<SpecialistsScreenProps> = ({
             </div>
 
             {/* Actions */}
-            <div className="pt-3 border-t border-[#C6BDAC] flex items-center gap-2">
+            <div className="pt-3 border-t border-[#C6BDAC]/40 flex items-center gap-2">
               <button
                 onClick={() => onOpenSpecialistModal(specialist)}
-                className="flex-1 py-2 px-3 rounded-full bg-[#F4EFE9] hover:bg-[#C6BDAC]/40/40 text-[#5A4A43] text-xs font-semibold border border-[#C6BDAC]/40 transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                className="flex-1 py-2 px-3 rounded-full bg-[#F4EFE9] hover:bg-[#C6BDAC]/20 text-[#5A4A43] text-xs font-semibold border border-[#C6BDAC]/40 transition-colors flex items-center justify-center gap-1 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[15px]">badge</span>
                 <span>Ver Perfil</span>
@@ -113,7 +113,7 @@ export const SpecialistsScreen: React.FC<SpecialistsScreenProps> = ({
 
               <button
                 onClick={() => onBookWithSpecialist(specialist)}
-                className="flex-1 py-2 px-3 rounded-full bg-[#7c5357] hover:bg-[#674246] text-white text-xs font-semibold shadow-xs transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer"
+                className="flex-1 py-2 px-3 rounded-full bg-primary hover:bg-[#AA8A74] text-on-primary text-xs font-bold shadow-xs transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[15px]">calendar_month</span>
                 <span>Agendar con Ella</span>

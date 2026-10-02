@@ -42,7 +42,7 @@ export const BookingStepCustomization: React.FC<BookingStepCustomizationProps> =
                 }`}
               >
                 <span className="text-xs font-bold block">{shape.name}</span>
-                <span className={`text-[10px] line-clamp-2 mt-0.5 ${isSelected ? 'text-white/80' : 'text-[#5A4A43]'}`}>
+                <span className={`text-[10px] line-clamp-2 mt-0.5 ${isSelected ? 'text-[#2B2420]/80' : 'text-[#5A4A43]'}`}>
                   {shape.description}
                 </span>
               </button>

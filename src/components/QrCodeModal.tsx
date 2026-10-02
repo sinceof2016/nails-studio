@@ -62,39 +62,39 @@ export const QrCodeModal: React.FC<QrCodeModalProps> = ({
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <rect width="100" height="100" fill="#fdf9f3" />
+              <rect width="100" height="100" fill="#F4EFE9" />
               {/* Corner markers */}
-              <rect x="10" y="10" width="24" height="24" fill="#3e2c35" rx="4" />
-              <rect x="14" y="14" width="16" height="16" fill="#fdf9f3" rx="2" />
-              <rect x="18" y="18" width="8" height="8" fill="#7c5357" rx="1" />
+              <rect x="10" y="10" width="24" height="24" fill="#2B2420" rx="4" />
+              <rect x="14" y="14" width="16" height="16" fill="#F4EFE9" rx="2" />
+              <rect x="18" y="18" width="8" height="8" fill="#BB9C87" rx="1" />
 
-              <rect x="66" y="10" width="24" height="24" fill="#3e2c35" rx="4" />
-              <rect x="70" y="14" width="16" height="16" fill="#fdf9f3" rx="2" />
-              <rect x="74" y="18" width="8" height="8" fill="#7c5357" rx="1" />
+              <rect x="66" y="10" width="24" height="24" fill="#2B2420" rx="4" />
+              <rect x="70" y="14" width="16" height="16" fill="#F4EFE9" rx="2" />
+              <rect x="74" y="18" width="8" height="8" fill="#BB9C87" rx="1" />
 
-              <rect x="10" y="66" width="24" height="24" fill="#3e2c35" rx="4" />
-              <rect x="14" y="70" width="16" height="16" fill="#fdf9f3" rx="2" />
-              <rect x="18" y="74" width="8" height="8" fill="#7c5357" rx="1" />
+              <rect x="10" y="66" width="24" height="24" fill="#2B2420" rx="4" />
+              <rect x="14" y="70" width="16" height="16" fill="#F4EFE9" rx="2" />
+              <rect x="18" y="74" width="8" height="8" fill="#BB9C87" rx="1" />
 
               {/* Data matrix pattern aesthetic */}
-              <rect x="42" y="12" width="6" height="6" fill="#7c5357" />
-              <rect x="52" y="12" width="6" height="6" fill="#3e2c35" />
-              <rect x="42" y="24" width="16" height="6" fill="#7c5357" />
-              <rect x="12" y="42" width="8" height="8" fill="#3e2c35" />
-              <rect x="24" y="42" width="12" height="6" fill="#7c5357" />
-              <rect x="42" y="40" width="16" height="16" fill="#3e2c35" rx="2" />
+              <rect x="42" y="12" width="6" height="6" fill="#BB9C87" />
+              <rect x="52" y="12" width="6" height="6" fill="#2B2420" />
+              <rect x="42" y="24" width="16" height="6" fill="#BB9C87" />
+              <rect x="12" y="42" width="8" height="8" fill="#2B2420" />
+              <rect x="24" y="42" width="12" height="6" fill="#BB9C87" />
+              <rect x="42" y="40" width="16" height="16" fill="#2B2420" rx="2" />
               <rect x="46" y="44" width="8" height="8" fill="#C6BDAC" />
-              <rect x="66" y="42" width="12" height="6" fill="#7c5357" />
-              <rect x="82" y="42" width="6" height="18" fill="#3e2c35" />
-              <rect x="42" y="66" width="6" height="12" fill="#7c5357" />
-              <rect x="54" y="66" width="18" height="6" fill="#3e2c35" />
-              <rect x="76" y="66" width="12" height="12" fill="#7c5357" />
-              <rect x="54" y="78" width="6" height="10" fill="#3e2c35" />
-              <rect x="66" y="82" width="12" height="6" fill="#7c5357" />
+              <rect x="66" y="42" width="12" height="6" fill="#BB9C87" />
+              <rect x="82" y="42" width="6" height="18" fill="#2B2420" />
+              <rect x="42" y="66" width="6" height="12" fill="#BB9C87" />
+              <rect x="54" y="66" width="18" height="6" fill="#2B2420" />
+              <rect x="76" y="66" width="12" height="12" fill="#BB9C87" />
+              <rect x="54" y="78" width="6" height="10" fill="#2B2420" />
+              <rect x="66" y="82" width="12" height="6" fill="#BB9C87" />
             </svg>
           </div>
 
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f7f3ed] border border-[#C6BDAC]">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F4EFE9] border border-[#C6BDAC]">
             <span className="text-xs font-mono font-bold text-[#5A4A43]">
               {appointment.bookingCode}
             </span>

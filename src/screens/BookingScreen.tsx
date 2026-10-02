@@ -413,7 +413,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
         <div className="absolute -right-8 -bottom-8 w-40 h-40 rounded-full bg-white/50 blur-2xl pointer-events-none" />
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/95 text-[#5E3D44] text-xs font-semibold mb-2 border border-[#C6BDAC]">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/95 text-[#2B2420] text-xs font-semibold mb-2 border border-[#C6BDAC]">
               <span className="material-symbols-outlined text-[15px] text-[#2B2420]">event_available</span>
               {BUSINESS_CONFIG.branchName} · Calendario en Tiempo Real
             </div>
@@ -567,7 +567,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       {localToast && (
         <div
           role="status"
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-[#2B2420] text-white text-xs font-semibold shadow-2xl flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-3 max-w-[90vw]"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-[#2B2420] text-[#F4EFE9] text-xs font-semibold shadow-2xl flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-3 max-w-[90vw]"
         >
           <span className="material-symbols-outlined text-rose-400 text-[20px] shrink-0">warning</span>
           <span>{localToast}</span>

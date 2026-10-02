@@ -124,7 +124,7 @@ export const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
               onBookService(service);
               onClose();
             }}
-            className="w-full py-3 px-4 rounded-full bg-[#7c5357] hover:bg-[#674246] text-white font-semibold text-sm shadow-[0_4px_16px_rgba(124,83,87,0.25)] active:scale-95 transition-all flex items-center justify-center gap-2"
+            className="w-full py-3 px-4 rounded-full bg-primary hover:bg-[#AA8A74] text-on-primary font-bold text-sm shadow-xs active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>Reservar este servicio (${service.price})</span>
             <span className="material-symbols-outlined text-[18px]">

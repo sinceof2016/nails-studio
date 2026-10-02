@@ -67,7 +67,7 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
         {/* Header */}
         <div className="p-5 sm:p-6 bg-white border-b border-[#C6BDAC]/30 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#f8d8ff] to-[#ffdbc9] flex items-center justify-center text-[#5A4A43]">
+            <div className="w-10 h-10 rounded-2xl bg-[#F4EFE9] border border-[#C6BDAC]/50 flex items-center justify-center text-[#5A4A43]">
               <span className="material-symbols-outlined text-[22px]">tune</span>
             </div>
             <div>
@@ -81,7 +81,7 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-[#F4EFE9] hover:bg-[#C6BDAC]/40/20 flex items-center justify-center text-[#5A4A43] transition-colors cursor-pointer"
+            className="w-9 h-9 rounded-full bg-[#F4EFE9] hover:bg-[#C6BDAC]/30 flex items-center justify-center text-[#5A4A43] transition-colors cursor-pointer"
             aria-label="Cerrar modal"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
@@ -94,7 +94,7 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
             onClick={() => setActiveTab('categories')}
             className={`pb-2.5 border-b-2 transition-all cursor-pointer ${
               activeTab === 'categories'
-                ? 'border-[#7c5357] text-[#5A4A43]'
+                ? 'border-[#BB9C87] text-[#2B2420] font-bold'
                 : 'border-transparent text-[#5A4A43] hover:text-[#2B2420]'
             }`}
           >
@@ -107,12 +107,12 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
             }}
             className={`pb-2.5 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'inspector'
-                ? 'border-[#7c5357] text-[#5A4A43]'
+                ? 'border-[#BB9C87] text-[#2B2420] font-bold'
                 : 'border-transparent text-[#5A4A43] hover:text-[#2B2420]'
             }`}
           >
             <span>Inspector en Vivo</span>
-            <span className="px-1.5 py-0.2 rounded-full bg-[#7c5357]/10 text-[#5A4A43] text-[10px]">
+            <span className="px-1.5 py-0.2 rounded-full bg-[#BB9C87]/20 text-[#2B2420] text-[10px] font-bold">
               {Object.keys(liveCookies).length}
             </span>
           </button>
@@ -165,7 +165,7 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
                       }
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-[#d8c2c4] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#c5a6aa] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#7c5357]"></div>
+                    <div className="w-11 h-6 bg-[#C6BDAC] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#918380] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#918380] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#BB9C87]"></div>
                   </label>
                 </div>
                 <p className="text-xs text-[#5A4A43] leading-relaxed">
@@ -180,7 +180,7 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
               <div className="p-4 rounded-2xl bg-white border border-[#C6BDAC]/40 space-y-2 shadow-2xs">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[#71547c] text-[20px]">insights</span>
+                    <span className="material-symbols-outlined text-[#918380] text-[20px]">insights</span>
                     <strong className="text-sm text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">
                       3. Cookies de Rendimiento &amp; Analítica Anónima
                     </strong>
@@ -194,7 +194,7 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
                       }
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-[#d8c2c4] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#c5a6aa] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#7c5357]"></div>
+                    <div className="w-11 h-6 bg-[#C6BDAC] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#918380] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#918380] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#BB9C87]"></div>
                   </label>
                 </div>
                 <p className="text-xs text-[#5A4A43] leading-relaxed">
@@ -223,7 +223,7 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
                       }
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-[#d8c2c4] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#c5a6aa] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#7c5357]"></div>
+                    <div className="w-11 h-6 bg-[#C6BDAC] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#918380] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#918380] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#BB9C87]"></div>
                   </label>
                 </div>
                 <p className="text-xs text-[#5A4A43] leading-relaxed">
@@ -237,7 +237,7 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
           ) : (
             /* Live Inspector Tab */
             <div className="space-y-4">
-              <div className="p-3.5 rounded-2xl bg-[#ffdbc9]/40 border border-[#ffdbc9] text-xs text-[#5A4A43] flex items-center justify-between">
+              <div className="p-3.5 rounded-2xl bg-[#F4EFE9] border border-[#C6BDAC] text-xs text-[#5A4A43] flex items-center justify-between">
                 <div>
                   <strong>Registro Real del Navegador:</strong> Muestra las cookies guardadas actualmente en <code className="font-mono bg-white/60 px-1 py-0.5 rounded">document.cookie</code>.
                 </div>
@@ -279,7 +279,7 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
                 </h4>
                 <div className="overflow-x-auto rounded-xl border border-[#C6BDAC]/30">
                   <table className="w-full text-left text-[11px]">
-                    <thead className="bg-[#f5e6e8] text-[#5A4A43]">
+                    <thead className="bg-[#F4EFE9] text-[#5A4A43]">
                       <tr>
                         <th className="p-2.5 font-semibold">Cookie</th>
                         <th className="p-2.5 font-semibold">Categoría</th>
@@ -310,7 +310,7 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
             <button
               type="button"
               onClick={onOpenPolicy}
-              className="text-xs font-semibold text-[#5A4A43] underline hover:text-[#5d363a] cursor-pointer"
+              className="text-xs font-semibold text-[#5A4A43] underline hover:text-[#2B2420] cursor-pointer"
             >
               Leer Política Completa
             </button>
@@ -333,14 +333,14 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
                 onRejectOptional();
                 onClose();
               }}
-              className="flex-1 sm:flex-none px-4 py-2.5 rounded-full bg-[#F4EFE9] hover:bg-[#F4EFE9] text-[#5A4A43] text-xs font-semibold border border-[#C6BDAC]/50 transition-all cursor-pointer text-center"
+              className="flex-1 sm:flex-none px-4 py-2.5 rounded-full bg-[#F4EFE9] hover:bg-[#C6BDAC]/20 text-[#5A4A43] text-xs font-semibold border border-[#C6BDAC]/50 transition-all cursor-pointer text-center"
             >
               Rechazar Opcionales
             </button>
             <button
               type="button"
               onClick={handleSave}
-              className="flex-1 sm:flex-none px-5 py-2.5 rounded-full bg-[#7c5357] hover:bg-[#674246] text-white text-xs font-semibold shadow-[0_4px_14px_rgba(124,83,87,0.25)] active:scale-95 transition-all cursor-pointer text-center"
+              className="flex-1 sm:flex-none px-5 py-2.5 rounded-full bg-primary hover:bg-[#AA8A74] text-on-primary text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer text-center"
             >
               Guardar Preferencias
             </button>

@@ -50,10 +50,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   return (
     <div className="w-full space-y-6 pb-12 animate-in fade-in duration-200">
       {/* Top Banner: Protocolo Signature & Ritual de Bienestar (Full Width) */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#C6BDAC]/35 via-[#F4EFE9] to-white p-6 sm:p-8 md:p-10 shadow-[0_8px_24px_-4px_rgba(234,185,189,0.3)] border border-[#C6BDAC] flex flex-col justify-between">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#C6BDAC]/35 via-[#F4EFE9] to-white p-6 sm:p-8 md:p-10 shadow-xs border border-[#C6BDAC] flex flex-col justify-between">
         <div className="absolute -right-10 -bottom-10 w-60 h-60 rounded-full bg-white/50 blur-2xl pointer-events-none" />
         <div className="relative z-10 space-y-3 max-w-3xl">
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/95 text-[#5E3D44] text-xs font-semibold backdrop-blur-md shadow-2xs border border-[#C6BDAC] font-['Plus_Jakarta_Sans',sans-serif]">
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/95 text-[#2B2420] text-xs font-semibold backdrop-blur-md shadow-2xs border border-[#C6BDAC] font-['Plus_Jakarta_Sans',sans-serif]">
             <span className="material-symbols-outlined text-[15px] text-[#2B2420] fill">
               auto_awesome
             </span>
@@ -72,12 +72,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <div className="relative z-10 pt-6 flex flex-wrap items-center gap-4">
           <button
             onClick={onOpenPromo}
-            className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-[#BB9C87] text-[#2B2420] font-bold text-xs sm:text-sm font-semibold shadow-[0_4px_16px_rgba(100,68,75,0.25)] hover:bg-[#AA8A74] active:scale-95 transition-all cursor-pointer"
+            className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-[#BB9C87] text-[#2B2420] font-bold text-xs sm:text-sm font-semibold shadow-xs hover:bg-[#AA8A74] active:scale-95 transition-all cursor-pointer"
           >
             <span>Conocer Nuestro Ritual</span>
             <span className="material-symbols-outlined text-[17px] ml-1.5">local_florist</span>
           </button>
-          <span className="text-xs sm:text-sm text-[#5E3D44] font-medium flex items-center gap-1.5">
+          <span className="text-xs sm:text-sm text-[#5A4A43] font-medium flex items-center gap-1.5">
             <span className="material-symbols-outlined text-[18px] text-[#2B2420]">verified</span>
             {BUSINESS_CONFIG.branchName} · Atención personalizada en cabina privada · Reserva en línea
           </span>
@@ -199,7 +199,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   <div
                     className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-semibold shadow-xs ${
                       service.tagType === 'top'
-                        ? 'bg-[#C6BDAC]/50 text-[#5E3D44]'
+                        ? 'bg-[#C6BDAC]/50 text-[#2B2420]'
                         : service.tagType === 'relax'
                         ? 'bg-[#C6BDAC]/40 text-[#2B2420]'
                         : service.tagType === 'trend'

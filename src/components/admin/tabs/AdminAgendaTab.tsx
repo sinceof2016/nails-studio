@@ -80,7 +80,7 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
           {/* BUTTON 1: WALK-IN / TURNO EXPRESS */}
           <button
             onClick={onOpenExpressModal}
-            className="h-10 px-4 rounded-full bg-gradient-to-r from-[#BB9C87] to-[#AA8A74] hover:opacity-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs shrink-0 cursor-pointer active:scale-95 transition-all"
+            className="h-10 px-4 rounded-full bg-gradient-to-r from-[#BB9C87] to-[#AA8A74] hover:opacity-95 text-[#2B2420] text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs shrink-0 cursor-pointer active:scale-95 transition-all"
             title="Crear cita express para clientas que llegan sin reserva en 10 segundos"
           >
             <span className="material-symbols-outlined text-[18px]">flash_on</span>
@@ -178,20 +178,20 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
         </button>
         <button
           onClick={() => setFilterStatus('en_preparacion')}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#918380] ${
             filterStatus === 'en_preparacion'
-              ? 'bg-[#71547c] text-white shadow-xs'
-              : 'bg-white text-[#71547c] border border-[#f8d8ff] hover:bg-[#f8d8ff]/40'
+              ? 'bg-primary text-on-primary font-bold shadow-xs border border-primary'
+              : 'bg-white text-[#5A4A43] border border-[#C6BDAC] hover:bg-[#F4EFE9]'
           }`}
         >
           En Cabina ({inPrepCount})
         </button>
         <button
           onClick={() => setFilterStatus('completada')}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#918380] ${
             filterStatus === 'completada'
-              ? 'bg-[#504444] text-white shadow-xs'
-              : 'bg-white text-[#5A4A43] border border-[#C6BDAC] hover:bg-[#ebe8e2]/50'
+              ? 'bg-[#2B2420] text-[#F4EFE9] font-bold shadow-xs border border-[#2B2420]'
+              : 'bg-white text-[#5A4A43] border border-[#C6BDAC] hover:bg-[#F4EFE9]'
           }`}
         >
           Completadas ({completedCount})
@@ -248,9 +248,9 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
                       apt.status === 'confirmada'
                         ? 'bg-[#dce8dc] text-[#2d6a4f]'
                         : apt.status === 'en_preparacion'
-                        ? 'bg-[#f8d8ff] text-[#71547c]'
+                        ? 'bg-[#BB9C87]/20 text-[#2B2420] border border-[#BB9C87]/40'
                         : apt.status === 'completada'
-                        ? 'bg-[#f1ede7] text-[#5A4A43]'
+                        ? 'bg-[#F4EFE9] text-[#5A4A43]'
                         : 'bg-[#ffdad6] text-[#ba1a1a]'
                     }`}
                   >

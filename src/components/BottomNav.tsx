@@ -33,7 +33,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   return (
     <nav
       aria-label="Navegación principal"
-      className="fixed bottom-0 w-full z-40 bg-[#F4EFE9]/95 backdrop-blur-xl border-t border-[#C6BDAC]/30 shadow-[0_-4px_24px_rgba(232,180,184,0.2)]"
+      className="fixed bottom-0 w-full z-40 bg-[#F4EFE9]/95 backdrop-blur-xl border-t border-[#C6BDAC]/30 shadow-[0_-4px_24px_rgba(43,36,32,0.08)]"
     >
       <div className="w-full max-w-lg mx-auto h-16 px-4 flex items-center justify-around">
         {tabs.map((tab) => {
@@ -42,16 +42,16 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             <button
               key={tab.id}
               onClick={() => onNavigate(tab.id)}
-              className={`flex flex-col items-center justify-center w-20 h-13 rounded-2xl transition-all duration-200 group relative cursor-pointer ${
+              className={`flex flex-col items-center justify-center w-20 h-13 rounded-2xl transition-all duration-200 group relative cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#918380] ${
                 isActive
-                  ? 'text-[#5A4A43] font-semibold'
-                  : 'text-[#5A4A43] hover:text-[#5A4A43]'
+                  ? 'text-[#2B2420] font-semibold'
+                  : 'text-[#5A4A43] hover:text-[#2B2420]'
               }`}
             >
               <div
                 className={`w-11 h-7 rounded-full flex items-center justify-center transition-all duration-200 relative ${
                   isActive
-                    ? 'bg-[#C6BDAC]/40/40 scale-105'
+                    ? 'bg-[#C6BDAC]/40 scale-105'
                     : 'group-hover:bg-[#ebe8e2]/50'
                 }`}
               >
@@ -64,7 +64,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 </span>
 
                 {tab.badge && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#7c5357] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-on-primary text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
                     {tab.badge}
                   </span>
                 )}

@@ -90,7 +90,7 @@ export const AdminCajaTab: React.FC<AdminCajaTabProps> = ({
 
         <div className="pt-3 border-t border-[#C6BDAC] flex items-center justify-between text-xs">
           <span className="text-[#5A4A43] font-medium">Entradas Digitales (Nequi / Daviplata / Datáfono):</span>
-          <strong className="text-[#71547c] font-mono text-sm font-bold">{formatCOP(totalDigitalIncome)}</strong>
+          <strong className="text-[#2B2420] font-mono text-sm font-bold">{formatCOP(totalDigitalIncome)}</strong>
         </div>
       </div>
 
@@ -133,7 +133,7 @@ export const AdminCajaTab: React.FC<AdminCajaTabProps> = ({
                             ? 'bg-emerald-100 text-emerald-800'
                             : cut.metodoPago === 'mixto'
                             ? 'bg-[#BB9C87]/15 text-[#2B2420]'
-                            : 'bg-[#f8d8ff] text-[#71547c]'
+                            : 'bg-[#C6BDAC]/30 text-[#2B2420] border border-[#C6BDAC]/60'
                         }`}
                       >
                         {cut.metodoPago === 'efectivo' && 'Efectivo'}

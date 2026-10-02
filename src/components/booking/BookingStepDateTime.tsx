@@ -223,7 +223,7 @@ export const BookingStepDateTime: React.FC<BookingStepDateTimeProps> = ({
                   <span className="text-xs font-bold block">{slot.slot}</span>
                   <span
                     className={`text-[10px] mt-0.5 block ${
-                      isSelected ? 'text-white/80' : 'text-emerald-700'
+                      isSelected ? 'text-[#2B2420]/80' : 'text-emerald-700'
                     }`}
                   >
                     Turno Libre
