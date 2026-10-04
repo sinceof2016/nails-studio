@@ -178,9 +178,6 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
     }
   }, [localToast]);
 
-  // Active Redirection Assistant state when clicking on a busy slot
-  const [redirectionSlot, setRedirectionSlot] = useState<string | null>(null);
-
   // Sync if initial props change
   useEffect(() => {
     if (initialService) setSelectedService(initialService);
@@ -219,16 +216,6 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
     return map;
   }, [selectedDateOption, appointments, slotLocks, specialists]);
 
-  // Which specialists are free at the redirected slot
-  const redirectionAvailableSpecialists = useMemo(() => {
-    if (!redirectionSlot) return [];
-    return specialists.filter((spec) => {
-      const slots = computeSlotAvailability(selectedDateOption, spec.id, appointments, slotLocks, new Date(), specialists);
-      const matchSlot = slots.find((s) => s.slot === redirectionSlot);
-      return matchSlot?.status === 'available';
-    });
-  }, [redirectionSlot, selectedDateOption, appointments, slotLocks, specialists]);
-
   // Pricing Calculation in COP
   const basePrice = selectedService ? selectedService.price : 0;
   const addOnsTotal = selectedAddOns.reduce((acc, name) => {
@@ -244,13 +231,6 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
     setSelectedAddOns((prev) =>
       prev.includes(addonName) ? prev.filter((a) => a !== addonName) : [...prev, addonName]
     );
-  };
-
-  // Redirect to another specialist
-  const handleRedirectToSpecialist = (specId: string, timeSlot: string) => {
-    setSelectedSpecialistId(specId);
-    setSelectedTime(timeSlot);
-    setRedirectionSlot(null);
   };
 
   // Confirm booking & Plain Text Validation
@@ -541,10 +521,6 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
             availableTimeSlots={availableTimeSlots}
             selectedTime={selectedTime}
             setSelectedTime={setSelectedTime}
-            redirectionSlot={redirectionSlot}
-            setRedirectionSlot={setRedirectionSlot}
-            redirectionAvailableSpecialists={redirectionAvailableSpecialists}
-            handleRedirectToSpecialist={handleRedirectToSpecialist}
             specialists={specialists}
             onBack={() => goToStep(1)}
             onNext={() => goToStep(3)}

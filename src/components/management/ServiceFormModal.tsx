@@ -251,15 +251,57 @@ export const ServiceFormModal: React.FC<ServiceFormModalProps> = ({
             />
           </div>
 
-          <div>
-            <label className="block font-semibold text-[#5A4A43] mb-1">URL de Imagen</label>
-            <input
-              type="url"
-              value={image}
-              onChange={(e) => setImage(e.target.value)}
-              placeholder="https://..."
-              className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20"
-            />
+          <div className="space-y-1.5">
+            <label className="block font-semibold text-[#5A4A43]">Foto de Portada del Servicio</label>
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-[#C6BDAC]">
+              <img
+                src={image || 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&q=80&w=800'}
+                alt="Vista previa del servicio"
+                className="w-16 h-12 rounded-xl object-cover shrink-0 border border-[#C6BDAC]"
+              />
+              <div className="flex-1 min-w-0 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <label className="px-3 py-1.5 rounded-xl bg-[#F4EFE9] hover:bg-[#C6BDAC]/40 text-[#2B2420] border border-[#C6BDAC] font-bold text-[11px] cursor-pointer inline-flex items-center gap-1.5 transition-all shadow-2xs">
+                    <span className="material-symbols-outlined text-[15px]">upload_file</span>
+                    <span>Subir imagen local</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            if (typeof event.target?.result === 'string') {
+                              setImage(event.target.result);
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+                  {image && (
+                    <button
+                      type="button"
+                      onClick={() => setImage('')}
+                      className="px-2 py-1.5 rounded-xl hover:bg-rose-50 text-rose-700 text-[11px] font-semibold flex items-center gap-0.5 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">delete</span>
+                      <span>Quitar</span>
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  value={image}
+                  onChange={(e) => setImage(e.target.value)}
+                  placeholder="O pega una URL: https://..."
+                  className="w-full h-8 px-2.5 rounded-lg bg-[#F4EFE9]/60 border border-[#C6BDAC]/70 text-[11px] text-[#2B2420] focus:outline-none focus:ring-1 focus:ring-[#2B2420]/30"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="pt-2 flex items-center justify-end gap-2 border-t border-[#C6BDAC]/50">

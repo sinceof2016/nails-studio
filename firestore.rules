@@ -63,7 +63,7 @@ service cloud.firestore {
       ]) &&
       data.clientName is string && data.clientName.size() > 0 && data.clientName.size() <= 100 &&
       data.clientPhone is string && data.clientPhone.size() >= 7 && data.clientPhone.size() <= 25 &&
-      (esStaff() || data.get('autorizacionDatos', false) == true) &&
+      (esStaff() || ('autorizacionDatos' in data && data.autorizacionDatos == true)) &&
       data.serviceName is string && data.serviceName.size() <= 150 &&
       data.totalPrice is number && data.totalPrice >= 0 &&
       data.bookingCode is string && data.bookingCode.size() <= 30 &&
