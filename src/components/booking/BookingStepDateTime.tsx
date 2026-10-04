@@ -1,7 +1,12 @@
 import React from 'react';
 import { Specialist } from '../../types';
 import { SPECIALISTS } from '../../data/mockData';
-import { CalendarDayOption, SlotAvailability } from '../../utils/calendarAvailability';
+import {
+  CalendarDayOption,
+  SlotAvailability,
+  isSpecialistWorkingOnDay,
+  getSpanishDayName
+} from '../../utils/calendarAvailability';
 
 interface BookingStepDateTimeProps {
   calendarDays: CalendarDayOption[];
@@ -42,6 +47,10 @@ export const BookingStepDateTime: React.FC<BookingStepDateTimeProps> = ({
   onNext,
   specialists = SPECIALISTS
 }) => {
+  const isCurrentSpecialistOff =
+    currentSpecialist !== null &&
+    !isSpecialistWorkingOnDay(currentSpecialist, selectedDateOption);
+
   return (
     <div className="space-y-5 animate-in fade-in duration-150">
       {/* 1. Day Selector (Next 7 Days) */}
@@ -133,7 +142,8 @@ export const BookingStepDateTime: React.FC<BookingStepDateTimeProps> = ({
           {/* ALL SPECIALISTS */}
           {specialists.map((spec) => {
             const isSelected = selectedSpecialistId === spec.id;
-            const stats = daySpecialistStats[spec.id] || { free: 8 };
+            const worksToday = isSpecialistWorkingOnDay(spec, selectedDateOption);
+            const stats = daySpecialistStats[spec.id] || { free: worksToday ? 8 : 0 };
 
             return (
               <button
@@ -164,17 +174,21 @@ export const BookingStepDateTime: React.FC<BookingStepDateTimeProps> = ({
                       ★ {spec.rating}
                     </span>
                   </div>
-                  <span className="text-[10px] text-[#5A4A43] block truncate">
-                    {stats.free > 0 ? (
-                      <span className="text-emerald-700 font-medium">
+                  <div className="mt-0.5">
+                    {!worksToday ? (
+                      <span className="text-[10px] text-rose-700 bg-rose-50 border border-rose-200/80 px-1.5 py-0.5 rounded font-bold block truncate">
+                        No atiende hoy
+                      </span>
+                    ) : stats.free > 0 ? (
+                      <span className="text-[10px] text-emerald-700 font-medium block truncate">
                         {stats.free} turnos libres
                       </span>
                     ) : (
-                      <span className="text-rose-600 font-semibold">
-                        {selectedDateOption.isToday ? 'Agenda llena hoy' : 'Sin disponibilidad'}
+                      <span className="text-[10px] text-rose-600 font-semibold block truncate">
+                        {selectedDateOption.isToday ? 'Agenda llena hoy' : 'Sin turnos'}
                       </span>
                     )}
-                  </span>
+                  </div>
                 </div>
               </button>
             );
@@ -182,7 +196,7 @@ export const BookingStepDateTime: React.FC<BookingStepDateTimeProps> = ({
         </div>
       </div>
 
-      {/* 3. Real-Time Time Slots (Available vs Passed vs Busy) */}
+      {/* 3. Real-Time Time Slots (Available vs Passed vs Busy / Off-day) */}
       <div className="bg-white rounded-3xl p-5 border border-[#C6BDAC] shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-[#C6BDAC]/60 pb-3">
           <div>
@@ -191,7 +205,7 @@ export const BookingStepDateTime: React.FC<BookingStepDateTimeProps> = ({
               <span>Horarios Disponibles</span>
             </h3>
             <p className="text-[11px] text-[#5A4A43]">
-              Horarios en verde tienen turno libre. Horarios pasados ya no admiten reservas.
+              Horarios en verde tienen turno libre. Horarios en gris/ámbar están reservados o fuera de atención.
             </p>
           </div>
 
@@ -202,7 +216,7 @@ export const BookingStepDateTime: React.FC<BookingStepDateTimeProps> = ({
             </span>
             <span className="flex items-center gap-1">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />
-              Ocupado
+              Reservado
             </span>
             <span className="flex items-center gap-1">
               <span className="w-2.5 h-2.5 rounded-full bg-gray-300 inline-block" />
@@ -210,6 +224,21 @@ export const BookingStepDateTime: React.FC<BookingStepDateTimeProps> = ({
             </span>
           </div>
         </div>
+
+        {/* Notificación si la especialista seleccionada no atiende en el día elegido */}
+        {isCurrentSpecialistOff && currentSpecialist && (
+          <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-2.5 animate-in fade-in">
+            <span className="material-symbols-outlined text-[20px] text-amber-700 shrink-0 mt-0.5">event_busy</span>
+            <div>
+              <strong className="block text-amber-950 font-bold">
+                {currentSpecialist.name} no atiende los {getSpanishDayName(selectedDateOption)}
+              </strong>
+              <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
+                Días de atención habitual: <strong>{currentSpecialist.availableDays?.join(', ') || 'Lunes a Sábado'}</strong>. Todos los turnos aparecen reservados para esta fecha. Puedes cambiar de fecha en el calendario o elegir otra especialista.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {availableTimeSlots.map((slot) => {
@@ -261,14 +290,16 @@ export const BookingStepDateTime: React.FC<BookingStepDateTimeProps> = ({
               );
             }
 
-            // Ocupado (booked) con asistente de redirección
+            // Ocupado / Reservado / Día no laboral
+            const isOffDay = slot.bookedByClient === 'No atiende este día';
+
             return (
               <button
                 key={slot.slot}
                 type="button"
                 onClick={() => setRedirectionSlot(slot.slot)}
                 className="py-3 px-3 rounded-2xl border border-[#C6BDAC] bg-[#F4EFE9] text-[#5A4A43] text-center opacity-85 hover:opacity-100 hover:border-amber-300 transition-all cursor-pointer group"
-                title="Haz clic para ver qué otra especialista tiene este turno libre"
+                title={isOffDay ? 'Especialista no disponible en este día. Clic para ver alternativas.' : 'Turno reservado. Haz clic para ver alternativas libres.'}
               >
                 <div className="flex items-center justify-center gap-1">
                   <span className="text-xs font-medium line-through text-[#5A4A43]">
@@ -278,8 +309,8 @@ export const BookingStepDateTime: React.FC<BookingStepDateTimeProps> = ({
                     swap_horiz
                   </span>
                 </div>
-                <span className="text-[10px] text-amber-700 font-semibold block mt-0.5">
-                  Ver alternativa
+                <span className="text-[10px] text-amber-700 font-semibold block mt-0.5 truncate">
+                  {isOffDay ? 'No atiende (Alternativa)' : 'Ver alternativa'}
                 </span>
               </button>
             );
@@ -295,61 +326,63 @@ export const BookingStepDateTime: React.FC<BookingStepDateTimeProps> = ({
                 <div>
                   <strong className="block text-amber-950 font-['Plus_Jakarta_Sans',sans-serif]">
                     {currentSpecialist
-                      ? `${currentSpecialist.name} está ocupada a las ${redirectionSlot}`
+                      ? `${currentSpecialist.name} no está disponible a las ${redirectionSlot}`
                       : `Horario ${redirectionSlot} parcialmente ocupado`}
                   </strong>
-                  <span className="text-[11px] text-amber-800">
-                    {redirectionAvailableSpecialists.length > 0
-                      ? '¡Buenas noticias! Tenemos disponibilidad con las siguientes especialistas en esa misma hora:'
-                      : 'No hay otras especialistas libres a esta hora exacta. Por favor selecciona otro horario verde.'}
-                  </span>
+                  <p className="text-[11px] text-amber-800">
+                    Otras especialistas certificadas disponibles a las {redirectionSlot} para {selectedDateOption.full}:
+                  </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setRedirectionSlot(null)}
-                className="text-amber-800 hover:text-amber-950 p-1 cursor-pointer"
+                className="w-6 h-6 rounded-full hover:bg-amber-200/50 flex items-center justify-center text-amber-800 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[16px]">close</span>
               </button>
             </div>
 
-            {redirectionAvailableSpecialists.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                {redirectionAvailableSpecialists.map((spec) => (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {redirectionAvailableSpecialists.length > 0 ? (
+                redirectionAvailableSpecialists.map((spec) => (
                   <button
                     key={spec.id}
                     type="button"
                     onClick={() => handleRedirectToSpecialist(spec.id, redirectionSlot)}
-                    className="p-2.5 rounded-xl bg-white border border-amber-300 hover:border-amber-500 flex items-center justify-between text-left transition-all cursor-pointer shadow-2xs"
+                    className="p-2.5 rounded-xl bg-white border border-amber-300 hover:border-amber-500 hover:shadow-xs flex items-center gap-2 text-left cursor-pointer transition-all"
                   >
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={spec.avatar}
-                        alt={spec.name}
-                        className="w-8 h-8 rounded-full object-cover"
-                      />
-                      <div>
-                        <strong className="text-xs text-[#2B2420] block">{spec.name}</strong>
-                        <span className="text-[10px] text-[#5A4A43]">{spec.role}</span>
-                      </div>
+                    <img
+                      src={spec.avatar}
+                      alt={spec.name}
+                      className="w-8 h-8 rounded-full object-cover shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <span className="block text-xs font-bold text-[#2B2420] truncate">
+                        {spec.name}
+                      </span>
+                      <span className="text-[10px] text-emerald-700 font-bold block">
+                        ✓ Turno Disponible
+                      </span>
                     </div>
-                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                      Asignar a las {redirectionSlot}
-                    </span>
                   </button>
-                ))}
-              </div>
-            )}
+                ))
+              ) : (
+                <div className="col-span-3 text-center py-2 text-amber-800 italic text-xs">
+                  No hay otras especialistas libres a esta misma hora. Por favor elige otro horario en verde.
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
 
+      {/* Navigation step buttons */}
       <div className="flex items-center justify-between pt-2">
         <button
           type="button"
           onClick={onBack}
-          className="px-5 py-2.5 rounded-full bg-white border border-[#C6BDAC] text-[#5A4A43] text-xs font-semibold hover:bg-[#C6BDAC]/40 cursor-pointer"
+          className="px-5 py-2.5 rounded-full bg-white border border-[#C6BDAC] text-[#5A4A43] text-xs font-semibold hover:bg-[#C6BDAC]/40 cursor-pointer transition-colors"
         >
           Atrás
         </button>
@@ -357,9 +390,13 @@ export const BookingStepDateTime: React.FC<BookingStepDateTimeProps> = ({
           type="button"
           onClick={onNext}
           disabled={!selectedTime}
-          className="px-6 py-3 rounded-full bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold text-xs shadow-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          className={`px-6 py-3 rounded-full text-xs font-bold shadow-xs transition-all flex items-center gap-2 ${
+            selectedTime
+              ? 'bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] active:scale-95 cursor-pointer'
+              : 'bg-neutral-200 text-neutral-400 cursor-not-allowed shadow-none'
+          }`}
         >
-          <span>Continuar a Personalización</span>
+          <span>Continuar a Estilo</span>
           <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
         </button>
       </div>

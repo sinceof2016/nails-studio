@@ -79,14 +79,10 @@ export async function saveAppointmentWithLockInFirestore(appointment: Appointmen
   const lockDocRef = doc(db, SLOT_LOCKS_COLLECTION, lockId);
 
   await runTransaction(db, async (transaction) => {
+    // 1. Verificar si el horario ya está bloqueado (lectura pública permitida en slot_locks)
     const lockSnap = await transaction.get(lockDocRef);
     if (lockSnap.exists()) {
       throw new Error(`El horario de las ${appointment.time} ya se encuentra ocupado con esta especialista.`);
-    }
-
-    const aptSnap = await transaction.get(aptDocRef);
-    if (aptSnap.exists()) {
-      throw new Error(`La cita con ID ${appointment.id} ya existe en el sistema.`);
     }
 
     const lockData: SlotLock = {
@@ -94,11 +90,20 @@ export async function saveAppointmentWithLockInFirestore(appointment: Appointmen
       slot: appointment.time,
       date: appointment.date,
       specialistId: appointment.specialistId,
-      createdAt: appointment.createdAt
+      createdAt: appointment.createdAt || getColombiaDateISO()
     };
 
+    // 2. Limpiar propiedades undefined para evitar errores de serialización en Firestore
+    const cleanAppointment = Object.entries(appointment).reduce<Record<string, unknown>>((acc, [key, val]) => {
+      if (val !== undefined) {
+        acc[key] = val;
+      }
+      return acc;
+    }, {});
+
+    // 3. Escribir atómicamente el bloqueo y la nueva cita
     transaction.set(lockDocRef, lockData);
-    transaction.set(aptDocRef, appointment);
+    transaction.set(aptDocRef, cleanAppointment);
   });
 }
 

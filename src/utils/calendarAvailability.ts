@@ -16,9 +16,9 @@ export interface SlotAvailability {
   slot: string; // e.g. "11:00 AM"
   hour24: number;
   isPassed: boolean; // Has this hour already passed today?
-  isBooked: boolean; // Is this slot booked for the selected specialist?
+  isBooked: boolean; // Is this slot booked for the selected specialist or off-day?
   bookedByClient?: string;
-  availableSpecialistIds: string[]; // Other specialists free at this exact hour
+  availableSpecialistIds: string[]; // Other specialists free and working at this exact hour
   status: 'available' | 'booked' | 'passed';
 }
 
@@ -37,6 +37,43 @@ export const HOURLY_TIME_SLOTS: string[] = [
   '06:00 PM',
   '07:00 PM'
 ];
+
+const SPANISH_DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+const normalizeDayName = (str: string): string =>
+  str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+// Get the Spanish day name for any date object, string or CalendarDayOption
+export function getSpanishDayName(date: Date | string | CalendarDayOption): string {
+  let d: Date;
+  if (typeof date === 'object' && date !== null && 'dateObj' in date && (date as CalendarDayOption).dateObj instanceof Date) {
+    d = (date as CalendarDayOption).dateObj;
+  } else if (typeof date === 'string') {
+    const parts = date.split('-');
+    if (parts.length === 3) {
+      d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    } else {
+      d = new Date(date);
+    }
+  } else if (date instanceof Date) {
+    d = date;
+  } else {
+    d = new Date();
+  }
+  return SPANISH_DAY_NAMES[d.getDay()] || 'Lunes';
+}
+
+// Check if a specialist works on a given day according to their availableDays configuration
+export function isSpecialistWorkingOnDay(
+  specialist: Specialist,
+  date: Date | string | CalendarDayOption
+): boolean {
+  if (!specialist.availableDays || specialist.availableDays.length === 0) {
+    return true; // Default fallback if not configured
+  }
+  const currentDayName = normalizeDayName(getSpanishDayName(date));
+  return specialist.availableDays.some((day) => normalizeDayName(day) === currentDayName);
+}
 
 // Helper to convert slot string e.g. "02:00 PM" to 24-hour number (14)
 export function parseSlotTo24Hour(slot: string): { hour: number; minute: number } {
@@ -147,6 +184,14 @@ export function computeSlotAvailability(
   const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
 
+  const chosenSpecialist = specialistId !== 'any'
+    ? specialistsList.find((s) => s.id === specialistId)
+    : null;
+
+  const chosenSpecWorksThisDay = chosenSpecialist
+    ? isSpecialistWorkingOnDay(chosenSpecialist, selectedDateOption)
+    : true;
+
   return HOURLY_TIME_SLOTS.map((slot) => {
     const { hour: slotHour, minute: slotMinute } = parseSlotTo24Hour(slot);
 
@@ -158,7 +203,7 @@ export function computeSlotAvailability(
       }
     }
 
-    // 2. Active appointments for this day & slot (compara por ISO prioritariamente)
+    // 2. Active appointments for this day & slot
     const matchingApts = appointments.filter(
       (a) =>
         a.status !== 'cancelada' &&
@@ -166,7 +211,7 @@ export function computeSlotAvailability(
         datesMatch(a.date, selectedDateOption)
     );
 
-    // 3. Slot locks públicos para este horario y día (prevención de colisión para visitantes)
+    // 3. Slot locks públicos para este horario y día
     const matchingLocks = slotLocks.filter(
       (l) => l.slot === slot && datesMatch(l.date, selectedDateOption)
     );
@@ -176,24 +221,30 @@ export function computeSlotAvailability(
     const bookedFromLocks = matchingLocks.map((l) => l.specialistId);
     const bookedSpecialistIds = Array.from(new Set([...bookedFromApts, ...bookedFromLocks]));
 
-    // Available specialists at this hour (among those not booked and not passed)
+    // Available specialists at this hour: MUST WORK on this day AND not be booked/locked
     const availableSpecialistIds = specialistsList
-      .filter((s) => !bookedSpecialistIds.includes(s.id))
+      .filter((s) => isSpecialistWorkingOnDay(s, selectedDateOption) && !bookedSpecialistIds.includes(s.id))
       .map((s) => s.id);
 
     let isBooked = false;
     let bookedByClient: string | undefined;
 
     if (specialistId === 'any') {
-      // If 'any' specialist is chosen, it is booked only if ALL specialists are booked
+      // If 'any' specialist is chosen, it is booked only if ALL working specialists are booked
       isBooked = availableSpecialistIds.length === 0;
     } else {
-      // Booked if the chosen specialist has an active appointment or a slot lock at this slot
-      const chosenBooking = matchingApts.find((a) => a.specialistId === specialistId);
-      const isLocked = matchingLocks.some((l) => l.specialistId === specialistId);
-      if (chosenBooking || isLocked) {
+      if (!chosenSpecWorksThisDay) {
+        // Specialist does NOT work on this day: 100% booked / no disponible
         isBooked = true;
-        bookedByClient = chosenBooking?.clientName;
+        bookedByClient = 'No atiende este día';
+      } else {
+        // Booked if the chosen specialist has an active appointment or a slot lock at this slot
+        const chosenBooking = matchingApts.find((a) => a.specialistId === specialistId);
+        const isLocked = matchingLocks.some((l) => l.specialistId === specialistId);
+        if (chosenBooking || isLocked) {
+          isBooked = true;
+          bookedByClient = chosenBooking?.clientName;
+        }
       }
     }
 
@@ -222,8 +273,9 @@ export function countFreeSlots(
   specialistId: string,
   appointments: Appointment[] = [],
   slotLocks: SlotLock[] = [],
-  now: Date = new Date()
+  now: Date = new Date(),
+  specialistsList: Specialist[] = SPECIALISTS
 ): number {
-  const slots = computeSlotAvailability(dayOption, specialistId, appointments, slotLocks, now);
+  const slots = computeSlotAvailability(dayOption, specialistId, appointments, slotLocks, now, specialistsList);
   return slots.filter((s) => s.status === 'available').length;
 }
