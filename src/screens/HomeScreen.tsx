@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { Service, Specialist, ServiceCategory } from '../types';
+import { Service, Specialist, ServiceCategory, SystemUser } from '../types';
 import { SERVICES, SPECIALISTS, INITIAL_SERVICE_CATEGORIES } from '../data/mockData';
 import { formatCOP } from '../utils/format';
 import { BUSINESS_CONFIG } from '../config/businessConfig';
+import { compressImageFile } from '../utils/imageCompressor';
 
 interface HomeScreenProps {
   onQuickBook: (service: Service) => void;
@@ -14,6 +15,8 @@ interface HomeScreenProps {
   services?: Service[];
   specialists?: Specialist[];
   serviceCategories?: ServiceCategory[];
+  currentUser?: SystemUser | null;
+  onUpdateServiceImage?: (serviceId: string, newImage: string) => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
@@ -25,10 +28,29 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onOpenCookiePolicy,
   services = SERVICES,
   specialists = SPECIALISTS,
-  serviceCategories = INITIAL_SERVICE_CATEGORIES
+  serviceCategories = INITIAL_SERVICE_CATEGORIES,
+  currentUser,
+  onUpdateServiceImage
 }) => {
   const [activeCategory, setActiveCategory] = useState<string>('todos');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [uploadingServiceId, setUploadingServiceId] = useState<string | null>(null);
+
+  const isSuperAdmin = currentUser?.rol === 'SuperAdmin';
+
+  const handleServiceImageUpload = async (serviceId: string, file?: File) => {
+    if (!file || !onUpdateServiceImage) return;
+
+    try {
+      setUploadingServiceId(serviceId);
+      const compressed = await compressImageFile(file, 800, 800);
+      onUpdateServiceImage(serviceId, compressed);
+    } catch (err) {
+      console.warn('Error subiendo imagen local de servicio:', err);
+    } finally {
+      setUploadingServiceId(null);
+    }
+  };
 
   const categories = useMemo(() => [
     { id: 'todos', label: 'Todos los Servicios' },
@@ -202,6 +224,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   >
                     {service.tag}
                   </div>
+
+                  {/* SuperAdmin: Cambiar foto local */}
+                  {isSuperAdmin && onUpdateServiceImage && (
+                    <label
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute bottom-2.5 right-2.5 px-2.5 py-1 rounded-full bg-black/75 hover:bg-black text-white text-[10px] font-bold flex items-center gap-1 backdrop-blur-xs cursor-pointer shadow-md transition-all select-none z-10"
+                    >
+                      <span className="material-symbols-outlined text-[13px]">
+                        {uploadingServiceId === service.id ? 'sync' : 'photo_camera'}
+                      </span>
+                      <span>{uploadingServiceId === service.id ? 'Cargando...' : 'Cambiar foto'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={uploadingServiceId === service.id}
+                        className="hidden"
+                        onChange={(e) => handleServiceImageUpload(service.id, e.target.files?.[0])}
+                      />
+                    </label>
+                  )}
                 </div>
 
                 {/* Title & Price in COP */}

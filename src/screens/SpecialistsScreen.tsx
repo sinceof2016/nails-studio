@@ -1,18 +1,40 @@
-import React from 'react';
-import { Specialist } from '../types';
+import React, { useState } from 'react';
+import { Specialist, SystemUser } from '../types';
 import { SPECIALISTS } from '../data/mockData';
+import { compressImageFile } from '../utils/imageCompressor';
 
 interface SpecialistsScreenProps {
   onBookWithSpecialist: (specialist: Specialist) => void;
   onOpenSpecialistModal: (specialist: Specialist) => void;
   specialists?: Specialist[];
+  currentUser?: SystemUser | null;
+  onUpdateSpecialistAvatar?: (specialistId: string, newAvatar: string) => void;
 }
 
 export const SpecialistsScreen: React.FC<SpecialistsScreenProps> = ({
   onBookWithSpecialist,
   onOpenSpecialistModal,
-  specialists = SPECIALISTS
+  specialists = SPECIALISTS,
+  currentUser,
+  onUpdateSpecialistAvatar
 }) => {
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+
+  const isSuperAdmin = currentUser?.rol === 'SuperAdmin';
+
+  const handleAvatarUpload = async (specialistId: string, file?: File) => {
+    if (!file || !onUpdateSpecialistAvatar) return;
+
+    try {
+      setUploadingId(specialistId);
+      const compressed = await compressImageFile(file, 400, 400);
+      onUpdateSpecialistAvatar(specialistId, compressed);
+    } catch (err) {
+      console.warn('Error al subir foto de especialista:', err);
+    } finally {
+      setUploadingId(null);
+    }
+  };
   return (
     <div className="w-full space-y-6 pb-12 animate-in fade-in duration-200">
       {/* Hero Header */}
@@ -42,13 +64,32 @@ export const SpecialistsScreen: React.FC<SpecialistsScreenProps> = ({
             <div>
               {/* Header: Avatar, Name, Rating */}
               <div className="flex items-center gap-4 mb-4">
-                <div className="relative shrink-0">
-                  <img
-                    src={specialist.avatar}
-                    alt={specialist.name}
-                    className="w-16 h-16 rounded-full object-cover ring-2 ring-[#C6BDAC] ring-offset-2 ring-offset-white group-hover:scale-105 transition-transform"
-                  />
-                  <span className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-white" title="Disponible hoy" />
+                <div className="relative shrink-0 flex flex-col items-center gap-1">
+                  <div className="relative">
+                    <img
+                      src={specialist.avatar}
+                      alt={specialist.name}
+                      className="w-16 h-16 rounded-full object-cover ring-2 ring-[#C6BDAC] ring-offset-2 ring-offset-white group-hover:scale-105 transition-transform"
+                    />
+                    <span className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-white" title="Disponible hoy" />
+                  </div>
+
+                  {/* SuperAdmin: Subir foto local */}
+                  {isSuperAdmin && onUpdateSpecialistAvatar && (
+                    <label className="cursor-pointer inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#2B2420] hover:bg-black text-white text-[9px] font-bold shadow-2xs transition-all select-none">
+                      <span className="material-symbols-outlined text-[11px]">
+                        {uploadingId === specialist.id ? 'sync' : 'photo_camera'}
+                      </span>
+                      <span>{uploadingId === specialist.id ? 'Cargando' : 'Cambiar'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={uploadingId === specialist.id}
+                        className="hidden"
+                        onChange={(e) => handleAvatarUpload(specialist.id, e.target.files?.[0])}
+                      />
+                    </label>
+                  )}
                 </div>
 
                 <div className="min-w-0 flex-1">

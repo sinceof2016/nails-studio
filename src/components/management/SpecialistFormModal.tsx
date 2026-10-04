@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Specialist } from '../../types';
 import { validateOnlyPlainText, sanitizeToPlainText } from '../../utils/security';
+import { compressImageFile } from '../../utils/imageCompressor';
 
 interface SpecialistFormModalProps {
   isOpen: boolean;
@@ -201,16 +202,15 @@ export const SpecialistFormModal: React.FC<SpecialistFormModalProps> = ({
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (file) {
-                          const reader = new FileReader();
-                          reader.onload = (event) => {
-                            if (typeof event.target?.result === 'string') {
-                              setAvatar(event.target.result);
-                            }
-                          };
-                          reader.readAsDataURL(file);
+                          try {
+                            const optimized = await compressImageFile(file, 400, 400);
+                            setAvatar(optimized);
+                          } catch (err: unknown) {
+                            setFormError(err instanceof Error ? err.message : 'Error al procesar la imagen local.');
+                          }
                         }
                       }}
                     />

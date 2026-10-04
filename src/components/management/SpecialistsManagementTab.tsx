@@ -1,19 +1,36 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Specialist } from '../../types';
+import { compressImageFile } from '../../utils/imageCompressor';
 
 interface SpecialistsManagementTabProps {
   specialists: Specialist[];
   onOpenCreateModal: () => void;
   onEditSpecialist: (specialist: Specialist) => void;
   onDeleteSpecialist: (specialist: Specialist) => void;
+  onUpdateSpecialist?: (specialist: Specialist) => void;
 }
 
 export const SpecialistsManagementTab: React.FC<SpecialistsManagementTabProps> = ({
   specialists,
   onOpenCreateModal,
   onEditSpecialist,
-  onDeleteSpecialist
+  onDeleteSpecialist,
+  onUpdateSpecialist
 }) => {
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+
+  const handleUploadAvatar = async (spec: Specialist, file?: File) => {
+    if (!file || !onUpdateSpecialist) return;
+    try {
+      setUploadingId(spec.id);
+      const compressed = await compressImageFile(file, 400, 400);
+      onUpdateSpecialist({ ...spec, avatar: compressed });
+    } catch (err) {
+      console.warn('Error cambiando foto de especialista:', err);
+    } finally {
+      setUploadingId(null);
+    }
+  };
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#C6BDAC]/70 shadow-2xs">
@@ -42,11 +59,28 @@ export const SpecialistsManagementTab: React.FC<SpecialistsManagementTabProps> =
           >
             <div>
               <div className="flex items-start gap-3">
-                <img
-                  src={spec.avatar}
-                  alt={spec.name}
-                  className="w-14 h-14 rounded-full object-cover ring-2 ring-[#918380]/60 shrink-0"
-                />
+                <div className="relative shrink-0 flex flex-col items-center gap-1">
+                  <img
+                    src={spec.avatar}
+                    alt={spec.name}
+                    className="w-14 h-14 rounded-full object-cover ring-2 ring-[#918380]/60 shrink-0"
+                  />
+                  {onUpdateSpecialist && (
+                    <label className="cursor-pointer inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-[#2B2420] hover:bg-black text-white text-[9px] font-bold shadow-2xs transition-all select-none">
+                      <span className="material-symbols-outlined text-[11px]">
+                        {uploadingId === spec.id ? 'sync' : 'photo_camera'}
+                      </span>
+                      <span>{uploadingId === spec.id ? '...' : 'Foto'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={uploadingId === spec.id}
+                        className="hidden"
+                        onChange={(e) => handleUploadAvatar(spec, e.target.files?.[0])}
+                      />
+                    </label>
+                  )}
+                </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-1">
                     <h4 className="font-bold text-base text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif] truncate">

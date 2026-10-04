@@ -1,18 +1,42 @@
-import React from 'react';
-import { Specialist } from '../types';
+import React, { useState } from 'react';
+import { Specialist, SystemUser } from '../types';
+import { compressImageFile } from '../utils/imageCompressor';
 
 interface SpecialistModalProps {
   specialist: Specialist | null;
   onClose: () => void;
   onBookWithSpecialist: (specialist: Specialist) => void;
+  currentUser?: SystemUser | null;
+  onUpdateSpecialistAvatar?: (specialistId: string, newAvatar: string) => void;
 }
 
 export const SpecialistModal: React.FC<SpecialistModalProps> = ({
   specialist,
   onClose,
-  onBookWithSpecialist
+  onBookWithSpecialist,
+  currentUser,
+  onUpdateSpecialistAvatar
 }) => {
+  const [uploading, setUploading] = useState(false);
+
   if (!specialist) return null;
+
+  const isSuperAdmin = currentUser?.rol === 'SuperAdmin';
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !onUpdateSpecialistAvatar) return;
+
+    try {
+      setUploading(true);
+      const compressed = await compressImageFile(file, 400, 400);
+      onUpdateSpecialistAvatar(specialist.id, compressed);
+    } catch (err) {
+      console.warn('Error subiendo foto local de especialista:', err);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
@@ -32,7 +56,7 @@ export const SpecialistModal: React.FC<SpecialistModalProps> = ({
           </span>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-[#ebe8e2] flex items-center justify-center text-[#5A4A43] transition-colors"
+            className="w-8 h-8 rounded-full hover:bg-[#ebe8e2] flex items-center justify-center text-[#5A4A43] transition-colors cursor-pointer"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
@@ -41,19 +65,38 @@ export const SpecialistModal: React.FC<SpecialistModalProps> = ({
         {/* Scrollable Content */}
         <div className="overflow-y-auto px-5 py-4 space-y-4">
           {/* Avatar and basic info */}
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className="w-20 h-20 rounded-full overflow-hidden ring-2 ring-[#C6BDAC] ring-offset-2 ring-offset-[#F4EFE9] bg-[#C6BDAC]/40">
-                <img
-                  src={specialist.avatar}
-                  alt={specialist.name}
-                  className="w-full h-full object-cover"
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex flex-col items-center gap-1.5 shrink-0">
+              <div className="relative">
+                <div className="w-20 h-20 rounded-full overflow-hidden ring-2 ring-[#C6BDAC] ring-offset-2 ring-offset-[#F4EFE9] bg-[#C6BDAC]/40">
+                  <img
+                    src={specialist.avatar}
+                    alt={specialist.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <span
+                  className="absolute bottom-0.5 right-0.5 w-4 h-4 rounded-full bg-[#52b788] ring-2 ring-white"
+                  title="Disponible hoy"
                 />
               </div>
-              <span
-                className="absolute bottom-0.5 right-0.5 w-4 h-4 rounded-full bg-[#52b788] ring-2 ring-white"
-                title="Disponible hoy"
-              />
+
+              {/* SuperAdmin: Subir foto de perfil desde archivo local */}
+              {isSuperAdmin && onUpdateSpecialistAvatar && (
+                <label className="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#2B2420] hover:bg-black text-white text-[10px] font-bold shadow-xs transition-all select-none">
+                  <span className="material-symbols-outlined text-[13px]">
+                    {uploading ? 'sync' : 'photo_camera'}
+                  </span>
+                  <span>{uploading ? 'Cargando...' : 'Cambiar foto local'}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={uploading}
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                  />
+                </label>
+              )}
             </div>
             <div>
               <h3 className="text-xl font-bold text-[#2B2420] font-['Plus_Jakarta_Sans',sans-serif]">

@@ -292,6 +292,7 @@ export const UsersManagementScreen: React.FC<UsersManagementScreenProps> = ({
           onOpenCreateModal={handleOpenCreateService}
           onEditService={handleEditService}
           onDeleteService={(s) => setDeleteConfirm({ type: 'service', id: s.id, name: s.name })}
+          onUpdateService={onUpdateService}
         />
       )}
 
@@ -311,6 +312,7 @@ export const UsersManagementScreen: React.FC<UsersManagementScreenProps> = ({
           onOpenCreateModal={handleOpenCreateSpecialist}
           onEditSpecialist={handleEditSpecialist}
           onDeleteSpecialist={(spec) => setDeleteConfirm({ type: 'specialist', id: spec.id, name: spec.name })}
+          onUpdateSpecialist={onUpdateSpecialist}
         />
       )}
 

@@ -632,6 +632,18 @@ export default function App() {
     showToast(`Servicio "${updatedService.name}" actualizado.`);
   };
 
+  const handleUpdateServiceImage = (serviceId: string, newImage: string) => {
+    setServices((prev) => {
+      const updated = prev.map((s) => (s.id === serviceId ? { ...s, image: newImage } : s));
+      try {
+        localStorage.setItem('pelu_services', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    setSelectedServiceDetail((prev) => (prev && prev.id === serviceId ? { ...prev, image: newImage } : prev));
+    showToast('Foto del servicio actualizada.');
+  };
+
   const handleDeleteService = (serviceId: string) => {
     setServices((prev) => {
       const updated = prev.filter((s) => s.id !== serviceId);
@@ -698,6 +710,18 @@ export default function App() {
     showToast(`Manicurista "${updatedSpecialist.name}" actualizada.`);
   };
 
+  const handleUpdateSpecialistAvatar = (specialistId: string, newAvatar: string) => {
+    setSpecialists((prev) => {
+      const updated = prev.map((s) => (s.id === specialistId ? { ...s, avatar: newAvatar } : s));
+      try {
+        localStorage.setItem('pelu_specialists', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    setSelectedSpecialist((prev) => (prev && prev.id === specialistId ? { ...prev, avatar: newAvatar } : prev));
+    showToast('Foto de la especialista actualizada.');
+  };
+
   const handleDeleteSpecialist = (specialistId: string) => {
     setSpecialists((prev) => {
       const updated = prev.filter((s) => s.id !== specialistId);
@@ -751,6 +775,8 @@ export default function App() {
             services={services}
             specialists={specialists}
             serviceCategories={serviceCategories}
+            currentUser={currentUser}
+            onUpdateServiceImage={handleUpdateServiceImage}
           />
         )}
 
@@ -781,6 +807,8 @@ export default function App() {
             onBookWithSpecialist={handleBookWithSpecialist}
             onOpenSpecialistModal={setSelectedSpecialist}
             specialists={specialists}
+            currentUser={currentUser}
+            onUpdateSpecialistAvatar={handleUpdateSpecialistAvatar}
           />
         )}
 
@@ -967,6 +995,8 @@ export default function App() {
         specialist={selectedSpecialist}
         onClose={() => setSelectedSpecialist(null)}
         onBookWithSpecialist={handleBookWithSpecialist}
+        currentUser={currentUser}
+        onUpdateSpecialistAvatar={handleUpdateSpecialistAvatar}
       />
 
       {/* Service Detail Modal */}
@@ -974,6 +1004,8 @@ export default function App() {
         service={selectedServiceDetail}
         onClose={() => setSelectedServiceDetail(null)}
         onBookService={handleQuickBook}
+        currentUser={currentUser}
+        onUpdateServiceImage={handleUpdateServiceImage}
       />
 
       {/* Experience & Ritual Modal */}

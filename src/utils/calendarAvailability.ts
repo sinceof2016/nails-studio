@@ -234,9 +234,9 @@ export function computeSlotAvailability(
       isBooked = availableSpecialistIds.length === 0;
     } else {
       if (!chosenSpecWorksThisDay) {
-        // Specialist does NOT work on this day: 100% booked / no disponible
+        // Specialist does NOT work on this day: 100% booked / reservado
         isBooked = true;
-        bookedByClient = 'No atiende este día';
+        bookedByClient = 'Reservado';
       } else {
         // Booked if the chosen specialist has an active appointment or a slot lock at this slot
         const chosenBooking = matchingApts.find((a) => a.specialistId === specialistId);

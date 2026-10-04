@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Service, ServiceCategory } from '../../types';
 import { validateOnlyPlainText, sanitizeToPlainText } from '../../utils/security';
+import { compressImageFile } from '../../utils/imageCompressor';
 
 interface ServiceFormModalProps {
   isOpen: boolean;
@@ -268,16 +269,15 @@ export const ServiceFormModal: React.FC<ServiceFormModalProps> = ({
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (file) {
-                          const reader = new FileReader();
-                          reader.onload = (event) => {
-                            if (typeof event.target?.result === 'string') {
-                              setImage(event.target.result);
-                            }
-                          };
-                          reader.readAsDataURL(file);
+                          try {
+                            const optimized = await compressImageFile(file, 800, 800);
+                            setImage(optimized);
+                          } catch (err: unknown) {
+                            setFormError(err instanceof Error ? err.message : 'Error al procesar la imagen local.');
+                          }
                         }
                       }}
                     />

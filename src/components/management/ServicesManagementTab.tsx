@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Service, ServiceCategory } from '../../types';
 import { formatCOP } from '../../utils/format';
+import { compressImageFile } from '../../utils/imageCompressor';
 
 interface ServicesManagementTabProps {
   services: Service[];
@@ -8,6 +9,7 @@ interface ServicesManagementTabProps {
   onOpenCreateModal: () => void;
   onEditService: (service: Service) => void;
   onDeleteService: (service: Service) => void;
+  onUpdateService?: (service: Service) => void;
 }
 
 export const ServicesManagementTab: React.FC<ServicesManagementTabProps> = ({
@@ -15,10 +17,25 @@ export const ServicesManagementTab: React.FC<ServicesManagementTabProps> = ({
   categories,
   onOpenCreateModal,
   onEditService,
-  onDeleteService
+  onDeleteService,
+  onUpdateService
 }) => {
   const [selectedCat, setSelectedCat] = useState<string>('todos');
   const [search, setSearch] = useState<string>('');
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+
+  const handleUploadPhoto = async (service: Service, file?: File) => {
+    if (!file || !onUpdateService) return;
+    try {
+      setUploadingId(service.id);
+      const compressed = await compressImageFile(file, 800, 800);
+      onUpdateService({ ...service, image: compressed });
+    } catch (err) {
+      console.warn('Error cambiando foto de servicio:', err);
+    } finally {
+      setUploadingId(null);
+    }
+  };
 
   const filteredServices = services.filter((s) => {
     const matchCat = selectedCat === 'todos' || s.category === selectedCat;
@@ -95,6 +112,23 @@ export const ServicesManagementTab: React.FC<ServicesManagementTabProps> = ({
                   <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-[#BB9C87] text-[#2B2420] font-bold text-[10px] font-bold shadow-2xs">
                     {service.tag}
                   </span>
+                )}
+
+                {/* Subir foto local */}
+                {onUpdateService && (
+                  <label className="absolute bottom-2 right-2 px-2.5 py-1 rounded-xl bg-black/75 hover:bg-black text-white text-[10px] font-bold flex items-center gap-1 backdrop-blur-xs cursor-pointer shadow-md transition-all select-none">
+                    <span className="material-symbols-outlined text-[13px]">
+                      {uploadingId === service.id ? 'sync' : 'photo_camera'}
+                    </span>
+                    <span>{uploadingId === service.id ? 'Cargando...' : 'Cambiar foto'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingId === service.id}
+                      className="hidden"
+                      onChange={(e) => handleUploadPhoto(service, e.target.files?.[0])}
+                    />
+                  </label>
                 )}
               </div>
 

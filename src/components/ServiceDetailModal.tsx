@@ -1,19 +1,43 @@
-import React from 'react';
-import { Service } from '../types';
+import React, { useState } from 'react';
+import { Service, SystemUser } from '../types';
 import { formatCOP } from '../utils/format';
+import { compressImageFile } from '../utils/imageCompressor';
 
 interface ServiceDetailModalProps {
   service: Service | null;
   onClose: () => void;
   onBookService: (service: Service) => void;
+  currentUser?: SystemUser | null;
+  onUpdateServiceImage?: (serviceId: string, newImage: string) => void;
 }
 
 export const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
   service,
   onClose,
-  onBookService
+  onBookService,
+  currentUser,
+  onUpdateServiceImage
 }) => {
+  const [uploading, setUploading] = useState(false);
+
   if (!service) return null;
+
+  const isSuperAdmin = currentUser?.rol === 'SuperAdmin';
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !onUpdateServiceImage) return;
+
+    try {
+      setUploading(true);
+      const compressed = await compressImageFile(file, 800, 800);
+      onUpdateServiceImage(service.id, compressed);
+    } catch (err) {
+      console.warn('Error subiendo imagen local de servicio:', err);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
@@ -32,7 +56,7 @@ export const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
           />
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-[#2B2420] hover:bg-white transition-colors shadow-sm"
+            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-[#2B2420] hover:bg-white transition-colors shadow-sm cursor-pointer z-10"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
@@ -42,6 +66,23 @@ export const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
             </span>
             {service.rating} <span className="text-[#5A4A43] font-normal">({service.reviewsCount})</span>
           </div>
+
+          {/* SuperAdmin: Subir foto de servicio desde equipo local */}
+          {isSuperAdmin && onUpdateServiceImage && (
+            <label className="absolute bottom-3 right-3 cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/80 hover:bg-black text-white text-xs font-bold backdrop-blur-md shadow-lg border border-white/40 transition-all select-none">
+              <span className="material-symbols-outlined text-[16px]">
+                {uploading ? 'sync' : 'upload_file'}
+              </span>
+              <span>{uploading ? 'Cargando...' : 'Cambiar foto local (SuperAdmin)'}</span>
+              <input
+                type="file"
+                accept="image/*"
+                disabled={uploading}
+                className="hidden"
+                onChange={handleImageUpload}
+              />
+            </label>
+          )}
         </div>
 
         {/* Content */}
