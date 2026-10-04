@@ -139,6 +139,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 
   // 2. NEW CUT MODAL STATE
   const [showNewCutModal, setShowNewCutModal] = useState(false);
+  const [selectedAppointmentIdForCut, setSelectedAppointmentIdForCut] = useState<string>('');
   const [cutClientName, setCutClientName] = useState('');
   const [cutClientPhone, setCutClientPhone] = useState('');
   const [cutServiceName, setCutServiceName] = useState(services[0]?.name || 'Manicura Rusa Glazed Donut');
@@ -149,6 +150,28 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
   const [cutNote, setCutNote] = useState('');
   const [cutValidationError, setCutValidationError] = useState<string | null>(null);
   const [isSubmittingCut, setIsSubmittingCut] = useState(false);
+
+  // Fast trigger to open cut modal with prefilled data from an appointment
+  const handleOpenCutForAppointment = (apt: Appointment) => {
+    setSelectedAppointmentIdForCut(apt.id);
+    setCutClientName(apt.clientName);
+    setCutClientPhone(apt.clientPhone);
+    const matched = services.find(
+      (s) => s.id === apt.serviceId || s.name.toLowerCase() === apt.serviceName.toLowerCase()
+    );
+    if (matched) {
+      setCutServiceName(matched.name);
+      setCutServicePrice(apt.totalPrice || matched.price);
+    } else {
+      setCutServiceName(apt.serviceName);
+      setCutServicePrice(apt.totalPrice || apt.servicePrice || 0);
+    }
+    if (apt.specialistId) {
+      setCutSpecialistId(apt.specialistId);
+    }
+    setCutNote(`Cita #${apt.bookingCode} · ${apt.date} ${apt.time}`);
+    setShowNewCutModal(true);
+  };
 
   // Split Payment & Cash change state
   const [cutMontoEfectivo, setCutMontoEfectivo] = useState(50000);
@@ -605,7 +628,16 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         });
       }
 
+      if (selectedAppointmentIdForCut) {
+        try {
+          await onUpdateStatus(selectedAppointmentIdForCut, 'completada');
+        } catch {
+          // Ignorar si ya estaba completada
+        }
+      }
+
       setShowNewCutModal(false);
+      setSelectedAppointmentIdForCut('');
       setCutClientName('');
       setCutNote('');
       notify(`✓ Cobro registrado: ${formatCOP(priceNum)} (${spec.name} +${formatCOP(comisionEspecialista)})`);
@@ -856,6 +888,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
           onTableReady={handleTableReady}
           onStatusChangeWithNotification={handleStatusChangeWithNotification}
           onSelectAppointmentForQr={setSelectedAppointmentForQr}
+          onOpenCutForAppointment={handleOpenCutForAppointment}
           onDeleteAppointment={onDeleteAppointment ? (apt) => onDeleteAppointment(apt.id, { date: apt.date, specialistId: apt.specialistId, time: apt.time }) : undefined}
           userRole={activeUserRole}
           specialists={specialists}
@@ -932,7 +965,10 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       {/* MODAL 2: NUEVO CORTE / COBRO */}
       <NewCutModal
         isOpen={showNewCutModal}
-        onClose={() => setShowNewCutModal(false)}
+        onClose={() => {
+          setShowNewCutModal(false);
+          setSelectedAppointmentIdForCut('');
+        }}
         cutClientName={cutClientName}
         setCutClientName={setCutClientName}
         cutClientPhone={cutClientPhone}
@@ -961,6 +997,9 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         cutValidationError={cutValidationError}
         services={services}
         specialists={specialists}
+        appointments={appointments}
+        selectedAppointmentId={selectedAppointmentIdForCut}
+        onSelectAppointmentId={setSelectedAppointmentIdForCut}
         isSubmitting={isSubmittingCut}
         onSubmit={handleSubmitCut}
       />

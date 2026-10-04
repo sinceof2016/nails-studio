@@ -69,14 +69,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </p>
         </div>
 
-        <div className="relative z-10 pt-6 flex flex-wrap items-center gap-4">
-          <button
-            onClick={onOpenPromo}
-            className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-[#BB9C87] text-[#2B2420] font-bold text-xs sm:text-sm font-semibold shadow-xs hover:bg-[#AA8A74] active:scale-95 transition-all cursor-pointer"
-          >
-            <span>Conocer Nuestro Ritual</span>
-            <span className="material-symbols-outlined text-[17px] ml-1.5">local_florist</span>
-          </button>
+        <div className="relative z-10 pt-4 flex flex-wrap items-center gap-4">
           <span className="text-xs sm:text-sm text-[#5A4A43] font-medium flex items-center gap-1.5">
             <span className="material-symbols-outlined text-[18px] text-[#2B2420]">verified</span>
             {BUSINESS_CONFIG.branchName} · Atención personalizada en cabina privada · Reserva en línea

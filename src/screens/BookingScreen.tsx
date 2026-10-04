@@ -105,8 +105,32 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       trackBeginBooking(selectedService?.name || 'Servicio');
     }
     setStep(nextStep);
+    if (nextStep > 1) {
+      window.history.pushState({ bookingStep: nextStep }, '', `#/reservar/paso-${nextStep}`);
+    } else {
+      window.history.pushState({ bookingStep: 1 }, '', '#/reservar');
+    }
     setTimeout(scrollToBookingTop, 20);
   };
+
+  // Listen for browser Back / Forward between booking steps
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      if (e.state && typeof e.state.bookingStep === 'number') {
+        setStep(e.state.bookingStep);
+      } else {
+        const hash = window.location.hash.toLowerCase();
+        if (hash.includes('paso-4')) setStep(4);
+        else if (hash.includes('paso-3')) setStep(3);
+        else if (hash.includes('paso-2')) setStep(2);
+        else if (hash.includes('reservar')) setStep(1);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
 
   // Local calendar 7-day window
   const calendarDays = useMemo(() => getUpcomingCalendarDays(), []);

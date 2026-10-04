@@ -26,6 +26,7 @@ interface AdminAgendaTabProps {
   onTableReady: (apt: Appointment) => void;
   onStatusChangeWithNotification: (apt: Appointment, newStatus: Appointment['status']) => void;
   onSelectAppointmentForQr: (apt: Appointment) => void;
+  onOpenCutForAppointment?: (apt: Appointment) => void;
   onDeleteAppointment?: (apt: Appointment) => void;
   userRole?: string;
   specialists?: Specialist[];
@@ -53,6 +54,7 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
   onTableReady,
   onStatusChangeWithNotification,
   onSelectAppointmentForQr,
+  onOpenCutForAppointment,
   onDeleteAppointment,
   userRole,
   specialists = DEFAULT_SPECIALISTS
@@ -405,6 +407,17 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
                       <span className="material-symbols-outlined text-[14px]">qr_code</span>
                       <span>Pase QR</span>
                     </button>
+
+                    {onOpenCutForAppointment && apt.status !== 'cancelada' && (
+                      <button
+                        onClick={() => onOpenCutForAppointment(apt)}
+                        className="h-7 px-2.5 rounded-full bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] text-[11px] font-bold flex items-center gap-1 cursor-pointer shadow-2xs transition-all"
+                        title="Registrar cobro de esta cita en caja"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">point_of_sale</span>
+                        <span>Cobrar</span>
+                      </button>
+                    )}
 
                     {canDeleteAppointments && (
                       <button

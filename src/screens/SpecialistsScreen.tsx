@@ -16,17 +16,17 @@ export const SpecialistsScreen: React.FC<SpecialistsScreenProps> = ({
   return (
     <div className="w-full space-y-6 pb-12 animate-in fade-in duration-200">
       {/* Hero Header */}
-      <div className="rounded-3xl bg-gradient-to-r from-[#2B2420] via-[#3D332D] to-[#2B2420] p-6 sm:p-8 text-[#F4EFE9] shadow-md border border-[#5A4A43]/40 relative overflow-hidden">
-        <div className="absolute -right-10 -bottom-10 w-48 h-48 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+      <div className="rounded-3xl bg-gradient-to-r from-[#C6BDAC]/35 via-[#F4EFE9] to-white p-6 sm:p-7 border border-[#C6BDAC] shadow-xs relative overflow-hidden">
+        <div className="absolute -right-8 -bottom-8 w-40 h-40 rounded-full bg-white/50 blur-2xl pointer-events-none" />
         <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-[#BB9C87] text-xs font-semibold mb-3 border border-white/10">
-            <span className="material-symbols-outlined text-[15px] fill">stars</span>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/95 text-[#2B2420] text-xs font-semibold mb-2 border border-[#C6BDAC]">
+            <span className="material-symbols-outlined text-[15px] text-[#2B2420] fill">stars</span>
             Equipo Profesional Certificado
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold font-['Plus_Jakarta_Sans',sans-serif] tracking-tight text-[#F4EFE9] mb-2">
+          <h2 className="text-2xl sm:text-3xl font-bold font-['Plus_Jakarta_Sans',sans-serif] tracking-tight text-[#2B2420] mb-2">
             Maestras de Manicura, Nail Art &amp; Bienestar
           </h2>
-          <p className="text-sm text-[#F4EFE9]/90 leading-relaxed">
+          <p className="text-xs sm:text-sm text-[#5A4A43] leading-relaxed">
             Cada una de nuestras especialistas cuenta con certificación internacional en técnica rusa, esterilización de grado médico y diseño personalizado. Elige a tu manicurista preferida para tu próxima cita.
           </p>
         </div>

@@ -1,9 +1,12 @@
 {
-  "apiKey": "AIzaSyDKEHXgMZfdVGdM8-nXA_r4tCBI3Hb_y6k",
-  "authDomain": "nails-studio-32cc0.firebaseapp.com",
   "projectId": "nails-studio-32cc0",
+  "appId": "1:550802415820:web:eaed7567c1d81c35eb2269",
+  "apiKey": "AIzaSyDvp4TAotRkHPOAbcbhN5qOO-sYo7D9T4k",
+  "authDomain": "nails-studio-32cc0.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-auranailsspa-4643c7da-0060-4c78-bdb5-baee984b4e62",
   "storageBucket": "nails-studio-32cc0.firebasestorage.app",
   "messagingSenderId": "550802415820",
-  "appId": "1:550802415820:web:bfb8da886866766beb2269",
-  "measurementId": "G-4P56YG4BJ6"
+  "measurementId": "",
+  "oAuthClientId": "550802415820-7r3skk7eir8sdb9op0aoi2qkdcfl24v2.apps.googleusercontent.com",
+  "recaptchaSiteKey": ""
 }

@@ -122,24 +122,51 @@ export default function App() {
     };
   }, [currentUser]);
 
+  // Helper to parse hash into AppTab
+  const getTabFromHash = (hashStr: string): AppTab | null => {
+    const clean = hashStr.replace(/^#\/?/, '').toLowerCase().trim();
+    if (!clean) return null;
+    const baseTab = clean.split('/')[0];
+    if (['404', 'notfound', 'error'].includes(baseTab)) return '404';
+    if (['servicios', 'carta'].includes(baseTab)) return 'servicios';
+    if (['reservar', 'reserva', 'agendar', 'inicio'].includes(baseTab)) return 'reservar';
+    if (['especialistas', 'manicuristas', 'equipo'].includes(baseTab)) return 'especialistas';
+    if (['agenda', 'turnos', 'citas'].includes(baseTab)) return 'agenda';
+    if (['cobro', 'cortes'].includes(baseTab)) return 'cobro';
+    if (['liquidaciones', 'liquidacion'].includes(baseTab)) return 'liquidaciones';
+    if (['caja', 'arqueo'].includes(baseTab)) return 'caja';
+    if (['clientes', 'directorio'].includes(baseTab)) return 'clientes';
+    if (['usuarios', 'personal', 'administracion'].includes(baseTab)) return 'usuarios';
+    if (['api', 'consola'].includes(baseTab)) return 'api';
+    return null;
+  };
+
   const handleNavigateTab = (tab: AppTab) => {
     setCurrentTab(tab);
+    const targetHash = `#/${tab}`;
+    if (window.location.hash !== targetHash) {
+      window.history.pushState({ tab }, '', targetHash);
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Listen for hash / path changes to route to 404 or specific tabs
+  // Listen for browser Back / Forward (popstate & hashchange)
   useEffect(() => {
     const handleUrlRoute = () => {
-      const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
-      if (hash === '404' || hash === 'notfound' || hash === 'error') {
-        setCurrentTab('404');
+      const matchedTab = getTabFromHash(window.location.hash);
+      if (matchedTab) {
+        setCurrentTab((prev) => (prev !== matchedTab ? matchedTab : prev));
+      } else if (!window.location.hash || window.location.hash === '#' || window.location.hash === '#/') {
+        setCurrentTab('reservar');
       }
     };
 
     handleUrlRoute();
     window.addEventListener('hashchange', handleUrlRoute);
+    window.addEventListener('popstate', handleUrlRoute);
     return () => {
       window.removeEventListener('hashchange', handleUrlRoute);
+      window.removeEventListener('popstate', handleUrlRoute);
     };
   }, []);
 
@@ -396,30 +423,26 @@ export default function App() {
   const handleQuickBook = (service: Service) => {
     setBookingService(service);
     showToast(`${service.name} seleccionado`);
-    setCurrentTab('reservar');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    handleNavigateTab('reservar');
   };
 
   const handleBookWithSpecialist = (specialist: Specialist) => {
     setBookingSpecialist(specialist);
     showToast(`Especialista ${specialist.name} asignada`);
-    setCurrentTab('reservar');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    handleNavigateTab('reservar');
   };
 
   const handleApplyPromo = (percent: number) => {
     if (percent <= 0) {
       setPromoDiscount(0);
-      setCurrentTab('reservar');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      handleNavigateTab('reservar');
       return;
     }
     setPromoDiscount(percent);
     const promoService = services.find((s) => s.id === 'manicura-rusa-glazed') || services[0];
     setBookingService(promoService);
     showToast(`¡${percent}% OFF aplicado con éxito!`);
-    setCurrentTab('reservar');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    handleNavigateTab('reservar');
   };
 
   const handleBookingSuccess = (newAppointment: Appointment) => {
@@ -550,7 +573,7 @@ export default function App() {
     await logoutVault();
     clearSession();
     setCurrentUser(null);
-    setCurrentTab('servicios');
+    handleNavigateTab('servicios');
     showToast('Sesión cerrada. Ahora estás en Modo Público.');
   };
 
@@ -740,8 +763,8 @@ export default function App() {
             appointments={appointments}
             slotLocks={slotLocks}
             onBookingSuccess={handleBookingSuccess}
-            onNavigateToAppointments={() => setCurrentTab('agenda')}
-            onNavigateToServices={() => setCurrentTab('servicios')}
+            onNavigateToAppointments={() => handleNavigateTab('agenda')}
+            onNavigateToServices={() => handleNavigateTab('servicios')}
             isPublicView={!currentUser}
             services={services}
             specialists={specialists}
@@ -779,7 +802,7 @@ export default function App() {
             onUpdateStatus={handleUpdateStatus}
             onCancelAppointment={(id) => handleUpdateStatus(id, 'cancelada')}
             onDeleteAppointment={handleDeleteAppointment}
-            onNavigateToBooking={() => setCurrentTab('reservar')}
+            onNavigateToBooking={() => handleNavigateTab('reservar')}
             onRegisterCut={handleRegisterCut}
             onAddExpense={handleAddExpense}
             onSaveCashClose={handleSaveCashClose}
@@ -787,10 +810,10 @@ export default function App() {
             onToast={showToast}
             initialTab={getAdminInitialTab(currentTab)}
             onTabChange={(adminTab) => {
-              if (adminTab === 'agenda') setCurrentTab('agenda');
-              else if (adminTab === 'caja') setCurrentTab('caja');
-              else if (adminTab === 'cortes') setCurrentTab('liquidaciones');
-              else if (adminTab === 'clientes') setCurrentTab('clientes');
+              if (adminTab === 'agenda') handleNavigateTab('agenda');
+              else if (adminTab === 'caja') handleNavigateTab('caja');
+              else if (adminTab === 'cortes') handleNavigateTab('liquidaciones');
+              else if (adminTab === 'clientes') handleNavigateTab('clientes');
             }}
           />
         ) : (currentTab === 'agenda' ||
@@ -924,8 +947,16 @@ export default function App() {
       <Toast
         message={toastMessage}
         onView={() => {
-          if (currentUser && currentTab !== 'agenda') {
-            setCurrentTab('agenda');
+          if (!toastMessage) return;
+          const lower = toastMessage.toLowerCase();
+          if (currentUser) {
+            if (lower.includes('cita') || lower.includes('turno') || lower.includes('mesa lista') || lower.includes('recordatorio')) {
+              handleNavigateTab('agenda');
+            } else if (lower.includes('cobro') || lower.includes('gasto') || lower.includes('arqueo')) {
+              handleNavigateTab('caja');
+            } else if (lower.includes('liquidación') || lower.includes('liquidacion')) {
+              handleNavigateTab('liquidaciones');
+            }
           }
         }}
         onClose={() => setToastMessage(null)}
