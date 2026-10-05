@@ -1,5 +1,5 @@
-import React from 'react';
-import { Specialist, Service, Appointment } from '../../../types';
+import React, { useMemo } from 'react';
+import { Specialist, Service, Appointment, SalonCutRecord } from '../../../types';
 import { formatCOP } from '../../../utils/format';
 
 interface NewCutModalProps {
@@ -34,6 +34,7 @@ interface NewCutModalProps {
   services: Service[];
   specialists: Specialist[];
   appointments?: Appointment[];
+  cuts?: SalonCutRecord[];
   selectedAppointmentId?: string;
   onSelectAppointmentId?: (id: string) => void;
   isSubmitting?: boolean;
@@ -72,11 +73,20 @@ export const NewCutModal: React.FC<NewCutModalProps> = ({
   services,
   specialists,
   appointments = [],
+  cuts = [],
   selectedAppointmentId = '',
   onSelectAppointmentId,
   isSubmitting = false,
   onSubmit
 }) => {
+  const chargedAppointmentIds = useMemo(() => {
+    return new Set(cuts.filter((c) => c.appointmentId).map((c) => c.appointmentId as string));
+  }, [cuts]);
+
+  const availableAppointments = useMemo(() => {
+    return appointments.filter((a) => a.status !== 'cancelada' && !chargedAppointmentIds.has(a.id));
+  }, [appointments, chargedAppointmentIds]);
+
   if (!isOpen) return null;
 
   const handleAppointmentSelectChange = (aptId: string) => {
@@ -146,7 +156,7 @@ export const NewCutModal: React.FC<NewCutModalProps> = ({
                 <span>Cargar desde Citas Reservadas</span>
               </span>
               <span className="text-[10px] text-amber-800 font-normal">
-                {appointments.filter((a) => a.status !== 'cancelada').length} citas disponibles
+                {availableAppointments.length} citas pendientes de cobro
               </span>
             </div>
 
@@ -156,13 +166,11 @@ export const NewCutModal: React.FC<NewCutModalProps> = ({
               className="w-full h-9 px-2.5 rounded-xl bg-white border border-amber-300 text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
             >
               <option value="">-- Registro Manual / Turno Sin Cita Previa --</option>
-              {appointments
-                .filter((a) => a.status !== 'cancelada')
-                .map((apt) => (
-                  <option key={apt.id} value={apt.id}>
-                    [{apt.time} · {apt.date}] {apt.clientName} - {apt.serviceName} ({apt.specialistName}) #{apt.bookingCode}
-                  </option>
-                ))}
+              {availableAppointments.map((apt) => (
+                <option key={apt.id} value={apt.id}>
+                  [{apt.time} · {apt.date}] {apt.clientName} - {apt.serviceName} ({apt.specialistName}) #{apt.bookingCode}
+                </option>
+              ))}
             </select>
 
             {selectedApt && (

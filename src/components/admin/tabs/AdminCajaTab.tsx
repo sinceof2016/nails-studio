@@ -19,6 +19,8 @@ interface AdminCajaTabProps {
   onOpenNewCutModal: () => void;
   onOpenExpenseModal: () => void;
   onOpenCloseModal: () => void;
+  canVoidCut?: boolean;
+  onVoidCut?: (cut: SalonCutRecord) => void;
 }
 
 export const AdminCajaTab: React.FC<AdminCajaTabProps> = ({
@@ -35,7 +37,9 @@ export const AdminCajaTab: React.FC<AdminCajaTabProps> = ({
   registeredBy,
   onOpenNewCutModal,
   onOpenExpenseModal,
-  onOpenCloseModal
+  onOpenCloseModal,
+  canVoidCut = false,
+  onVoidCut
 }) => {
   const handleExportCsv = () => {
     const rows: (string | number)[][] = [
@@ -204,6 +208,7 @@ export const AdminCajaTab: React.FC<AdminCajaTabProps> = ({
                   <th className="p-3">Especialista</th>
                   <th className="p-3">Método</th>
                   <th className="p-3 text-right">Total Cobrado</th>
+                  {canVoidCut && onVoidCut && <th className="p-3 text-right">Acción</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#C6BDAC]/40 bg-white">
@@ -234,6 +239,18 @@ export const AdminCajaTab: React.FC<AdminCajaTabProps> = ({
                     <td className="p-3 text-right font-mono font-bold text-[#2B2420]">
                       {formatCOP(cut.servicioPrecio + cut.propina)}
                     </td>
+                    {canVoidCut && onVoidCut && (
+                      <td className="p-3 text-right">
+                        <button
+                          onClick={() => onVoidCut(cut)}
+                          className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
+                          title="Anular cobro"
+                        >
+                          <span className="material-symbols-outlined text-[13px]">delete</span>
+                          <span>Anular</span>
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

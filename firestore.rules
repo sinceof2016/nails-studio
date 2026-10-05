@@ -46,11 +46,36 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // AYUDAS DE TIPO Y TAMAÑO (campos opcionales: si existen, deben cumplir el tope)
+    // =========================================================================
+
+    function strMax(data, campo, max) {
+      return !(campo in data) || (data[campo] is string && data[campo].size() <= max);
+    }
+
+    function numMax(data, campo, max) {
+      return !(campo in data) || (data[campo] is number && data[campo] >= 0 && data[campo] <= max);
+    }
+
+    function boolOpt(data, campo) {
+      return !(campo in data) || data[campo] is bool;
+    }
+
+    function listMax(data, campo, max) {
+      return !(campo in data) || (data[campo] is list && data[campo].size() <= max);
+    }
+
+    // Id del bloqueo de horario que le corresponde a una cita (mismo formato que usa la app)
+    function lockIdDeCita(data) {
+      return data.date + '_' + data.specialistId + '_' + data.time.replace(':', '-').replace(' ', '-');
+    }
+
+    // =========================================================================
     // VALIDACIONES ESTRICTAS DE ESQUEMA, TIPOS Y RANGOS
     // =========================================================================
 
-    // Validación estricta para creación de cita (pública o por staff)
-    function isValidNewAppointment(data) {
+    // Campos y topes comunes de una cita (creación y actualización)
+    function isValidAppointmentFields(data) {
       return data.keys().hasOnly([
         'id', 'serviceId', 'serviceName', 'servicePrice', 'serviceDuration',
         'serviceImage', 'specialistId', 'specialistName', 'specialistRole',
@@ -63,54 +88,91 @@ service cloud.firestore {
       ]) &&
       data.clientName is string && data.clientName.size() > 0 && data.clientName.size() <= 100 &&
       data.clientPhone is string && data.clientPhone.size() >= 7 && data.clientPhone.size() <= 25 &&
-      (esStaff() || data.get('autorizacionDatos', false) == true) &&
       data.serviceName is string && data.serviceName.size() <= 150 &&
-      data.totalPrice is number && data.totalPrice >= 0 &&
+      data.totalPrice is number && data.totalPrice >= 0 && data.totalPrice <= 50000000 &&
       data.bookingCode is string && data.bookingCode.size() <= 30 &&
+      strMax(data, 'id', 60) &&
+      strMax(data, 'serviceId', 60) &&
+      strMax(data, 'specialistId', 60) &&
+      strMax(data, 'specialistName', 80) &&
+      strMax(data, 'specialistRole', 80) &&
+      strMax(data, 'serviceImage', 150000) &&
+      strMax(data, 'specialistAvatar', 150000) &&
+      strMax(data, 'date', 20) &&
+      strMax(data, 'time', 20) &&
+      strMax(data, 'clientEmail', 120) &&
+      strMax(data, 'notes', 600) &&
+      strMax(data, 'polishColor', 100) &&
+      strMax(data, 'nailShape', 100) &&
+      strMax(data, 'paymentMethod', 30) &&
+      strMax(data, 'digitalMethod', 40) &&
+      strMax(data, 'createdAt', 40) &&
+      strMax(data, 'branchId', 60) &&
+      strMax(data, 'autorizacionFecha', 40) &&
+      strMax(data, 'autorizacionVersion', 40) &&
+      numMax(data, 'servicePrice', 50000000) &&
+      numMax(data, 'serviceDuration', 1000) &&
+      numMax(data, 'montoEfectivo', 50000000) &&
+      numMax(data, 'montoDigital', 50000000) &&
+      numMax(data, 'tipAmount', 50000000) &&
+      numMax(data, 'groupGuestsCount', 50) &&
+      listMax(data, 'selectedAddOns', 20) &&
+      boolOpt(data, 'notifiedViaWhatsApp') &&
+      boolOpt(data, 'isGroupBooking') &&
+      boolOpt(data, 'autorizacionDatos');
+    }
+
+    // Validación estricta para creación de cita (pública o por staff)
+    // El visitante solo puede crear una cita si en la MISMA operación se crea su bloqueo de horario.
+    // El bloqueo debe ser el que nace con esa misma cita (su appointmentId coincide), no uno ya existente de otra cita.
+    function isValidNewAppointment(data, aptId) {
+      return isValidAppointmentFields(data) &&
+      data.date is string && data.time is string && data.specialistId is string &&
+      (esStaff() || data.get('autorizacionDatos', false) == true) &&
       data.status in ['confirmada', 'en_preparacion'] &&
-      (!('servicePrice' in data) || (data.servicePrice is number && data.servicePrice >= 0)) &&
-      (!('notes' in data) || (data.notes is string && data.notes.size() <= 500));
+      (esStaff() || (
+        existsAfter(/databases/$(database)/documents/slot_locks/$(lockIdDeCita(data))) &&
+        getAfter(/databases/$(database)/documents/slot_locks/$(lockIdDeCita(data))).data.appointmentId == aptId
+      ));
     }
 
     // Validación estricta para actualización de cita (solo staff)
     function isValidAppointmentUpdate(data) {
-      return data.keys().hasOnly([
-        'id', 'serviceId', 'serviceName', 'servicePrice', 'serviceDuration',
-        'serviceImage', 'specialistId', 'specialistName', 'specialistRole',
-        'specialistAvatar', 'date', 'time', 'clientName', 'clientPhone',
-        'clientEmail', 'notes', 'polishColor', 'nailShape', 'selectedAddOns',
-        'totalPrice', 'paymentMethod', 'montoEfectivo', 'montoDigital',
-        'digitalMethod', 'tipAmount', 'status', 'bookingCode', 'createdAt',
-        'notifiedViaWhatsApp', 'branchId', 'isGroupBooking', 'groupGuestsCount',
-        'autorizacionDatos', 'autorizacionFecha', 'autorizacionVersion'
-      ]) &&
-      data.clientName is string && data.clientName.size() > 0 && data.clientName.size() <= 100 &&
-      data.clientPhone is string && data.clientPhone.size() >= 7 && data.clientPhone.size() <= 25 &&
-      data.totalPrice is number && data.totalPrice >= 0 &&
-      data.status in ['confirmada', 'en_preparacion', 'completada', 'cancelada'] &&
-      (!('servicePrice' in data) || (data.servicePrice is number && data.servicePrice >= 0)) &&
-      (!('notes' in data) || (data.notes is string && data.notes.size() <= 500));
+      return isValidAppointmentFields(data) &&
+      data.status in ['confirmada', 'en_preparacion', 'completada', 'cancelada'];
     }
 
-    // Validación para registros de cobros / cortes de salón (exige sucursalId obligatorio)
-    function isValidCut(data) {
+    // Validación para registros de cobros / cortes de salón (exige sucursalId obligatorio).
+    // Si el cobro viene de una cita, su id debe ser 'cut-' + id de la cita: así una cita solo puede cobrarse una vez.
+    function isValidCut(data, cutId) {
       return data.keys().hasOnly([
         'id', 'fecha', 'hora', 'clienteNombre', 'clienteTelefono',
         'servicioNombre', 'servicioPrecio', 'especialistaId', 'especialistaNombre',
         'comisionPorcentaje', 'comisionEspecialista', 'recaudoSalon', 'propina',
         'metodoPago', 'montoEfectivo', 'montoDigital', 'digitalMethod',
-        'sucursalId', 'nota'
+        'sucursalId', 'nota', 'appointmentId'
       ]) &&
       data.clienteNombre is string && data.clienteNombre.size() > 0 && data.clienteNombre.size() <= 100 &&
       data.servicioNombre is string && data.servicioNombre.size() <= 150 &&
-      data.servicioPrecio is number && data.servicioPrecio >= 0 &&
-      data.comisionEspecialista is number && data.comisionEspecialista >= 0 &&
-      data.recaudoSalon is number && data.recaudoSalon >= 0 &&
-      data.propina is number && data.propina >= 0 &&
-      data.sucursalId is string && data.sucursalId.size() > 0 &&
+      data.servicioPrecio is number && data.servicioPrecio >= 0 && data.servicioPrecio <= 50000000 &&
+      data.comisionEspecialista is number && data.comisionEspecialista >= 0 && data.comisionEspecialista <= 50000000 &&
+      data.recaudoSalon is number && data.recaudoSalon >= 0 && data.recaudoSalon <= 50000000 &&
+      data.propina is number && data.propina >= 0 && data.propina <= 50000000 &&
+      data.sucursalId is string && data.sucursalId.size() > 0 && data.sucursalId.size() <= 60 &&
       data.metodoPago in ['efectivo', 'nequi_daviplata', 'tarjeta_datafono', 'mixto'] &&
       (!('comisionPorcentaje' in data) || (data.comisionPorcentaje is number && data.comisionPorcentaje >= 0 && data.comisionPorcentaje <= 100)) &&
-      (!('nota' in data) || (data.nota is string && data.nota.size() <= 500));
+      strMax(data, 'id', 60) &&
+      strMax(data, 'fecha', 20) &&
+      strMax(data, 'hora', 20) &&
+      strMax(data, 'clienteTelefono', 25) &&
+      strMax(data, 'especialistaId', 60) &&
+      strMax(data, 'especialistaNombre', 80) &&
+      strMax(data, 'digitalMethod', 40) &&
+      strMax(data, 'nota', 500) &&
+      strMax(data, 'appointmentId', 60) &&
+      (!('appointmentId' in data) || cutId == 'cut-' + data.appointmentId) &&
+      numMax(data, 'montoEfectivo', 50000000) &&
+      numMax(data, 'montoDigital', 50000000);
     }
 
     // Validación para egresos de caja menor (exige sucursalId obligatorio)
@@ -120,8 +182,11 @@ service cloud.firestore {
       ]) &&
       data.concepto is string && data.concepto.size() > 0 && data.concepto.size() <= 200 &&
       data.categoria in ['insumos', 'servicios', 'mantenimiento', 'caja_menor'] &&
-      data.sucursalId is string && data.sucursalId.size() > 0 &&
-      data.monto is number && data.monto > 0;
+      data.sucursalId is string && data.sucursalId.size() > 0 && data.sucursalId.size() <= 60 &&
+      data.monto is number && data.monto > 0 && data.monto <= 50000000 &&
+      strMax(data, 'id', 60) &&
+      strMax(data, 'fecha', 20) &&
+      strMax(data, 'registradoPor', 100);
     }
 
     // Validación para arqueos y cierres de caja (exige sucursalId obligatorio)
@@ -131,16 +196,36 @@ service cloud.firestore {
         'entradasDigitales', 'egresosGastos', 'efectivoEsperado',
         'efectivoContado', 'diferencia', 'estado', 'responsableNombre', 'sucursalId'
       ]) &&
-      data.fecha is string &&
-      data.sucursalId is string && data.sucursalId.size() > 0 &&
-      data.baseInicial is number && data.baseInicial >= 0 &&
-      data.entradasEfectivo is number && data.entradasEfectivo >= 0 &&
-      data.entradasDigitales is number && data.entradasDigitales >= 0 &&
-      data.egresosGastos is number && data.egresosGastos >= 0 &&
-      data.efectivoEsperado is number && data.efectivoEsperado >= 0 &&
-      data.efectivoContado is number && data.efectivoContado >= 0 &&
-      data.diferencia is number &&
-      data.estado in ['cuadrada', 'descuadre'];
+      data.fecha is string && data.fecha.size() <= 20 &&
+      data.sucursalId is string && data.sucursalId.size() > 0 && data.sucursalId.size() <= 60 &&
+      data.baseInicial is number && data.baseInicial >= 0 && data.baseInicial <= 1000000000 &&
+      data.entradasEfectivo is number && data.entradasEfectivo >= 0 && data.entradasEfectivo <= 1000000000 &&
+      data.entradasDigitales is number && data.entradasDigitales >= 0 && data.entradasDigitales <= 1000000000 &&
+      data.egresosGastos is number && data.egresosGastos >= 0 && data.egresosGastos <= 1000000000 &&
+      data.efectivoEsperado is number && data.efectivoEsperado >= 0 && data.efectivoEsperado <= 1000000000 &&
+      data.efectivoContado is number && data.efectivoContado >= 0 && data.efectivoContado <= 1000000000 &&
+      data.diferencia is number && data.diferencia >= -1000000000 && data.diferencia <= 1000000000 &&
+      data.estado in ['cuadrada', 'descuadre'] &&
+      strMax(data, 'id', 60) &&
+      strMax(data, 'hora', 20) &&
+      strMax(data, 'responsableNombre', 100);
+    }
+
+    // Perfil de usuario del sistema (solo lo escribe el SuperAdmin). Solo 'rol' es obligatorio.
+    function isValidUser(data) {
+      return data.keys().hasOnly([
+        'id', 'nombre', 'email', 'rol', 'sucursalAsignada', 'avatar',
+        'creadoEn', 'puedeVerApi', 'puedeVerUsuarios'
+      ]) &&
+      data.rol in ['SuperAdmin', 'Administrador', 'Caja'] &&
+      strMax(data, 'id', 128) &&
+      strMax(data, 'nombre', 100) &&
+      strMax(data, 'email', 120) &&
+      strMax(data, 'sucursalAsignada', 60) &&
+      strMax(data, 'avatar', 150000) &&
+      strMax(data, 'creadoEn', 40) &&
+      boolOpt(data, 'puedeVerApi') &&
+      boolOpt(data, 'puedeVerUsuarios');
     }
 
     // =========================================================================
@@ -152,19 +237,20 @@ service cloud.firestore {
     // Crea / Actualiza / Borra: Solo el SuperAdmin.
     match /users/{userId} {
       allow read: if isSignedIn() && (request.auth.uid == userId || esAdmin());
-      allow write: if esSuperAdmin();
+      allow create, update: if esSuperAdmin() && isValidUser(request.resource.data);
+      allow delete: if esSuperAdmin();
     }
 
     // Colección: appointments (Citas y turnos del santuario)
     // Lee: Solo personal verificado (esStaff).
-    // Crea: Público/clientes (reserva online con validación estricta y estado inicial).
+    // Crea: Público/clientes (reserva online con validación estricta, estado inicial y bloqueo de horario en la misma operación).
     // Actualiza: Solo personal verificado (esStaff).
     // Borra: Solo administradores (esAdmin).
     match /appointments/{appointmentId} {
       allow list: if esStaff();
       // El visitante solo puede 'consultar' un ID que todavía no existe (la reserva comprueba que esté libre); nunca lee una cita.
       allow get: if esStaff() || resource == null;
-      allow create: if isValidNewAppointment(request.resource.data);
+      allow create: if isValidNewAppointment(request.resource.data, appointmentId);
       allow update: if isValidAppointmentUpdate(request.resource.data) && esStaff();
       allow delete: if esAdmin();
     }
@@ -177,11 +263,13 @@ service cloud.firestore {
     match /slot_locks/{lockId} {
       allow read: if true;
       allow create: if !exists(/databases/$(database)/documents/slot_locks/$(lockId)) &&
+                       string(lockId).size() <= 120 &&
                        request.resource.data.keys().hasOnly(['appointmentId', 'slot', 'date', 'specialistId', 'createdAt']) &&
-                       request.resource.data.appointmentId is string &&
-                       request.resource.data.slot is string &&
-                       request.resource.data.date is string &&
-                       request.resource.data.specialistId is string &&
+                       request.resource.data.appointmentId is string && request.resource.data.appointmentId.size() <= 60 &&
+                       request.resource.data.slot is string && request.resource.data.slot.size() <= 20 &&
+                       request.resource.data.date is string && request.resource.data.date.size() <= 20 &&
+                       request.resource.data.specialistId is string && request.resource.data.specialistId.size() <= 60 &&
+                       strMax(request.resource.data, 'createdAt', 40) &&
                        (
                          // (1) Reserva nueva: el bloqueo nace junto con la cita nueva que lo origina (misma transacción)
                          (
@@ -210,9 +298,12 @@ service cloud.firestore {
     // Actualiza: Solo personal de la sede de origen y destino (canAccessBranch origen Y destino).
     // Borra: Solo administradores (esAdmin).
     match /salon_cuts/{cutId} {
-      allow read: if esStaff() && canAccessBranch(resource.data.sucursalId);
-      allow create: if isValidCut(request.resource.data) && esStaff() && canAccessBranch(request.resource.data.sucursalId);
-      allow update: if isValidCut(request.resource.data) && esStaff() && canAccessBranch(resource.data.sucursalId) && canAccessBranch(request.resource.data.sucursalId);
+      // get: un documento que aun no existe se puede consultar (la app lo hace antes de crear un cobro, gasto o cierre).
+      allow get: if esStaff() && (resource == null || canAccessBranch(resource.data.sucursalId));
+      // list: el personal de caja debe consultar con where('sucursalId', '==', su sede). Administradores pueden listar todo.
+      allow list: if esStaff() && canAccessBranch(resource.data.sucursalId);
+      allow create: if isValidCut(request.resource.data, cutId) && esStaff() && canAccessBranch(request.resource.data.sucursalId);
+      allow update: if isValidCut(request.resource.data, cutId) && esStaff() && canAccessBranch(resource.data.sucursalId) && canAccessBranch(request.resource.data.sucursalId);
       allow delete: if esAdmin();
     }
 
@@ -222,7 +313,10 @@ service cloud.firestore {
     // Actualiza: Solo personal de la sede de origen y destino (canAccessBranch origen Y destino).
     // Borra: Solo administradores (esAdmin).
     match /expenses/{expenseId} {
-      allow read: if esStaff() && canAccessBranch(resource.data.sucursalId);
+      // get: un documento que aun no existe se puede consultar (la app lo hace antes de crear un cobro, gasto o cierre).
+      allow get: if esStaff() && (resource == null || canAccessBranch(resource.data.sucursalId));
+      // list: el personal de caja debe consultar con where('sucursalId', '==', su sede). Administradores pueden listar todo.
+      allow list: if esStaff() && canAccessBranch(resource.data.sucursalId);
       allow create: if isValidExpense(request.resource.data) && esStaff() && canAccessBranch(request.resource.data.sucursalId);
       allow update: if isValidExpense(request.resource.data) && esStaff() && canAccessBranch(resource.data.sucursalId) && canAccessBranch(request.resource.data.sucursalId);
       allow delete: if esAdmin();
@@ -234,7 +328,10 @@ service cloud.firestore {
     // Actualiza: Solo personal de la sede de origen y destino (canAccessBranch origen Y destino).
     // Borra: Solo administradores (esAdmin).
     match /cash_closes/{closeId} {
-      allow read: if esStaff() && canAccessBranch(resource.data.sucursalId);
+      // get: un documento que aun no existe se puede consultar (la app lo hace antes de crear un cobro, gasto o cierre).
+      allow get: if esStaff() && (resource == null || canAccessBranch(resource.data.sucursalId));
+      // list: el personal de caja debe consultar con where('sucursalId', '==', su sede). Administradores pueden listar todo.
+      allow list: if esStaff() && canAccessBranch(resource.data.sucursalId);
       allow create: if isValidCashClose(request.resource.data) && esStaff() && canAccessBranch(request.resource.data.sucursalId);
       allow update: if isValidCashClose(request.resource.data) && esStaff() && canAccessBranch(resource.data.sucursalId) && canAccessBranch(request.resource.data.sucursalId);
       allow delete: if esAdmin();

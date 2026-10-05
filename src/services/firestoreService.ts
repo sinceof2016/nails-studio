@@ -8,7 +8,9 @@ import {
   deleteDoc,
   onSnapshot,
   runTransaction,
-  writeBatch
+  writeBatch,
+  query,
+  where
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import {
@@ -221,9 +223,13 @@ export function subscribeToSalonCuts(
   branchId?: string,
   onError?: (error: unknown) => void
 ) {
-  const colRef = collection(db, CUTS_COLLECTION);
+  const isSpecificBranch = branchId && branchId !== 'todas';
+  const q = isSpecificBranch
+    ? query(collection(db, CUTS_COLLECTION), where('sucursalId', '==', branchId))
+    : collection(db, CUTS_COLLECTION);
+
   return onSnapshot(
-    colRef,
+    q,
     (snapshot) => {
       const list: SalonCutRecord[] = [];
       snapshot.forEach((docSnap) => {
@@ -252,14 +258,23 @@ export async function addSalonCutToFirestore(cut: SalonCutRecord): Promise<void>
   });
 }
 
+export async function deleteSalonCutFromFirestore(cutId: string): Promise<void> {
+  const docRef = doc(db, CUTS_COLLECTION, cutId);
+  await deleteDoc(docRef);
+}
+
 export function subscribeToExpenses(
   callback: (expenses: ExpenseRecord[]) => void,
   branchId?: string,
   onError?: (error: unknown) => void
 ) {
-  const colRef = collection(db, EXPENSES_COLLECTION);
+  const isSpecificBranch = branchId && branchId !== 'todas';
+  const q = isSpecificBranch
+    ? query(collection(db, EXPENSES_COLLECTION), where('sucursalId', '==', branchId))
+    : collection(db, EXPENSES_COLLECTION);
+
   return onSnapshot(
-    colRef,
+    q,
     (snapshot) => {
       const list: ExpenseRecord[] = [];
       snapshot.forEach((docSnap) => {
@@ -293,9 +308,13 @@ export function subscribeToCashCloses(
   branchId?: string,
   onError?: (error: unknown) => void
 ) {
-  const colRef = collection(db, CLOSES_COLLECTION);
+  const isSpecificBranch = branchId && branchId !== 'todas';
+  const q = isSpecificBranch
+    ? query(collection(db, CLOSES_COLLECTION), where('sucursalId', '==', branchId))
+    : collection(db, CLOSES_COLLECTION);
+
   return onSnapshot(
-    colRef,
+    q,
     (snapshot) => {
       const list: CashRegisterClose[] = [];
       snapshot.forEach((docSnap) => {

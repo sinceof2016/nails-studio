@@ -12,10 +12,9 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test": "tsx src/tests/authSecurity.test.ts && tsx src/tests/plainTextSecurity.test.ts && tsx src/tests/dataAuthorization.test.ts && tsx src/tests/superadminPersistence.test.ts && tsx src/tests/textoPlano.test.ts"
+    "test": "tsx src/tests/authSecurity.test.ts && tsx src/tests/plainTextSecurity.test.ts && tsx src/tests/dataAuthorization.test.ts && tsx src/tests/superadminPersistence.test.ts && tsx src/tests/textoPlano.test.ts && tsx src/tests/cobroUnico.test.ts"
   },
   "dependencies": {
-    "@google/genai": "^2.4.0",
     "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-react": "^6.1.1",
     "dotenv": "^17.2.3",

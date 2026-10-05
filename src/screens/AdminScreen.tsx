@@ -48,6 +48,7 @@ interface AdminScreenProps {
   onAddExpense: (expense: ExpenseRecord) => Promise<void>;
   onSaveCashClose: (close: CashRegisterClose) => Promise<void>;
   onAddAppointment?: (appointment: Appointment) => Promise<void>;
+  onDeleteCut?: (cutId: string) => Promise<void>;
   onToast?: (message: string) => void;
   initialTab?: 'agenda' | 'caja' | 'cortes' | 'clientes';
   onTabChange?: (tab: 'agenda' | 'caja' | 'cortes' | 'clientes') => void;
@@ -67,6 +68,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
   onDeleteAppointment,
   onNavigateToBooking,
   onRegisterCut,
+  onDeleteCut,
   onAddExpense,
   onSaveCashClose,
   onAddAppointment,
@@ -472,8 +474,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
             clientName: cleanClientName,
             bookingCode
           });
-        } catch {
-          // WhatsApp es complementario
+        } catch (notifErr) {
+          console.warn('WhatsApp notificación no enviada para turno express:', notifErr);
         }
       }
 
@@ -574,9 +576,12 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       finalDigitalMethod = cutDigitalMethod;
     }
 
+    const isFromAppointment = Boolean(selectedAppointmentIdForCut && selectedAppointmentIdForCut.trim());
+    const cutId = isFromAppointment ? `cut-${selectedAppointmentIdForCut}` : generateSecureId('cut');
+
     // CONSTRUCCIÓN ESTRICTA SIN VALORES UNDEFINED (cumple reglas isValidCut)
     const newCut: SalonCutRecord = {
-      id: generateSecureId('cut'),
+      id: cutId,
       fecha: selectedDate,
       hora: getColombiaTimeStr(),
       clienteNombre: cleanCutClientName,
@@ -596,7 +601,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         digitalMethod: finalDigitalMethod
       } : {}),
       sucursalId: activeBranchId,
-      ...(cleanCutNote ? { nota: cleanCutNote } : {})
+      ...(cleanCutNote ? { nota: cleanCutNote } : {}),
+      ...(isFromAppointment ? { appointmentId: selectedAppointmentIdForCut } : {})
     };
 
     // Limite solo en el cliente. La proteccion real contra reservas masivas es Firebase App Check (pendiente).
@@ -634,8 +640,14 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       if (selectedAppointmentIdForCut) {
         try {
           await onUpdateStatus(selectedAppointmentIdForCut, 'completada');
-        } catch {
-          // Ignorar si ya estaba completada
+        } catch (firstErr) {
+          // Reintentar una vez si falló el cambio de estado
+          try {
+            await onUpdateStatus(selectedAppointmentIdForCut, 'completada');
+          } catch (secondErr) {
+            console.warn('Error al marcar la cita como completada tras el cobro:', secondErr);
+            notify('Cobro registrado, pero no se pudo marcar la cita como completada.');
+          }
         }
       }
 
@@ -646,9 +658,32 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       notify(`✓ Cobro registrado: ${formatCOP(priceNum)} (${spec.name} +${formatCOP(comisionEspecialista)})`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al registrar el cobro en Firestore.';
-      setCutValidationError(msg);
+      if (msg.toLowerCase().includes('ya existe') || msg.toLowerCase().includes('already exists')) {
+        setCutValidationError('Esta cita ya fue cobrada.');
+      } else {
+        setCutValidationError(msg);
+      }
     } finally {
       setIsSubmittingCut(false);
+    }
+  };
+
+  const canVoidCut = !isCajaRole;
+
+  const handleVoidCut = async (cut: SalonCutRecord) => {
+    if (!canVoidCut) return;
+    const confirmed = window.confirm(
+      `¿Estás seguro de anular el cobro de ${cut.clienteNombre} (${formatCOP(cut.servicioPrecio + cut.propina)})? La cita asociada quedará disponible para cobrar nuevamente.`
+    );
+    if (!confirmed) return;
+    try {
+      if (onDeleteCut) {
+        await onDeleteCut(cut.id);
+      }
+      notify('✓ Cobro anulado exitosamente.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al anular el cobro en Firestore.';
+      notify(`⚠ Error: ${msg}`);
     }
   };
 
@@ -877,6 +912,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
           specialistFilter={specialistFilter}
           setSpecialistFilter={setSpecialistFilter}
           appointments={appointments}
+          cuts={cuts}
           filterStatus={filterStatus}
           setFilterStatus={setFilterStatus}
           totalCount={totalCount}
@@ -915,6 +951,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
           onOpenNewCutModal={() => setShowNewCutModal(true)}
           onOpenExpenseModal={() => setShowExpenseModal(true)}
           onOpenCloseModal={() => setShowCloseModal(true)}
+          canVoidCut={canVoidCut}
+          onVoidCut={handleVoidCut}
         />
       )}
 
@@ -1001,6 +1039,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         services={services}
         specialists={specialists}
         appointments={appointments}
+        cuts={cuts}
         selectedAppointmentId={selectedAppointmentIdForCut}
         onSelectAppointmentId={setSelectedAppointmentIdForCut}
         isSubmitting={isSubmittingCut}

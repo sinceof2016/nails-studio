@@ -435,8 +435,8 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
           clientName: cleanClientName,
           bookingCode
         });
-      } catch {
-        // La notificación es complementaria, la cita ya quedó garantizada en Firestore
+      } catch (notifErr) {
+        console.warn('WhatsApp notificación no enviada:', notifErr);
       }
 
       onBookingSuccess(newAppointment);

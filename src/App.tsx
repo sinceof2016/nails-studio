@@ -78,6 +78,7 @@ import {
   getSlotLockDocId,
   subscribeToSalonCuts,
   addSalonCutToFirestore,
+  deleteSalonCutFromFirestore,
   subscribeToExpenses,
   addExpenseToFirestore,
   subscribeToCashCloses,
@@ -202,7 +203,9 @@ export default function App() {
       localStorage.removeItem('pelu_services');
       localStorage.removeItem('pelu_specialists');
       localStorage.removeItem('pelu_service_categories');
-    } catch {}
+    } catch {
+      /* localStorage no disponible */
+    }
   }, []);
 
   // Analytics consent and page view tracking
@@ -379,7 +382,9 @@ export default function App() {
           setServices(liveServices);
           try {
             localStorage.setItem('aura_tarifas_2026_services', JSON.stringify(liveServices));
-          } catch {}
+          } catch {
+            /* localStorage no disponible */
+          }
         } else {
           // Si Firestore está vacío (catálogo inicial aún no cargado), el visitante mantiene el catálogo local
           const saved = localStorage.getItem('aura_tarifas_2026_services');
@@ -388,6 +393,7 @@ export default function App() {
               const parsed = JSON.parse(saved);
               setServices(Array.isArray(parsed) && parsed.length > 0 ? parsed : SERVICES);
             } catch {
+              /* localStorage no disponible */
               setServices(SERVICES);
             }
           } else {
@@ -403,7 +409,9 @@ export default function App() {
           setPublicSpecialists(liveSpecialists);
           try {
             localStorage.setItem('aura_tarifas_2026_specialists', JSON.stringify(liveSpecialists));
-          } catch {}
+          } catch {
+            /* localStorage no disponible */
+          }
         } else {
           const saved = localStorage.getItem('aura_tarifas_2026_specialists');
           if (saved) {
@@ -411,6 +419,7 @@ export default function App() {
               const parsed = JSON.parse(saved);
               setPublicSpecialists(Array.isArray(parsed) && parsed.length > 0 ? parsed : SPECIALISTS);
             } catch {
+              /* localStorage no disponible */
               setPublicSpecialists(SPECIALISTS);
             }
           } else {
@@ -426,7 +435,9 @@ export default function App() {
           setServiceCategories(liveCats);
           try {
             localStorage.setItem('aura_tarifas_2026_categories', JSON.stringify(liveCats));
-          } catch {}
+          } catch {
+            /* localStorage no disponible */
+          }
         } else {
           const saved = localStorage.getItem('aura_tarifas_2026_categories');
           if (saved) {
@@ -434,6 +445,7 @@ export default function App() {
               const parsed = JSON.parse(saved);
               setServiceCategories(Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_SERVICE_CATEGORIES);
             } catch {
+              /* localStorage no disponible */
               setServiceCategories(INITIAL_SERVICE_CATEGORIES);
             }
           } else {
@@ -460,17 +472,42 @@ export default function App() {
   }, []);
 
   // 2. Subscribe to private Firestore collections in real-time (SOLO si hay usuario staff)
+  const permissionErrorShownRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    permissionErrorShownRef.current = false;
+  }, [currentUser?.id, currentUser?.rol, branchFilter]);
+
   useEffect(() => {
     if (!isStaff) {
       // Visitante: no tiene sesión de staff, no se suscribe a colecciones privadas
       return;
     }
 
+    if (isCaja) {
+      if (!currentUser?.sucursalAsignada || !currentUser.sucursalAsignada.trim()) {
+        showToast('Tu usuario no tiene sede asignada. Pide al SuperAdmin que la configure.');
+        return;
+      }
+      if (currentUser.sucursalAsignada === 'todas') {
+        showToast('Tu usuario necesita una sede concreta o rol Administrador.');
+        return;
+      }
+    }
+
+    const handleSubError = (colName: string, phrase: string) => (err: unknown) => {
+      console.warn(`Error en suscripción de ${colName}:`, err);
+      if (!permissionErrorShownRef.current) {
+        permissionErrorShownRef.current = true;
+        showToast(`No tienes permiso para ver ${phrase}`);
+      }
+    };
+
     const unsubApts = subscribeToAppointments(
       (data) => {
         setAppointments(data || []);
       },
-      (err) => console.warn('Error en suscripción de citas:', err)
+      handleSubError('citas', 'las citas')
     );
 
     const unsubCuts = subscribeToSalonCuts(
@@ -478,7 +515,7 @@ export default function App() {
         setCuts(data || []);
       },
       branchFilter,
-      (err) => console.warn('Error en suscripción de cortes:', err)
+      handleSubError('cortes', 'los cobros de esta sede')
     );
 
     const unsubExpenses = subscribeToExpenses(
@@ -486,7 +523,7 @@ export default function App() {
         setExpenses(data || []);
       },
       branchFilter,
-      (err) => console.warn('Error en suscripción de gastos:', err)
+      handleSubError('gastos', 'los gastos de esta sede')
     );
 
     const unsubCloses = subscribeToCashCloses(
@@ -494,22 +531,29 @@ export default function App() {
         setCashCloses(data || []);
       },
       branchFilter,
-      (err) => console.warn('Error en suscripción de cierres:', err)
+      handleSubError('cierres', 'los cierres de esta sede')
     );
 
     const unsubSpecialistsPriv = subscribeToSpecialistsPrivate(
       (privMap) => {
         setPrivateSpecialistsMap(privMap || {});
       },
-      (err) => console.warn('Error en suscripción de datos privados de especialistas:', err)
+      handleSubError('datos privados de especialistas', 'los datos de especialistas')
     );
 
-    const unsubUsers = subscribeToUsers(
-      (liveUsers) => {
-        setSystemUsers(liveUsers || []);
-      },
-      (err) => console.warn('Error en suscripción de usuarios:', err)
-    );
+    const canSubscribeUsers = currentUser?.rol === 'SuperAdmin' || currentUser?.rol === 'Administrador';
+    let unsubUsers = () => {};
+
+    if (canSubscribeUsers) {
+      unsubUsers = subscribeToUsers(
+        (liveUsers) => {
+          setSystemUsers(liveUsers || []);
+        },
+        handleSubError('usuarios', 'los usuarios')
+      );
+    } else {
+      setSystemUsers([]);
+    }
 
     return () => {
       unsubApts();
@@ -519,7 +563,7 @@ export default function App() {
       unsubSpecialistsPriv();
       unsubUsers();
     };
-  }, [isStaff, branchFilter]);
+  }, [isStaff, isCaja, currentUser?.sucursalAsignada, currentUser?.rol, branchFilter]);
 
   // Persist user and notifications
   useEffect(() => {
@@ -677,6 +721,18 @@ export default function App() {
     }
   };
 
+  const handleDeleteCut = async (cutId: string) => {
+    try {
+      await deleteSalonCutFromFirestore(cutId);
+      setCuts((prev) => prev.filter((c) => c.id !== cutId));
+      showToast('✓ Cobro anulado exitosamente.');
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Error al anular el cobro en Firestore.';
+      showToast(`⚠ Error: ${msg}`);
+      throw error;
+    }
+  };
+
   const handleAddExpense = async (expense: ExpenseRecord) => {
     try {
       await addExpenseToFirestore(expense);
@@ -774,7 +830,9 @@ export default function App() {
         const updated = [newService, ...prev.filter((s) => s.id !== newService.id)];
         try {
           localStorage.setItem('aura_tarifas_2026_services', JSON.stringify(updated));
-        } catch {}
+        } catch {
+          /* localStorage no disponible */
+        }
         return updated;
       });
       showToast(`Servicio "${newService.name}" guardado y sincronizado.`);
@@ -792,7 +850,9 @@ export default function App() {
         const updated = prev.map((s) => (s.id === updatedService.id ? updatedService : s));
         try {
           localStorage.setItem('aura_tarifas_2026_services', JSON.stringify(updated));
-        } catch {}
+        } catch {
+          /* localStorage no disponible */
+        }
         return updated;
       });
       showToast(`Servicio "${updatedService.name}" actualizado y sincronizado.`);
@@ -813,7 +873,9 @@ export default function App() {
         const updated = prev.map((s) => (s.id === serviceId ? updatedService : s));
         try {
           localStorage.setItem('aura_tarifas_2026_services', JSON.stringify(updated));
-        } catch {}
+        } catch {
+          /* localStorage no disponible */
+        }
         return updated;
       });
       setSelectedServiceDetail((prev) => (prev && prev.id === serviceId ? { ...prev, image: newImage } : prev));
@@ -836,7 +898,9 @@ export default function App() {
           } else {
             localStorage.removeItem('aura_tarifas_2026_services');
           }
-        } catch {}
+        } catch {
+          /* localStorage no disponible */
+        }
         return updated;
       });
       showToast('Servicio eliminado y sincronizado.');
@@ -854,7 +918,9 @@ export default function App() {
         const updated = [...prev.filter((c) => c.id !== newCategory.id), newCategory];
         try {
           localStorage.setItem('aura_tarifas_2026_categories', JSON.stringify(updated));
-        } catch {}
+        } catch {
+          /* localStorage no disponible */
+        }
         return updated;
       });
       showToast(`Tipo de servicio "${newCategory.label}" creado y sincronizado.`);
@@ -872,7 +938,9 @@ export default function App() {
         const updated = prev.map((c) => (c.id === updatedCategory.id ? updatedCategory : c));
         try {
           localStorage.setItem('aura_tarifas_2026_categories', JSON.stringify(updated));
-        } catch {}
+        } catch {
+          /* localStorage no disponible */
+        }
         return updated;
       });
       showToast(`Tipo de servicio "${updatedCategory.label}" actualizado y sincronizado.`);
@@ -894,7 +962,9 @@ export default function App() {
           } else {
             localStorage.removeItem('aura_tarifas_2026_categories');
           }
-        } catch {}
+        } catch {
+          /* localStorage no disponible */
+        }
         return updated;
       });
       showToast('Tipo de servicio eliminado y sincronizado.');
@@ -1052,6 +1122,7 @@ export default function App() {
             onDeleteAppointment={handleDeleteAppointment}
             onNavigateToBooking={() => handleNavigateTab('reservar')}
             onRegisterCut={handleRegisterCut}
+            onDeleteCut={handleDeleteCut}
             onAddExpense={handleAddExpense}
             onSaveCashClose={handleSaveCashClose}
             onAddAppointment={handleAddExpressAppointment}

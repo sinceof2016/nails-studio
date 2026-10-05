@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Appointment, Specialist } from '../../../types';
+import React, { useState, useMemo } from 'react';
+import { Appointment, Specialist, SalonCutRecord } from '../../../types';
 import { SPECIALISTS as DEFAULT_SPECIALISTS } from '../../../data/mockData';
 import { formatCOP } from '../../../utils/format';
 import { formatDisplayDate } from '../../../utils/dateAndId';
@@ -12,6 +12,7 @@ interface AdminAgendaTabProps {
   specialistFilter: string;
   setSpecialistFilter: (specId: string) => void;
   appointments: Appointment[];
+  cuts?: SalonCutRecord[];
   filterStatus: string;
   setFilterStatus: (status: string) => void;
   totalCount: number;
@@ -40,6 +41,7 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
   specialistFilter,
   setSpecialistFilter,
   appointments,
+  cuts = [],
   filterStatus,
   setFilterStatus,
   totalCount,
@@ -61,6 +63,10 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
 }) => {
   const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null);
   const canDeleteAppointments = userRole === 'SuperAdmin' || userRole === 'Administrador';
+
+  const chargedAppointmentIds = useMemo(() => {
+    return new Set(cuts.filter((c) => c.appointmentId).map((c) => c.appointmentId as string));
+  }, [cuts]);
 
   const confirmDelete = () => {
     if (appointmentToDelete && onDeleteAppointment) {
@@ -408,7 +414,17 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
                       <span>Pase QR</span>
                     </button>
 
-                    {onOpenCutForAppointment && apt.status !== 'cancelada' && (
+                    {chargedAppointmentIds.has(apt.id) && (
+                      <span
+                        className="h-7 px-2.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 text-[11px] font-bold flex items-center gap-1"
+                        title="Esta cita ya fue cobrada en caja"
+                      >
+                        <span className="material-symbols-outlined text-[14px] text-emerald-600">check_circle</span>
+                        <span>Cobrada</span>
+                      </span>
+                    )}
+
+                    {!chargedAppointmentIds.has(apt.id) && apt.status !== 'completada' && apt.status !== 'cancelada' && onOpenCutForAppointment && (
                       <button
                         onClick={() => onOpenCutForAppointment(apt)}
                         className="h-7 px-2.5 rounded-full bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] text-[11px] font-bold flex items-center gap-1 cursor-pointer shadow-2xs transition-all"

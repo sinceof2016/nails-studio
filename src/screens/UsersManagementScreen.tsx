@@ -94,7 +94,8 @@ export const UsersManagementScreen: React.FC<UsersManagementScreenProps> = ({
     try {
       const empty = await checkIfCatalogEmpty();
       setIsCatalogEmpty(empty);
-    } catch {
+    } catch (err) {
+      console.warn('Error verificando estado del catálogo:', err);
       setIsCatalogEmpty(false);
     }
   };
@@ -164,8 +165,8 @@ export const UsersManagementScreen: React.FC<UsersManagementScreenProps> = ({
       } else {
         await onAddUser(user);
       }
-    } catch {
-      // Toast de error es manejado en App.tsx
+    } catch (err) {
+      console.warn('Error al guardar usuario:', err);
     }
   };
 
@@ -187,8 +188,8 @@ export const UsersManagementScreen: React.FC<UsersManagementScreenProps> = ({
       } else {
         await onAddService(service);
       }
-    } catch {
-      // Toast de error es manejado en App.tsx
+    } catch (err) {
+      console.warn('Error al guardar servicio:', err);
     }
   };
 
@@ -210,8 +211,8 @@ export const UsersManagementScreen: React.FC<UsersManagementScreenProps> = ({
       } else {
         await onAddCategory(cat);
       }
-    } catch {
-      // Toast de error es manejado en App.tsx
+    } catch (err) {
+      console.warn('Error al guardar categoría:', err);
     }
   };
 
@@ -233,8 +234,8 @@ export const UsersManagementScreen: React.FC<UsersManagementScreenProps> = ({
       } else {
         await onAddSpecialist(spec);
       }
-    } catch {
-      // Toast de error es manejado en App.tsx
+    } catch (err) {
+      console.warn('Error al guardar especialista:', err);
     }
   };
 
@@ -257,8 +258,8 @@ export const UsersManagementScreen: React.FC<UsersManagementScreenProps> = ({
       } else if (deleteConfirm.type === 'specialist') {
         await onDeleteSpecialist(deleteConfirm.id);
       }
-    } catch {
-      // Toast de error es manejado en App.tsx
+    } catch (err) {
+      console.warn('Error al eliminar registro:', err);
     } finally {
       setDeleteConfirm(null);
     }

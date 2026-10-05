@@ -134,6 +134,20 @@ export function renderTemplate(template: string, vars: Record<string, string>): 
   return result;
 }
 
+let hasLoggedDisabled = false;
+
+export function isWhatsAppConfigured(): boolean {
+  const phone = BUSINESS_CONFIG.whatsapp;
+  if (!phone || phone.startsWith('PENDIENTE_')) {
+    return false;
+  }
+  const config = getUltraMsgConfig();
+  if (!config.instanceId || !config.token) {
+    return false;
+  }
+  return true;
+}
+
 /**
  * Envía un mensaje automático a través del Proxy Seguro del Servidor (/api/whatsapp/send)
  * protegiendo los tokens de UltraMsg contra exposición pública.
@@ -146,6 +160,15 @@ export async function sendUltraMsgWhatsApp(params: {
 }): Promise<{ success: boolean; messageId?: string; error?: string; waUrl?: string }> {
   const cleanPhone = formatPhoneForWhatsApp(params.phone);
   const waUrl = buildWaMeUrl(cleanPhone, params.message);
+
+  if (!isWhatsAppConfigured()) {
+    if (!hasLoggedDisabled) {
+      console.info('WhatsApp desactivado');
+      hasLoggedDisabled = true;
+    }
+    return { success: true, waUrl };
+  }
+
   const config = getUltraMsgConfig();
 
   // 1. Intentar envío seguro vía Proxy de Backend

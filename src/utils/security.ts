@@ -8,16 +8,18 @@
 // Patrones exhaustivos de código ejecutable, etiquetas HTML, scripts e inyecciones
 // NOTA: No usamos el flag 'g' global para evitar el problema de estado mutable de RegExp.lastIndex en .test()
 const EXECUTABLE_OR_TAG_PATTERNS = [
-  /<\s*\/?\s*[a-zA-Z][^>]*>/i,                        // Cualquier etiqueta HTML/XML (<script>, <img>, <a>, <div>, etc.)
-  /<script[\s\S]*?>[\s\S]*?<\/script>/i,              // Bloque script
-  /<iframe[\s\S]*?>/i,                                // iframes
-  /<embed[\s\S]*?>/i,                                 // embed
-  /<object[\s\S]*?>/i,                                // object
+  /<\s*\/?\s*[a-zA-Z/!?][^>]*>?/i,                    // Cualquier etiqueta HTML/XML (<script>, <img>, <a>, <div>, <iframe..., etc.)
+  /<script[\s\S]*?/i,                                 // Bloque script abierto o cerrado
+  /<iframe[\s\S]*?/i,                                 // iframes abiertos o cerrados
+  /<img[\s\S]*?/i,                                    // img
+  /<svg[\s\S]*?/i,                                    // svg
+  /<embed[\s\S]*?/i,                                  // embed
+  /<object[\s\S]*?/i,                                 // object
   /javascript\s*:/i,                                  // Pseudo-protocolo javascript:
   /vbscript\s*:/i,                                    // Pseudo-protocolo vbscript:
   /data\s*:\s*text\/(html|javascript)/i,              // Data URIs ejecutables
   // Event handlers conocidos precedidos de espacio, comilla o inicio de cadena
-  /(?:[\s"']|^)on(click|error|load|mouseover|focus|change|submit|blur|keydown|keyup|keypress|mouseenter|mouseleave|select|reset|abort|dblclick)\s*=/i,
+  /(?:[\s"'/]|^)on(click|error|load|mouseover|mouseout|mouseenter|mouseleave|focus|blur|change|input|submit|keydown|keyup|keypress|dblclick|select|reset|abort|toggle|animationstart|pointerdown|touchstart)\s*=/i,
   /\b(eval|Function|execScript|setTimeout|setInterval)\s*\(/i, // Ejecutores directos de JavaScript
   /\b(document\.(location|cookie|write|createElement)|window\.(location|open))\b/i, // Manipulación del DOM
   /\b(alert|prompt|confirm)\s*\(/i,                   // Cuadros modales nativos
@@ -88,16 +90,16 @@ export function sanitizeToPlainText(text: string): string {
 
   let sanitized = text;
 
-  // 1. Eliminar cualquier etiqueta HTML o XML completa o fragmentada
-  sanitized = sanitized.replace(/<[^>]*>?/gm, '');
+  // 1. Eliminar etiquetas HTML o XML (un "<" seguido de letra, "/", "!" o "?")
+  sanitized = sanitized.replace(/<[a-zA-Z/!?][^>]*>?/gm, '');
 
   // 2. Eliminar pseudo-protocolos ejecutables
   sanitized = sanitized.replace(/javascript\s*:/gi, '');
   sanitized = sanitized.replace(/vbscript\s*:/gi, '');
   sanitized = sanitized.replace(/data\s*:\s*text\/(html|javascript)/gi, '');
 
-  // 3. Eliminar controladores de eventos inline (ej: onerror=, onload=, onclick=)
-  sanitized = sanitized.replace(/on[a-zA-Z]+\s*=\s*['"]?[^'"]*['"]?/gi, '');
+  // 3. Eliminar controladores de eventos inline conocidos (ej: onerror=, onload=, onclick=)
+  sanitized = sanitized.replace(/on(click|error|load|mouseover|mouseout|mouseenter|mouseleave|focus|blur|change|input|submit|keydown|keyup|keypress|dblclick|select|reset|abort|toggle|animationstart|pointerdown|touchstart)\s*=\s*['"]?[^'"]*['"]?/gi, '');
 
   // 4. Eliminar llamadas a funciones de ejecución de código
   sanitized = sanitized.replace(/\b(eval|exec|Function|alert|confirm|prompt)\s*\([^)]*\)/gi, '');
@@ -107,13 +109,10 @@ export function sanitizeToPlainText(text: string): string {
   sanitized = sanitized.replace(/\{\{([^}]*)\}\}/g, '$1');
   sanitized = sanitized.replace(/<%([^%]*)%>/g, '$1');
 
-  // 6. Eliminar corchetes angulares residuales y comillas peligrosas
-  sanitized = sanitized.replace(/[<>]/g, '');
-
-  // 7. Neutralizar fórmulas ejecutables que comiencen con =, +, -, @ (ej: =HYPERLINK(...), +cmd|...)
+  // 6. Neutralizar fórmulas ejecutables que comiencen con =, +, -, @ (ej: =HYPERLINK(...), +cmd|...)
   sanitized = sanitized.replace(/^([=+\-@]\s*[a-zA-Z_]+\s*(\(|\|))/i, "'$1");
 
-  // 8. Normalizar espacios
+  // 7. Normalizar espacios
   return sanitized.trim();
 }
 
