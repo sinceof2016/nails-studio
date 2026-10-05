@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { SERVICES } from '../data/mockData';
 import { Service } from '../types';
 import { formatCOP } from '../utils/format';
 import { BUSINESS_CONFIG } from '../config/businessConfig';
 
 interface NotFoundScreenProps {
+  services: Service[];
   onNavigateHome: () => void;
   onNavigateToBooking: () => void;
   onNavigateToSpecialists: () => void;
@@ -14,6 +14,7 @@ interface NotFoundScreenProps {
 type ScreenSimulationState = 'normal' | 'loading' | 'error' | 'empty';
 
 export const NotFoundScreen: React.FC<NotFoundScreenProps> = ({
+  services,
   onNavigateHome,
   onNavigateToBooking,
   onNavigateToSpecialists,
@@ -27,12 +28,12 @@ export const NotFoundScreen: React.FC<NotFoundScreenProps> = ({
   // Filter recommendations based on search
   const filteredServices = useMemo(() => {
     if (screenState === 'empty') return [];
-    if (!searchQuery.trim()) return SERVICES.slice(0, 3);
-    return SERVICES.filter((s) =>
+    if (!searchQuery.trim()) return services.slice(0, 3);
+    return services.filter((s) =>
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.description.toLowerCase().includes(searchQuery.toLowerCase())
+      (s.description && s.description.toLowerCase().includes(searchQuery.toLowerCase()))
     );
-  }, [searchQuery, screenState]);
+  }, [searchQuery, screenState, services]);
 
   const handleRetry = () => {
     setIsRetrying(true);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { validateOnlyPlainText, sanitizeToPlainText } from '../utils/security';
+import { validateOnlyPlainText, sanitizeToPlainText, validateAndClean } from '../utils/security';
 import { BUSINESS_CONFIG } from '../config/businessConfig';
 import {
   getUltraMsgConfig,
@@ -37,12 +37,39 @@ export const UltraMsgConfigModal: React.FC<UltraMsgConfigModalProps> = ({
   if (!isOpen) return null;
 
   const handleSave = () => {
-    // Sanitizar plantillas para garantizar texto plano
+    const confRes = validateAndClean(config.confirmationTemplate, 'Plantilla de Confirmación', 2000);
+    if (!confRes.ok) {
+      if (onToast) onToast(confRes.error || 'Error en plantilla de confirmación.');
+      return;
+    }
+    const statusRes = validateAndClean(config.statusChangeTemplate, 'Plantilla de Cambio de Estado', 2000);
+    if (!statusRes.ok) {
+      if (onToast) onToast(statusRes.error || 'Error en plantilla de cambio de estado.');
+      return;
+    }
+    const payRes = validateAndClean(config.paymentTemplate, 'Plantilla de Cobro', 2000);
+    if (!payRes.ok) {
+      if (onToast) onToast(payRes.error || 'Error en plantilla de cobro.');
+      return;
+    }
+    const instRes = validateAndClean(config.instanceId, 'ID de Instancia', 100);
+    if (!instRes.ok) {
+      if (onToast) onToast(instRes.error || 'Error en ID de instancia.');
+      return;
+    }
+    const tokenRes = validateAndClean(config.token, 'Token', 150);
+    if (!tokenRes.ok) {
+      if (onToast) onToast(tokenRes.error || 'Error en token de UltraMsg.');
+      return;
+    }
+
     const cleanConfig: UltraMsgConfig = {
       ...config,
-      confirmationTemplate: sanitizeToPlainText(config.confirmationTemplate),
-      statusChangeTemplate: sanitizeToPlainText(config.statusChangeTemplate),
-      paymentTemplate: sanitizeToPlainText(config.paymentTemplate)
+      instanceId: instRes.value,
+      token: tokenRes.value,
+      confirmationTemplate: confRes.value,
+      statusChangeTemplate: statusRes.value,
+      paymentTemplate: payRes.value
     };
     saveUltraMsgConfig(cleanConfig);
     setConfig(cleanConfig);
@@ -93,16 +120,16 @@ export const UltraMsgConfigModal: React.FC<UltraMsgConfigModalProps> = ({
       return;
     }
 
-    const val = validateOnlyPlainText(testMessage, 'Mensaje de Prueba', 500);
-    if (!val.isValid) {
-      setTestResult({ success: false, msg: val.reason || 'El mensaje solo admite texto plano.' });
+    const val = validateAndClean(testMessage, 'Mensaje de Prueba', 500);
+    if (!val.ok) {
+      setTestResult({ success: false, msg: val.error || 'El mensaje solo admite texto plano.' });
       return;
     }
 
     setIsTesting(true);
     setTestResult(null);
 
-    const safeMessage = sanitizeToPlainText(testMessage);
+    const safeMessage = val.value;
 
     const res = await sendUltraMsgWhatsApp({
       phone: testPhone,

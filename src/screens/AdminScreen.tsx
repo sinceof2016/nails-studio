@@ -15,7 +15,7 @@ import { QrCodeModal } from '../components/QrCodeModal';
 import { ClientHistoryModal } from '../components/ClientHistoryModal';
 import { UltraMsgConfigModal } from '../components/UltraMsgConfigModal';
 import { formatCOP } from '../utils/format';
-import { validateOnlyPlainText, sanitizeToPlainText, validateColombianPhone, checkRateLimit } from '../utils/security';
+import { validateOnlyPlainText, sanitizeToPlainText, validateColombianPhone, checkRateLimit, validateAndClean } from '../utils/security';
 import { sendUltraMsgWhatsApp, getUltraMsgConfig, renderTemplate } from '../services/whatsappService';
 import { BUSINESS_CONFIG } from '../config/businessConfig';
 import { getColombiaDateISO, getColombiaTimeStr, generateSecureId, generateBookingCode, formatDisplayDate } from '../utils/dateAndId';
@@ -389,18 +389,20 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
     e.preventDefault();
     setExpressValidationError(null);
 
-    const nameVal = validateOnlyPlainText(expressClientName, 'Nombre de la Clienta', 100);
-    if (!nameVal.isValid) {
-      setExpressValidationError(nameVal.reason || 'Nombre no válido.');
+    const nameRes = validateAndClean(expressClientName, 'Nombre de la Clienta', 100);
+    if (!nameRes.ok) {
+      setExpressValidationError(nameRes.error || 'Nombre no válido.');
       return;
     }
 
+    let cleanNotes = '[Turno Express Walk-in en Salón]';
     if (expressNotes && expressNotes.trim()) {
-      const noteVal = validateOnlyPlainText(expressNotes, 'Notas del Turno Express', 500);
-      if (!noteVal.isValid) {
-        setExpressValidationError(noteVal.reason || 'Las notas solo admiten texto plano sin scripts ni código.');
+      const noteRes = validateAndClean(expressNotes, 'Notas del Turno Express', 500);
+      if (!noteRes.ok) {
+        setExpressValidationError(noteRes.error || 'Las notas solo admiten texto plano sin scripts ni código.');
         return;
       }
+      cleanNotes = `[Walk-in] ${noteRes.value}`;
     }
 
     const phoneVal = validateColombianPhone(expressClientPhone);
@@ -409,9 +411,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       return;
     }
 
-    const cleanClientName = sanitizeToPlainText(expressClientName) || 'Clienta Walk-in';
+    const cleanClientName = nameRes.value || 'Clienta Walk-in';
     const cleanClientPhone = sanitizeToPlainText(expressClientPhone);
-    const cleanNotes = expressNotes ? `[Walk-in] ${sanitizeToPlainText(expressNotes)}` : '[Turno Express Walk-in en Salón]';
 
     const selectedServ = services.find((s) => s.id === expressServiceId) || services[0];
     const selectedSpec = specialists.find((s) => s.id === expressSpecialistId) || specialists[0];
@@ -424,11 +425,11 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       serviceName: selectedServ.name,
       servicePrice: selectedServ.price,
       serviceDuration: selectedServ.durationMinutes,
-      serviceImage: selectedServ.image,
+      serviceImage: selectedServ.image || '',
       specialistId: selectedSpec.id,
       specialistName: selectedSpec.name,
       specialistRole: selectedSpec.role,
-      specialistAvatar: selectedSpec.avatar,
+      specialistAvatar: selectedSpec.avatar || '',
       date: currentDateISO,
       time: expressTime,
       clientName: cleanClientName,
@@ -530,24 +531,20 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
     e.preventDefault();
     setCutValidationError(null);
 
-    const rateCheck = checkRateLimit('booking');
-    if (!rateCheck.allowed) {
-      setCutValidationError(`Has superado el límite de operaciones rápidas. Espera ${rateCheck.retryAfterSeconds}s.`);
+    const nameRes = validateAndClean(cutClientName, 'Nombre del Cliente', 100);
+    if (!nameRes.ok) {
+      setCutValidationError(nameRes.error || 'Nombre no válido.');
       return;
     }
 
-    const nameVal = validateOnlyPlainText(cutClientName, 'Nombre del Cliente', 100);
-    if (!nameVal.isValid) {
-      setCutValidationError(nameVal.reason || 'Nombre no válido.');
-      return;
-    }
-
+    let cleanCutNote = '';
     if (cutNote && cutNote.trim()) {
-      const noteVal = validateOnlyPlainText(cutNote, 'Nota del Servicio', 500);
-      if (!noteVal.isValid) {
-        setCutValidationError(noteVal.reason || 'Nota no válida.');
+      const noteRes = validateAndClean(cutNote, 'Nota del Servicio', 500);
+      if (!noteRes.ok) {
+        setCutValidationError(noteRes.error || 'Nota no válida.');
         return;
       }
+      cleanCutNote = noteRes.value;
     }
 
     const phoneVal = validateColombianPhone(cutClientPhone);
@@ -556,9 +553,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       return;
     }
 
-    const cleanCutClientName = sanitizeToPlainText(cutClientName) || 'Cliente en Salón';
+    const cleanCutClientName = nameRes.value || 'Cliente en Salón';
     const cleanCutClientPhone = sanitizeToPlainText(cutClientPhone);
-    const cleanCutNote = sanitizeToPlainText(cutNote);
 
     const spec = specialists.find((s) => s.id === cutSpecialistId) || specialists[0];
     const commissionPercent = spec.commissionRate ?? 50;
@@ -602,6 +598,13 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       sucursalId: activeBranchId,
       ...(cleanCutNote ? { nota: cleanCutNote } : {})
     };
+
+    // Limite solo en el cliente. La proteccion real contra reservas masivas es Firebase App Check (pendiente).
+    const rateCheck = checkRateLimit('corte_rapido');
+    if (!rateCheck.allowed) {
+      setCutValidationError(`Has superado el límite de operaciones rápidas. Espera ${rateCheck.retryAfterSeconds}s.`);
+      return;
+    }
 
     setIsSubmittingCut(true);
     try {
@@ -654,13 +657,13 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
     e.preventDefault();
     setExpenseValidationError(null);
 
-    const val = validateOnlyPlainText(expenseConcept, 'Concepto del Gasto', 200);
-    if (!val.isValid) {
-      setExpenseValidationError(val.reason || 'Concepto no válido.');
+    const val = validateAndClean(expenseConcept, 'Concepto del Gasto', 200);
+    if (!val.ok) {
+      setExpenseValidationError(val.error || 'Concepto no válido.');
       return;
     }
 
-    const cleanConcept = sanitizeToPlainText(expenseConcept);
+    const cleanConcept = val.value;
 
     const amountNum = Math.max(0, Number(expenseAmount) || 0);
     if (amountNum <= 0) {

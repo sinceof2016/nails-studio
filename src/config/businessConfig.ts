@@ -81,21 +81,13 @@ export const BUSINESS_CONFIG: BusinessConfig = {
 };
 
 /**
- * Validador de producción: emite advertencias en consola si hay marcadores pendientes.
+ * Actualiza la configuración en memoria cuando se reciben datos en vivo desde settings/negocio en Firestore.
  */
-export function checkPendingBusinessData(): string[] {
-  const pendingKeys: string[] = [];
-  const entries = Object.entries(BUSINESS_CONFIG);
-  for (const [k, v] of entries) {
-    if (typeof v === 'string' && v.startsWith('PENDIENTE_')) {
-      pendingKeys.push(k);
+export function updateBusinessConfigFromFirestore(liveConfig: Partial<BusinessConfig> | null) {
+  if (!liveConfig) return;
+  for (const [key, value] of Object.entries(liveConfig)) {
+    if (value !== undefined && value !== null && key in BUSINESS_CONFIG) {
+      (BUSINESS_CONFIG as any)[key] = value;
     }
   }
-  if (pendingKeys.length > 0 && typeof console !== 'undefined') {
-    console.warn(
-      `[La Pelu SPA - Cumplimiento Legal] Hay ${pendingKeys.length} datos del negocio pendientes por configurar en variables de entorno:`,
-      pendingKeys.join(', ')
-    );
-  }
-  return pendingKeys;
 }

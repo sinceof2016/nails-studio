@@ -58,7 +58,7 @@ export async function getKmsKeys(): Promise<KmsStatusResponse> {
   return {
     success: true,
     algorithm: 'AES-256-GCM / SHA-256',
-    protocol: 'Dual Key Zero-Downtime Rotation (KMS-AURA-V2)',
+    protocol: 'Dual Key Zero-Downtime Rotation (KMS-V2)',
     primaryKey: {
       id: 'key-aura-prim',
       name: 'Llave Primaria Activa (Producción)',

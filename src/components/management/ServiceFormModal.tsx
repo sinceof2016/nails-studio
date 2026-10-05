@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Service, ServiceCategory } from '../../types';
-import { validateOnlyPlainText, sanitizeToPlainText } from '../../utils/security';
+import { validateAndClean, sanitizeToPlainText } from '../../utils/security';
 import { compressImageFile } from '../../utils/imageCompressor';
 
 interface ServiceFormModalProps {
@@ -64,9 +64,13 @@ export const ServiceFormModal: React.FC<ServiceFormModalProps> = ({
     e.preventDefault();
     setFormError(null);
 
-    const nameVal = validateOnlyPlainText(name, 'Nombre del Servicio', 100);
-    if (!nameVal.isValid) {
-      setFormError(nameVal.reason || 'Nombre de servicio inválido.');
+    const nameRes = validateAndClean(name, 'Nombre del Servicio', 100);
+    if (!nameRes.ok) {
+      setFormError(nameRes.error || 'Nombre de servicio inválido.');
+      return;
+    }
+    if (!nameRes.value.trim()) {
+      setFormError('El nombre del servicio es obligatorio.');
       return;
     }
 
@@ -80,30 +84,61 @@ export const ServiceFormModal: React.FC<ServiceFormModalProps> = ({
       return;
     }
 
-    const cleanName = sanitizeToPlainText(name);
+    const descRes = validateAndClean(description, 'Descripción', 1000);
+    if (!descRes.ok) {
+      setFormError(descRes.error || 'Descripción inválida.');
+      return;
+    }
+
+    const recRes = validateAndClean(recommendedFor, 'Recomendado Para', 500);
+    if (!recRes.ok) {
+      setFormError(recRes.error || 'Campo Recomendado Para inválido.');
+      return;
+    }
+
+    const tagRes = validateAndClean(tag, 'Etiqueta', 50);
+    if (!tagRes.ok) {
+      setFormError(tagRes.error || 'Etiqueta inválida.');
+      return;
+    }
+
+    const imageRes = validateAndClean(image, 'Imagen', 150000);
+    if (!imageRes.ok) {
+      setFormError(imageRes.error || 'URL o imagen inválida.');
+      return;
+    }
+
+    const cleanSteps: string[] = [];
+    const rawLines = stepsText.split('\n');
+    for (let i = 0; i < rawLines.length; i++) {
+      const line = rawLines[i].trim();
+      if (!line) continue;
+      const stepRes = validateAndClean(line, `Paso ${i + 1}`, 200);
+      if (!stepRes.ok) {
+        setFormError(stepRes.error || `Paso ${i + 1} no válido.`);
+        return;
+      }
+      cleanSteps.push(stepRes.value);
+    }
+
     const selectedCategoryObj = categories.find((c) => c.id === category);
     const categoryLabel = selectedCategoryObj ? selectedCategoryObj.label : 'Servicio Especial';
 
-    const steps = stepsText
-      .split('\n')
-      .map((s) => sanitizeToPlainText(s))
-      .filter((s) => s.length > 0);
-
     const service: Service = {
       id: serviceToEdit ? serviceToEdit.id : `srv-${Date.now().toString().slice(-6)}`,
-      name: cleanName,
+      name: nameRes.value,
       category,
       categoryLabel,
       price: Math.max(0, Math.round(Number(price) || 0)),
       durationMinutes: Math.max(15, Math.round(Number(durationMinutes) || 60)),
       rating: serviceToEdit ? serviceToEdit.rating : 5.0,
       reviewsCount: serviceToEdit ? serviceToEdit.reviewsCount : 0,
-      tag: sanitizeToPlainText(tag) || 'Exclusivo',
+      tag: tagRes.value || 'Exclusivo',
       tagType,
-      description: sanitizeToPlainText(description),
-      recommendedFor: sanitizeToPlainText(recommendedFor),
-      image: sanitizeToPlainText(image) || 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&q=80&w=800',
-      steps: steps.length > 0 ? steps : ['Preparación integral', 'Aplicación profesional', 'Acabado y nutrición']
+      description: descRes.value,
+      recommendedFor: recRes.value,
+      image: imageRes.value || 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&q=80&w=800',
+      steps: cleanSteps.length > 0 ? cleanSteps : ['Preparación integral', 'Aplicación profesional', 'Acabado y nutrición']
     };
 
     onSave(service);

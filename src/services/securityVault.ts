@@ -11,22 +11,15 @@ import {
   signOut,
   User as FirebaseUser
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { SystemUser } from '../types';
-import { ADMIN_USER } from '../data/catalogo';
-
-const OWNER_EMAILS = [
-  'orjueladavid32@gmail.com',
-  ADMIN_USER.email.toLowerCase()
-];
 
 /**
- * Resuelve o inicializa el perfil de staff en Firestore / memoria
+ * Resuelve el perfil de staff en Firestore (colección users/{uid})
  */
 async function resolveStaffProfile(firebaseUser: FirebaseUser, fallbackEmail: string): Promise<{ success: boolean; user?: SystemUser; error?: string }> {
   const userEmail = (firebaseUser.email || fallbackEmail).trim().toLowerCase();
-  const isOwnerAdmin = OWNER_EMAILS.includes(userEmail);
 
   try {
     const userDocRef = doc(db, 'users', firebaseUser.uid);
@@ -36,66 +29,30 @@ async function resolveStaffProfile(firebaseUser: FirebaseUser, fallbackEmail: st
       const data = userDocSnap.data();
       const user: SystemUser = {
         id: firebaseUser.uid,
-        nombre: data.nombre || data.name || firebaseUser.displayName || (isOwnerAdmin ? 'Super Administrador' : 'Personal de Salón'),
+        nombre: data.nombre || data.name || firebaseUser.displayName || 'Personal de Salón',
         email: userEmail,
-        rol: (isOwnerAdmin && !data.rol) ? 'SuperAdmin' : (data.rol || data.role || 'Caja'),
+        rol: data.rol || data.role || 'Caja',
         sucursalAsignada: data.sucursalAsignada || data.branchId || 'santuario-patio-bonito',
         avatar: data.avatar || firebaseUser.photoURL || undefined,
         creadoEn: data.creadoEn || data.createdAt || new Date().toISOString(),
-        puedeVerApi: Boolean(data.puedeVerApi || data.rol === 'SuperAdmin' || isOwnerAdmin),
-        puedeVerUsuarios: Boolean(data.puedeVerUsuarios || data.rol === 'SuperAdmin' || isOwnerAdmin)
+        puedeVerApi: Boolean(data.puedeVerApi || data.rol === 'SuperAdmin'),
+        puedeVerUsuarios: Boolean(data.puedeVerUsuarios || data.rol === 'SuperAdmin')
       };
       return { success: true, user };
     }
 
-    // Si es el propietario/admin principal pero no tiene documento aún en Firestore, auto-aprovisionar perfil SuperAdmin
-    if (isOwnerAdmin) {
-      const initialAdmin: SystemUser = {
-        id: firebaseUser.uid,
-        nombre: firebaseUser.displayName || 'Super Administrador',
-        email: userEmail,
-        rol: 'SuperAdmin',
-        sucursalAsignada: 'santuario-patio-bonito',
-        avatar: firebaseUser.photoURL || ADMIN_USER.avatar || undefined,
-        creadoEn: new Date().toISOString(),
-        puedeVerApi: true,
-        puedeVerUsuarios: true
-      };
-
-      try {
-        await setDoc(userDocRef, initialAdmin);
-      } catch (err) {
-        console.warn('Perfil SuperAdmin activo en memoria local:', err);
-      }
-
-      return { success: true, user: initialAdmin };
-    }
-
-    // Si no es admin y no tiene perfil registrado en Firestore
+    // Si no tiene perfil registrado en Firestore users/{uid}
     await signOut(auth);
     return {
       success: false,
-      error: 'Tu cuenta de correo no tiene un rol de personal registrado. Solicita al SuperAdmin que cree tu perfil en el panel.'
+      error: 'Tu cuenta de correo no tiene un rol de personal registrado en users/{uid}. Solicita al SuperAdmin que registre tu UID en el panel de usuarios.'
     };
-  } catch (err) {
-    // Si falla la consulta por permisos pero es el propietario reconocido
-    if (isOwnerAdmin) {
-      const fallbackAdmin: SystemUser = {
-        id: firebaseUser.uid,
-        nombre: firebaseUser.displayName || 'Super Administrador',
-        email: userEmail,
-        rol: 'SuperAdmin',
-        sucursalAsignada: 'santuario-patio-bonito',
-        avatar: firebaseUser.photoURL || ADMIN_USER.avatar || undefined,
-        creadoEn: new Date().toISOString(),
-        puedeVerApi: true,
-        puedeVerUsuarios: true
-      };
-      return { success: true, user: fallbackAdmin };
-    }
+  } catch (err: unknown) {
+    await signOut(auth);
+    const msg = err instanceof Error ? err.message : '';
     return {
       success: false,
-      error: 'Error al verificar permisos en la base de datos de usuarios.'
+      error: msg || 'Error al verificar permisos en la base de datos de usuarios.'
     };
   }
 }
@@ -165,13 +122,13 @@ export async function authenticateWithVault(
     ) {
       return {
         success: false,
-        error: 'Credenciales inválidas. Si tu cuenta usa Google, ingresa con el botón "Continuar con Google".'
+        error: 'Credenciales inválidas. Verifica tu correo y contraseña.'
       };
     }
     if (errorMsg.includes('auth/operation-not-allowed')) {
       return {
         success: false,
-        error: 'El método de contraseña no está activo en Firebase. Por favor usa el botón "Continuar con Google".'
+        error: 'El método de autenticación por correo y contraseña no está activo en Firebase.'
       };
     }
     if (errorMsg.includes('auth/invalid-email')) {
@@ -188,7 +145,7 @@ export async function authenticateWithVault(
     }
     return {
       success: false,
-      error: 'Error al verificar credenciales con el servidor de autenticación. Te sugerimos ingresar con Google.'
+      error: 'Error al verificar credenciales con el servidor de autenticación.'
     };
   }
 }

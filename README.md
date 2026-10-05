@@ -1,6 +1,6 @@
-# 💅 Aura Nails & Spa — Santuario de Belleza & Gestión Integral
+# La Pelu SPA — Gestión Integral & Reservas en Patio Bonito, Bogotá
 
-Aplicación web progresiva (PWA / SPA) de alta fidelidad diseñada para **Aura Nails & Spa**. Integra catálogo de servicios, reserva en intervalos de 1 hora, arqueo de caja y liquidación en pesos colombianos (**COP**), libro de citas, gestión de usuarios autorizados y pasarela de WhatsApp segura.
+Aplicación web progresiva (PWA / SPA) de alta fidelidad diseñada para **La Pelu SPA**. Integra catálogo de servicios, reserva en intervalos de 1 hora, arqueo de caja y liquidación en pesos colombianos (**COP**), libro de citas, gestión de usuarios autorizados y pasarela de WhatsApp segura.
 
 ---
 

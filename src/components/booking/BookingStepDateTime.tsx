@@ -197,6 +197,33 @@ export const BookingStepDateTime: React.FC<BookingStepDateTimeProps> = ({
           </div>
         </div>
 
+        {/* Banner cuando no hay turnos libres en el día seleccionado */}
+        {availableTimeSlots.filter((s) => s.status === 'available').length === 0 && (
+          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-amber-600 text-[20px] shrink-0">event_busy</span>
+              <span>
+                {selectedDateOption.isToday
+                  ? 'Los turnos para hoy han finalizado o están completos. Te invitamos a seleccionar Mañana o los siguientes días para tu cita:'
+                  : 'No hay horarios disponibles para esta fecha. Por favor selecciona otro día en el calendario arriba.'}
+              </span>
+            </div>
+            {calendarDays.length > 1 && selectedDateOption.isToday && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedDateOption(calendarDays[1]);
+                  setSelectedTime('');
+                }}
+                className="px-4 py-2 rounded-xl bg-[#BB9C87] hover:bg-[#AA8A74] text-[#2B2420] font-bold text-xs transition-all cursor-pointer shadow-xs shrink-0 flex items-center gap-1"
+              >
+                <span>Ver horarios de Mañana ({calendarDays[1].full})</span>
+                <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+              </button>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {availableTimeSlots.map((slot) => {
             const isSelected = selectedTime === slot.slot;

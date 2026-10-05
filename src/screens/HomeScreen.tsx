@@ -164,10 +164,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             spa
           </span>
           <p className="text-base font-semibold text-[#2B2420]">
-            No encontramos servicios con ese criterio de búsqueda
+            {services.length === 0
+              ? 'No hay servicios disponibles por ahora'
+              : 'No encontramos servicios con ese criterio de búsqueda'}
           </p>
           <p className="text-xs text-[#5A4A43] mt-1">
-            Prueba con otra palabra o selecciona "Todos los Servicios".
+            {services.length === 0
+              ? 'Estamos actualizando nuestra carta. Por favor vuelve a consultar más tarde.'
+              : 'Prueba con otra palabra o selecciona "Todos los Servicios".'}
           </p>
           <button
             onClick={() => {

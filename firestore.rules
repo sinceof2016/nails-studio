@@ -63,7 +63,7 @@ service cloud.firestore {
       ]) &&
       data.clientName is string && data.clientName.size() > 0 && data.clientName.size() <= 100 &&
       data.clientPhone is string && data.clientPhone.size() >= 7 && data.clientPhone.size() <= 25 &&
-      (esStaff() || ('autorizacionDatos' in data && data.autorizacionDatos == true)) &&
+      (esStaff() || data.get('autorizacionDatos', false) == true) &&
       data.serviceName is string && data.serviceName.size() <= 150 &&
       data.totalPrice is number && data.totalPrice >= 0 &&
       data.bookingCode is string && data.bookingCode.size() <= 30 &&
@@ -171,18 +171,35 @@ service cloud.firestore {
 
     // Colección: slot_locks (Bloqueos de horarios para prevenir doble reserva)
     // Lee: Público (los visitantes consultan horarios ocupados sin acceder a datos personales de clientes).
-    // Crea: Público/Staff en transacción junto con la cita (solo si el slot no está ya ocupado).
+    // Crea: Público/Staff en transacción junto con la cita (solo si no existe).
     // Actualiza: No permitido (inmutables).
     // Borra: Solo personal verificado (esStaff), al cancelar o reprogramar una cita.
     match /slot_locks/{lockId} {
       allow read: if true;
       allow create: if !exists(/databases/$(database)/documents/slot_locks/$(lockId)) &&
                        request.resource.data.keys().hasOnly(['appointmentId', 'slot', 'date', 'specialistId', 'createdAt']) &&
-                       request.resource.data.appointmentId is string && request.resource.data.appointmentId.size() > 0 &&
-                       request.resource.data.slot is string && request.resource.data.slot.size() > 0 &&
-                       request.resource.data.date is string && request.resource.data.date.size() > 0 &&
-                       request.resource.data.specialistId is string && request.resource.data.specialistId.size() > 0 &&
-                       (!('createdAt' in request.resource.data) || request.resource.data.createdAt is string);
+                       request.resource.data.appointmentId is string &&
+                       request.resource.data.slot is string &&
+                       request.resource.data.date is string &&
+                       request.resource.data.specialistId is string &&
+                       (
+                         // (1) Reserva nueva: el bloqueo nace junto con la cita nueva que lo origina (misma transacción)
+                         (
+                           !exists(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)) &&
+                           existsAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)) &&
+                           getAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.date == request.resource.data.date &&
+                           getAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.time == request.resource.data.slot &&
+                           getAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.specialistId == request.resource.data.specialistId
+                         ) ||
+                         // (2) Reactivar una cita cancelada: solo el personal puede recrear el bloqueo de una cita que ya existe y coincide
+                         (
+                           esStaff() &&
+                           exists(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)) &&
+                           get(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.date == request.resource.data.date &&
+                           get(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.time == request.resource.data.slot &&
+                           get(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.specialistId == request.resource.data.specialistId
+                         )
+                       );
       allow update: if false;
       allow delete: if esStaff();
     }
@@ -221,6 +238,130 @@ service cloud.firestore {
       allow create: if isValidCashClose(request.resource.data) && esStaff() && canAccessBranch(request.resource.data.sucursalId);
       allow update: if isValidCashClose(request.resource.data) && esStaff() && canAccessBranch(resource.data.sucursalId) && canAccessBranch(request.resource.data.sucursalId);
       allow delete: if esAdmin();
+    }
+
+    // =========================================================================
+    // CATÁLOGO Y DATOS DEL NEGOCIO (editables solo por el SuperAdmin, visibles para todos)
+    // =========================================================================
+
+    // Tipos de servicio. Lee: público. Escribe: solo SuperAdmin.
+    function isValidCategory(data, id) {
+      return data.keys().hasOnly(['id', 'label', 'icon', 'description']) &&
+        data.id == id &&
+        data.label is string && data.label.size() > 0 && data.label.size() <= 80 &&
+        (!('icon' in data) || (data.icon is string && data.icon.size() <= 40)) &&
+        (!('description' in data) || (data.description is string && data.description.size() <= 200));
+    }
+
+    // Servicios. Lee: público. Escribe: solo SuperAdmin. La imagen puede ser una URL o una imagen comprimida en base64 (máx. 150.000 caracteres, unos 110 KB).
+    function isValidService(data, id) {
+      return data.keys().hasOnly([
+        'id', 'name', 'category', 'categoryLabel', 'price', 'durationMinutes',
+        'rating', 'reviewsCount', 'tag', 'tagType', 'description', 'image',
+        'steps', 'recommendedFor'
+      ]) &&
+        data.id == id &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 120 &&
+        data.category is string && data.category.size() > 0 && data.category.size() <= 60 &&
+        data.categoryLabel is string && data.categoryLabel.size() <= 100 &&
+        data.price is number && data.price >= 0 && data.price <= 10000000 &&
+        data.durationMinutes is number && data.durationMinutes >= 5 && data.durationMinutes <= 600 &&
+        (!('rating' in data) || (data.rating is number && data.rating >= 0 && data.rating <= 5)) &&
+        (!('reviewsCount' in data) || (data.reviewsCount is number && data.reviewsCount >= 0)) &&
+        (!('tag' in data) || (data.tag is string && data.tag.size() <= 40)) &&
+        (!('tagType' in data) || data.tagType in ['top', 'relax', 'trend', 'care']) &&
+        (!('description' in data) || (data.description is string && data.description.size() <= 1000)) &&
+        (!('image' in data) || (data.image is string && data.image.size() <= 150000)) &&
+        (!('steps' in data) || (data.steps is list && data.steps.size() <= 20)) &&
+        (!('recommendedFor' in data) || (data.recommendedFor is string && data.recommendedFor.size() <= 300));
+    }
+
+    // Especialistas (parte PÚBLICA: sin teléfono ni comisión). Lee: público. Escribe: solo SuperAdmin.
+    function isValidSpecialist(data, id) {
+      return data.keys().hasOnly([
+        'id', 'name', 'role', 'rating', 'reviewsCount', 'avatar', 'bio',
+        'certifications', 'availableDays', 'specialties'
+      ]) &&
+        data.id == id &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 80 &&
+        data.role is string && data.role.size() <= 80 &&
+        (!('rating' in data) || (data.rating is number && data.rating >= 0 && data.rating <= 5)) &&
+        (!('reviewsCount' in data) || (data.reviewsCount is number && data.reviewsCount >= 0)) &&
+        (!('avatar' in data) || (data.avatar is string && data.avatar.size() <= 150000)) &&
+        (!('bio' in data) || (data.bio is string && data.bio.size() <= 1500)) &&
+        (!('certifications' in data) || (data.certifications is list && data.certifications.size() <= 20)) &&
+        (!('availableDays' in data) || (data.availableDays is list && data.availableDays.size() <= 7)) &&
+        (!('specialties' in data) || (data.specialties is list && data.specialties.size() <= 20));
+    }
+
+    // Especialistas (parte PRIVADA: teléfono y comisión). Lee: personal. Escribe: solo SuperAdmin.
+    function isValidSpecialistPrivate(data) {
+      return data.keys().hasOnly(['phone', 'commissionRate']) &&
+        data.commissionRate is number && data.commissionRate >= 0 && data.commissionRate <= 100 &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 30));
+    }
+
+    // Datos del negocio (documento settings/negocio). Lee: público. Escribe: solo SuperAdmin.
+    function isValidNegocio(data) {
+      return data.keys().hasOnly([
+        'businessName', 'brandName', 'nit', 'representanteLegal', 'address', 'city', 'country',
+        'phone', 'phoneFormatted', 'whatsapp', 'whatsappFormatted', 'email', 'privacyEmail',
+        'branchName', 'bookingCodePrefix', 'taxNotice', 'cancellationNoticeHours',
+        'advancePaymentRequired', 'dataPolicyVersion', 'privacyNoticeVersion', 'termsVersion',
+        'cancellationPolicyVersion'
+      ]) &&
+        data.businessName is string && data.businessName.size() <= 200 &&
+        data.brandName is string && data.brandName.size() > 0 && data.brandName.size() <= 100 &&
+        (!('nit' in data) || (data.nit is string && data.nit.size() <= 40)) &&
+        (!('representanteLegal' in data) || (data.representanteLegal is string && data.representanteLegal.size() <= 120)) &&
+        (!('address' in data) || (data.address is string && data.address.size() <= 250)) &&
+        (!('city' in data) || (data.city is string && data.city.size() <= 80)) &&
+        (!('country' in data) || (data.country is string && data.country.size() <= 80)) &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 30)) &&
+        (!('phoneFormatted' in data) || (data.phoneFormatted is string && data.phoneFormatted.size() <= 40)) &&
+        (!('whatsapp' in data) || (data.whatsapp is string && data.whatsapp.size() <= 30)) &&
+        (!('whatsappFormatted' in data) || (data.whatsappFormatted is string && data.whatsappFormatted.size() <= 40)) &&
+        (!('email' in data) || (data.email is string && data.email.size() <= 120)) &&
+        (!('privacyEmail' in data) || (data.privacyEmail is string && data.privacyEmail.size() <= 120)) &&
+        (!('branchName' in data) || (data.branchName is string && data.branchName.size() <= 100)) &&
+        (!('bookingCodePrefix' in data) || (data.bookingCodePrefix is string && data.bookingCodePrefix.size() <= 10)) &&
+        (!('taxNotice' in data) || (data.taxNotice is string && data.taxNotice.size() <= 300)) &&
+        (!('cancellationNoticeHours' in data) || (data.cancellationNoticeHours is number && data.cancellationNoticeHours >= 0 && data.cancellationNoticeHours <= 720)) &&
+        (!('advancePaymentRequired' in data) || data.advancePaymentRequired is bool) &&
+        (!('dataPolicyVersion' in data) || (data.dataPolicyVersion is string && data.dataPolicyVersion.size() <= 40)) &&
+        (!('privacyNoticeVersion' in data) || (data.privacyNoticeVersion is string && data.privacyNoticeVersion.size() <= 40)) &&
+        (!('termsVersion' in data) || (data.termsVersion is string && data.termsVersion.size() <= 40)) &&
+        (!('cancellationPolicyVersion' in data) || (data.cancellationPolicyVersion is string && data.cancellationPolicyVersion.size() <= 40));
+    }
+
+    match /service_categories/{categoryId} {
+      allow read: if true;
+      allow create, update: if esSuperAdmin() && isValidCategory(request.resource.data, categoryId);
+      allow delete: if esSuperAdmin();
+    }
+
+    match /services/{serviceId} {
+      allow read: if true;
+      allow create, update: if esSuperAdmin() && isValidService(request.resource.data, serviceId);
+      allow delete: if esSuperAdmin();
+    }
+
+    match /specialists/{specialistId} {
+      allow read: if true;
+      allow create, update: if esSuperAdmin() && isValidSpecialist(request.resource.data, specialistId);
+      allow delete: if esSuperAdmin();
+    }
+
+    match /specialists_private/{specialistId} {
+      allow read: if esStaff();
+      allow create, update: if esSuperAdmin() && isValidSpecialistPrivate(request.resource.data);
+      allow delete: if esSuperAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read: if settingId == 'negocio';
+      allow create, update: if settingId == 'negocio' && esSuperAdmin() && isValidNegocio(request.resource.data);
+      allow delete: if false;
     }
 
     // =========================================================================

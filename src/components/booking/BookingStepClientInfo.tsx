@@ -277,6 +277,29 @@ export const BookingStepClientInfo: React.FC<BookingStepClientInfoProps> = ({
           <span className="material-symbols-outlined text-[18px]">check_circle</span>
         </button>
       </div>
+
+      {/* reCAPTCHA Enterprise / Google Compliance notice */}
+      <p className="text-[10px] text-center text-[#5A4A43]/80 leading-relaxed pt-2">
+        Este sitio usa Google reCAPTCHA (Fraud Defense) para prevenir abuso automatizado; aplican la{' '}
+        <a
+          href="https://policies.google.com/privacy"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-[#2B2420]"
+        >
+          Política de Privacidad
+        </a>{' '}
+        y los{' '}
+        <a
+          href="https://policies.google.com/terms"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-[#2B2420]"
+        >
+          Términos de Servicio
+        </a>{' '}
+        de Google.
+      </p>
     </div>
   );
 };

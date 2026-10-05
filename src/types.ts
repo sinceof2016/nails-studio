@@ -12,17 +12,17 @@ export interface Service {
   categoryLabel: string;
   price: number;
   durationMinutes: number;
-  rating: number;
-  reviewsCount: number;
-  tag: string;
-  tagType: 'top' | 'relax' | 'trend' | 'care';
+  rating?: number;
+  reviewsCount?: number;
+  tag?: string;
+  tagType?: 'top' | 'relax' | 'trend' | 'care';
   description: string;
-  image: string;
-  steps: string[];
-  recommendedFor: string;
+  image?: string;
+  steps?: string[];
+  recommendedFor?: string;
 }
 
-export interface Specialist {
+export interface SpecialistPublic {
   id: string;
   name: string;
   role: string;
@@ -33,7 +33,15 @@ export interface Specialist {
   certifications: string[];
   availableDays: string[];
   specialties: string[];
+}
+
+export interface SpecialistPrivate {
   commissionRate: number; // e.g. 50%
+  phone?: string;
+}
+
+export interface Specialist extends SpecialistPublic {
+  commissionRate?: number; // e.g. 50% (exclusivo para personal staff)
   phone?: string;
   telefono?: string;
 }
@@ -77,11 +85,11 @@ export interface Appointment {
   serviceName: string;
   servicePrice: number;
   serviceDuration: number;
-  serviceImage: string;
+  serviceImage?: string;
   specialistId: string;
   specialistName: string;
   specialistRole: string;
-  specialistAvatar: string;
+  specialistAvatar?: string;
   date: string;
   time: string;
   clientName: string;

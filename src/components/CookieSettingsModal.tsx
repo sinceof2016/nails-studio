@@ -140,10 +140,10 @@ export const CookieSettingsModal: React.FC<CookieSettingsModalProps> = ({
                   </span>
                 </div>
                 <p className="text-xs text-[#5A4A43] leading-relaxed">
-                  Indispensables para navegar, autenticar tu sesión, sincronizar citas con Firestore en tiempo real y proteger contra ataques CSRF. No pueden desactivarse.
+                  Indispensables para navegar, autenticar tu sesión, sincronizar citas con Firestore en tiempo real y proteger contra ataques automatizados. Este sitio usa Google reCAPTCHA (Fraud Defense) para prevenir abuso automatizado; aplican la Política de Privacidad y los Términos de Google. No pueden desactivarse.
                 </p>
                 <div className="pt-1 text-[11px] text-[#5A4A43] font-mono">
-                  Cookies: aura_cookie_consent, aura_session_token, aura_csrf_protect
+                  Cookies: pelu_cookie_consent, pelu_auth_session, _GRECAPTCHA, rc::*
                 </div>
               </div>
 

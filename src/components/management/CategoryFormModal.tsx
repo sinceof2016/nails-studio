@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ServiceCategory } from '../../types';
-import { validateOnlyPlainText, sanitizeToPlainText } from '../../utils/security';
+import { validateAndClean, sanitizeToPlainText } from '../../utils/security';
 
 interface CategoryFormModalProps {
   isOpen: boolean;
@@ -43,13 +43,23 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
     e.preventDefault();
     setFormError(null);
 
-    const labelVal = validateOnlyPlainText(label, 'Nombre de la Categoría', 60);
-    if (!labelVal.isValid) {
-      setFormError(labelVal.reason || 'Nombre de categoría inválido.');
+    const labelRes = validateAndClean(label, 'Nombre de la Categoría', 60);
+    if (!labelRes.ok) {
+      setFormError(labelRes.error || 'Nombre de categoría inválido.');
+      return;
+    }
+    if (!labelRes.value.trim()) {
+      setFormError('El nombre de la categoría es obligatorio.');
       return;
     }
 
-    const cleanLabel = sanitizeToPlainText(label);
+    const descRes = validateAndClean(description, 'Descripción de la Categoría', 300);
+    if (!descRes.ok) {
+      setFormError(descRes.error || 'Descripción inválida.');
+      return;
+    }
+
+    const cleanLabel = labelRes.value;
     const cleanId = categoryToEdit
       ? categoryToEdit.id
       : (id.trim() || cleanLabel.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-'));
@@ -58,7 +68,7 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
       id: cleanId,
       label: cleanLabel,
       icon: sanitizeToPlainText(icon) || 'spa',
-      description: sanitizeToPlainText(description)
+      description: descRes.value
     };
 
     onSave(category);

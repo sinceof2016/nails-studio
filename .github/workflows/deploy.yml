@@ -39,6 +39,8 @@ jobs:
         run: npm run test
 
       - name: Build project
+        env:
+          VITE_RECAPTCHA_SITE_KEY: ${{ vars.VITE_RECAPTCHA_SITE_KEY }}
         run: npm run build
 
       - name: Upload Pages artifact

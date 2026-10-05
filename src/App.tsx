@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Header } from './components/Header';
 import { Toast } from './components/Toast';
 import { LoginModal } from './components/LoginModal';
@@ -81,8 +81,25 @@ import {
   subscribeToExpenses,
   addExpenseToFirestore,
   subscribeToCashCloses,
-  addCashCloseToFirestore
+  addCashCloseToFirestore,
+  subscribeToServices,
+  saveServiceInFirestore,
+  deleteServiceInFirestore,
+  subscribeToSpecialists,
+  subscribeToSpecialistsPrivate,
+  saveSpecialistInFirestore,
+  deleteSpecialistInFirestore,
+  subscribeToCategories,
+  saveCategoryInFirestore,
+  deleteCategoryInFirestore,
+  subscribeToBusinessConfig,
+  saveBusinessConfigInFirestore,
+  subscribeToUsers,
+  saveUserInFirestore,
+  deleteUserInFirestore
 } from './services/firestoreService';
+import { updateBusinessConfigFromFirestore, BusinessConfig } from './config/businessConfig';
+import { SpecialistPublic, SpecialistPrivate } from './types';
 
 export default function App() {
   // Current active tab: Defaults to 'reservar' as the primary home screen
@@ -210,38 +227,57 @@ export default function App() {
     }
   }, [currentTab, cookieConsent]);
 
-  // System users list (vacío en producción inicial)
+  // System users list (vacío en producción inicial, sincronizado desde users/{uid} en Firestore)
   const [systemUsers, setSystemUsers] = useState<SystemUser[]>([]);
 
-  // Services catalog list (SuperAdmin editable)
+  // Services catalog list (SuperAdmin editable, syncs with Firestore)
   const [services, setServices] = useState<Service[]>(() => {
     try {
-      const saved = localStorage.getItem('pelu_v2_services');
+      const saved = localStorage.getItem('aura_tarifas_2026_services');
       return saved ? JSON.parse(saved) : SERVICES;
     } catch {
       return SERVICES;
     }
   });
 
-  // Service categories list (SuperAdmin editable)
+  // Service categories list (SuperAdmin editable, syncs with Firestore)
   const [serviceCategories, setServiceCategories] = useState<ServiceCategory[]>(() => {
     try {
-      const saved = localStorage.getItem('pelu_v2_service_categories');
+      const saved = localStorage.getItem('aura_tarifas_2026_categories');
       return saved ? JSON.parse(saved) : INITIAL_SERVICE_CATEGORIES;
     } catch {
       return INITIAL_SERVICE_CATEGORIES;
     }
   });
 
-  // Specialists / Manicuristas list (SuperAdmin editable)
-  const [specialists, setSpecialists] = useState<Specialist[]>(() => {
+  // Public specialists list (from Firestore specialists collection)
+  const [publicSpecialists, setPublicSpecialists] = useState<SpecialistPublic[]>(() => {
     try {
-      const saved = localStorage.getItem('pelu_v2_specialists');
+      const saved = localStorage.getItem('aura_tarifas_2026_specialists');
       return saved ? JSON.parse(saved) : SPECIALISTS;
     } catch {
       return SPECIALISTS;
     }
   });
+
+  // Private specialists map (commissionRate & phone - ONLY fetched for authenticated staff)
+  const [privateSpecialistsMap, setPrivateSpecialistsMap] = useState<Record<string, SpecialistPrivate>>({});
+
+  // Combined specialists list for the application (merges public profile + private commission/phone when staff)
+  const specialists: Specialist[] = useMemo(() => {
+    return publicSpecialists.map((pub) => {
+      const priv = privateSpecialistsMap[pub.id];
+      return {
+        ...pub,
+        commissionRate: typeof priv?.commissionRate === 'number' ? priv.commissionRate : (pub as Specialist).commissionRate ?? 50,
+        phone: priv?.phone || (pub as Specialist).phone || '',
+        telefono: priv?.phone || (pub as Specialist).telefono || ''
+      };
+    });
+  }, [publicSpecialists, privateSpecialistsMap]);
+
+  // Business Config state (settings/negocio)
+  const [businessConfig, setBusinessConfig] = useState<BusinessConfig>(() => ({ ...BUSINESS_CONFIG }));
 
   // Login Modal state
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -323,12 +359,104 @@ export default function App() {
   const isCaja = currentUser?.rol === 'Caja';
   const branchFilter = isCaja ? currentUser.sucursalAsignada : undefined;
 
-  // 1. Subscribe to public slot locks (siempre activo para prevenir doble reserva)
+  // Limpiar mapa privado de especialistas y usuarios si no hay sesión de personal
+  useEffect(() => {
+    if (!isStaff) {
+      setPrivateSpecialistsMap({});
+      setSystemUsers([]);
+    }
+  }, [isStaff]);
+
+  // 1. Subscribe to public Firestore collections in real-time (servicios, manicuristas, categorías, datos negocio y bloqueos)
   useEffect(() => {
     const unsubLocks = subscribeToSlotLocks((data) => {
       setSlotLocks(data || []);
     });
-    return () => unsubLocks();
+
+    const unsubServices = subscribeToServices((liveServices) => {
+      if (Array.isArray(liveServices)) {
+        if (liveServices.length > 0) {
+          setServices(liveServices);
+          try {
+            localStorage.setItem('aura_tarifas_2026_services', JSON.stringify(liveServices));
+          } catch {}
+        } else {
+          // Si Firestore está vacío (catálogo inicial aún no cargado), el visitante mantiene el catálogo local
+          const saved = localStorage.getItem('aura_tarifas_2026_services');
+          if (saved) {
+            try {
+              const parsed = JSON.parse(saved);
+              setServices(Array.isArray(parsed) && parsed.length > 0 ? parsed : SERVICES);
+            } catch {
+              setServices(SERVICES);
+            }
+          } else {
+            setServices(SERVICES);
+          }
+        }
+      }
+    });
+
+    const unsubSpecialists = subscribeToSpecialists((liveSpecialists) => {
+      if (Array.isArray(liveSpecialists)) {
+        if (liveSpecialists.length > 0) {
+          setPublicSpecialists(liveSpecialists);
+          try {
+            localStorage.setItem('aura_tarifas_2026_specialists', JSON.stringify(liveSpecialists));
+          } catch {}
+        } else {
+          const saved = localStorage.getItem('aura_tarifas_2026_specialists');
+          if (saved) {
+            try {
+              const parsed = JSON.parse(saved);
+              setPublicSpecialists(Array.isArray(parsed) && parsed.length > 0 ? parsed : SPECIALISTS);
+            } catch {
+              setPublicSpecialists(SPECIALISTS);
+            }
+          } else {
+            setPublicSpecialists(SPECIALISTS);
+          }
+        }
+      }
+    });
+
+    const unsubCategories = subscribeToCategories((liveCats) => {
+      if (Array.isArray(liveCats)) {
+        if (liveCats.length > 0) {
+          setServiceCategories(liveCats);
+          try {
+            localStorage.setItem('aura_tarifas_2026_categories', JSON.stringify(liveCats));
+          } catch {}
+        } else {
+          const saved = localStorage.getItem('aura_tarifas_2026_categories');
+          if (saved) {
+            try {
+              const parsed = JSON.parse(saved);
+              setServiceCategories(Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_SERVICE_CATEGORIES);
+            } catch {
+              setServiceCategories(INITIAL_SERVICE_CATEGORIES);
+            }
+          } else {
+            setServiceCategories(INITIAL_SERVICE_CATEGORIES);
+          }
+        }
+      }
+    });
+
+    const unsubBusiness = subscribeToBusinessConfig((liveConfig) => {
+      if (liveConfig) {
+        updateBusinessConfigFromFirestore(liveConfig);
+        setBusinessConfig((prev) => ({ ...prev, ...liveConfig }));
+      }
+    });
+
+    return () => {
+      unsubLocks();
+      unsubServices();
+      unsubSpecialists();
+      unsubCategories();
+      unsubBusiness();
+    };
   }, []);
 
   // 2. Subscribe to private Firestore collections in real-time (SOLO si hay usuario staff)
@@ -369,11 +497,27 @@ export default function App() {
       (err) => console.warn('Error en suscripción de cierres:', err)
     );
 
+    const unsubSpecialistsPriv = subscribeToSpecialistsPrivate(
+      (privMap) => {
+        setPrivateSpecialistsMap(privMap || {});
+      },
+      (err) => console.warn('Error en suscripción de datos privados de especialistas:', err)
+    );
+
+    const unsubUsers = subscribeToUsers(
+      (liveUsers) => {
+        setSystemUsers(liveUsers || []);
+      },
+      (err) => console.warn('Error en suscripción de usuarios:', err)
+    );
+
     return () => {
       unsubApts();
       unsubCuts();
       unsubExpenses();
       unsubCloses();
+      unsubSpecialistsPriv();
+      unsubUsers();
     };
   }, [isStaff, branchFilter]);
 
@@ -577,160 +721,236 @@ export default function App() {
     showToast('Sesión cerrada. Ahora estás en Modo Público.');
   };
 
-  const handleAddUser = (newUser: SystemUser, password?: string) => {
-    setSystemUsers((prev) => {
-      const updated = [newUser, ...prev];
-      try {
-        localStorage.setItem('pelu_system_users', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-    showToast('Esta lista es solo local. Para dar acceso, crea la cuenta en la consola de Firebase y el perfil con el UID.');
+  const handleAddUser = async (newUser: SystemUser) => {
+    try {
+      await saveUserInFirestore(newUser);
+      showToast(`Usuario "${newUser.nombre}" guardado en Firestore.`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
+      throw err;
+    }
   };
 
-  const handleUpdateUser = (updatedUser: SystemUser, password?: string) => {
-    setSystemUsers((prev) => {
-      const updated = prev.map((u) => (u.id === updatedUser.id ? updatedUser : u));
-      try {
-        localStorage.setItem('pelu_system_users', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-    showToast(`Usuario ${updatedUser.nombre} actualizado.`);
+  const handleUpdateUser = async (updatedUser: SystemUser) => {
+    try {
+      await saveUserInFirestore(updatedUser);
+      showToast(`Usuario "${updatedUser.nombre}" actualizado en Firestore.`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
+      throw err;
+    }
   };
 
-  const handleDeleteUser = (userId: string) => {
-    setSystemUsers((prev) => {
-      const updated = prev.filter((u) => u.id !== userId);
-      try {
-        localStorage.setItem('pelu_system_users', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-    showToast('Usuario eliminado del sistema.');
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      await deleteUserInFirestore(userId);
+      showToast('Usuario eliminado de Firestore.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`No se pudo eliminar en el servidor: ${msg}. El cambio NO se publicó.`);
+      throw err;
+    }
   };
 
-  const handleAddService = (newService: Service) => {
-    setServices((prev) => {
-      const updated = [newService, ...prev];
-      try {
-        localStorage.setItem('pelu_services', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-    showToast(`Servicio "${newService.name}" agregado a la carta.`);
+  const handleSaveBusinessConfig = async (newConfig: BusinessConfig) => {
+    try {
+      await saveBusinessConfigInFirestore(newConfig);
+      setBusinessConfig(newConfig);
+      updateBusinessConfigFromFirestore(newConfig);
+      showToast('Datos del negocio guardados y sincronizados en Firestore.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
+      throw err;
+    }
   };
 
-  const handleUpdateService = (updatedService: Service) => {
-    setServices((prev) => {
-      const updated = prev.map((s) => (s.id === updatedService.id ? updatedService : s));
-      try {
-        localStorage.setItem('pelu_services', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-    showToast(`Servicio "${updatedService.name}" actualizado.`);
+  const handleAddService = async (newService: Service) => {
+    try {
+      await saveServiceInFirestore(newService);
+      setServices((prev) => {
+        const updated = [newService, ...prev.filter((s) => s.id !== newService.id)];
+        try {
+          localStorage.setItem('aura_tarifas_2026_services', JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+      showToast(`Servicio "${newService.name}" guardado y sincronizado.`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
+      throw err;
+    }
   };
 
-  const handleUpdateServiceImage = (serviceId: string, newImage: string) => {
-    setServices((prev) => {
-      const updated = prev.map((s) => (s.id === serviceId ? { ...s, image: newImage } : s));
-      try {
-        localStorage.setItem('pelu_services', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-    setSelectedServiceDetail((prev) => (prev && prev.id === serviceId ? { ...prev, image: newImage } : prev));
-    showToast('Foto del servicio actualizada.');
+  const handleUpdateService = async (updatedService: Service) => {
+    try {
+      await saveServiceInFirestore(updatedService);
+      setServices((prev) => {
+        const updated = prev.map((s) => (s.id === updatedService.id ? updatedService : s));
+        try {
+          localStorage.setItem('aura_tarifas_2026_services', JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+      showToast(`Servicio "${updatedService.name}" actualizado y sincronizado.`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
+      throw err;
+    }
   };
 
-  const handleDeleteService = (serviceId: string) => {
-    setServices((prev) => {
-      const updated = prev.filter((s) => s.id !== serviceId);
-      try {
-        localStorage.setItem('pelu_services', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-    showToast('Servicio eliminado de la carta.');
+  const handleUpdateServiceImage = async (serviceId: string, newImage: string) => {
+    const target = services.find((s) => s.id === serviceId);
+    if (!target) return;
+    const updatedService: Service = { ...target, image: newImage };
+    try {
+      await saveServiceInFirestore(updatedService);
+      setServices((prev) => {
+        const updated = prev.map((s) => (s.id === serviceId ? updatedService : s));
+        try {
+          localStorage.setItem('aura_tarifas_2026_services', JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+      setSelectedServiceDetail((prev) => (prev && prev.id === serviceId ? { ...prev, image: newImage } : prev));
+      showToast('Foto del servicio guardada y sincronizada en todos los servidores.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
+      throw err;
+    }
   };
 
-  const handleAddCategory = (newCategory: ServiceCategory) => {
-    setServiceCategories((prev) => {
-      const updated = [...prev, newCategory];
-      try {
-        localStorage.setItem('pelu_service_categories', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-    showToast(`Tipo de servicio "${newCategory.label}" creado.`);
+  const handleDeleteService = async (serviceId: string) => {
+    try {
+      await deleteServiceInFirestore(serviceId);
+      setServices((prev) => {
+        const updated = prev.filter((s) => s.id !== serviceId);
+        try {
+          if (updated.length > 0) {
+            localStorage.setItem('aura_tarifas_2026_services', JSON.stringify(updated));
+          } else {
+            localStorage.removeItem('aura_tarifas_2026_services');
+          }
+        } catch {}
+        return updated;
+      });
+      showToast('Servicio eliminado y sincronizado.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`No se pudo eliminar en el servidor: ${msg}. El cambio NO se publicó.`);
+      throw err;
+    }
   };
 
-  const handleUpdateCategory = (updatedCategory: ServiceCategory) => {
-    setServiceCategories((prev) => {
-      const updated = prev.map((c) => (c.id === updatedCategory.id ? updatedCategory : c));
-      try {
-        localStorage.setItem('pelu_service_categories', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-    showToast(`Tipo de servicio "${updatedCategory.label}" actualizado.`);
+  const handleAddCategory = async (newCategory: ServiceCategory) => {
+    try {
+      await saveCategoryInFirestore(newCategory);
+      setServiceCategories((prev) => {
+        const updated = [...prev.filter((c) => c.id !== newCategory.id), newCategory];
+        try {
+          localStorage.setItem('aura_tarifas_2026_categories', JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+      showToast(`Tipo de servicio "${newCategory.label}" creado y sincronizado.`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
+      throw err;
+    }
   };
 
-  const handleDeleteCategory = (categoryId: string) => {
-    setServiceCategories((prev) => {
-      const updated = prev.filter((c) => c.id !== categoryId);
-      try {
-        localStorage.setItem('pelu_service_categories', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-    showToast('Tipo de servicio eliminado.');
+  const handleUpdateCategory = async (updatedCategory: ServiceCategory) => {
+    try {
+      await saveCategoryInFirestore(updatedCategory);
+      setServiceCategories((prev) => {
+        const updated = prev.map((c) => (c.id === updatedCategory.id ? updatedCategory : c));
+        try {
+          localStorage.setItem('aura_tarifas_2026_categories', JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+      showToast(`Tipo de servicio "${updatedCategory.label}" actualizado y sincronizado.`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
+      throw err;
+    }
   };
 
-  const handleAddSpecialist = (newSpecialist: Specialist) => {
-    setSpecialists((prev) => {
-      const updated = [newSpecialist, ...prev];
-      try {
-        localStorage.setItem('pelu_specialists', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-    showToast(`Manicurista "${newSpecialist.name}" registrada en el equipo.`);
+  const handleDeleteCategory = async (categoryId: string) => {
+    try {
+      await deleteCategoryInFirestore(categoryId);
+      setServiceCategories((prev) => {
+        const updated = prev.filter((c) => c.id !== categoryId);
+        try {
+          if (updated.length > 0) {
+            localStorage.setItem('aura_tarifas_2026_categories', JSON.stringify(updated));
+          } else {
+            localStorage.removeItem('aura_tarifas_2026_categories');
+          }
+        } catch {}
+        return updated;
+      });
+      showToast('Tipo de servicio eliminado y sincronizado.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`No se pudo eliminar en el servidor: ${msg}. El cambio NO se publicó.`);
+      throw err;
+    }
   };
 
-  const handleUpdateSpecialist = (updatedSpecialist: Specialist) => {
-    setSpecialists((prev) => {
-      const updated = prev.map((s) => (s.id === updatedSpecialist.id ? updatedSpecialist : s));
-      try {
-        localStorage.setItem('pelu_specialists', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-    showToast(`Manicurista "${updatedSpecialist.name}" actualizada.`);
+  const handleAddSpecialist = async (newSpecialist: Specialist) => {
+    try {
+      await saveSpecialistInFirestore(newSpecialist);
+      showToast(`Manicurista "${newSpecialist.name}" registrada y sincronizada en Firestore.`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
+      throw err;
+    }
   };
 
-  const handleUpdateSpecialistAvatar = (specialistId: string, newAvatar: string) => {
-    setSpecialists((prev) => {
-      const updated = prev.map((s) => (s.id === specialistId ? { ...s, avatar: newAvatar } : s));
-      try {
-        localStorage.setItem('pelu_specialists', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-    setSelectedSpecialist((prev) => (prev && prev.id === specialistId ? { ...prev, avatar: newAvatar } : prev));
-    showToast('Foto de la especialista actualizada.');
+  const handleUpdateSpecialist = async (updatedSpecialist: Specialist) => {
+    try {
+      await saveSpecialistInFirestore(updatedSpecialist);
+      showToast(`Manicurista "${updatedSpecialist.name}" actualizada y sincronizada en Firestore.`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
+      throw err;
+    }
   };
 
-  const handleDeleteSpecialist = (specialistId: string) => {
-    setSpecialists((prev) => {
-      const updated = prev.filter((s) => s.id !== specialistId);
-      try {
-        localStorage.setItem('pelu_specialists', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-    showToast('Manicurista eliminada del equipo.');
+  const handleUpdateSpecialistAvatar = async (specialistId: string, newAvatar: string) => {
+    const target = specialists.find((s) => s.id === specialistId);
+    if (!target) return;
+    const updated = { ...target, avatar: newAvatar };
+    try {
+      await saveSpecialistInFirestore(updated);
+      setSelectedSpecialist((prev) => (prev && prev.id === specialistId ? { ...prev, avatar: newAvatar } : prev));
+      showToast('Foto de la especialista guardada y sincronizada en Firestore.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
+      throw err;
+    }
+  };
+
+  const handleDeleteSpecialist = async (specialistId: string) => {
+    try {
+      await deleteSpecialistInFirestore(specialistId);
+      showToast('Manicurista eliminada de Firestore.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`No se pudo eliminar en el servidor: ${msg}. El cambio NO se publicó.`);
+      throw err;
+    }
   };
 
   const activeAppointmentsCount = appointments.filter(
@@ -884,6 +1104,8 @@ export default function App() {
             onAddSpecialist={handleAddSpecialist}
             onUpdateSpecialist={handleUpdateSpecialist}
             onDeleteSpecialist={handleDeleteSpecialist}
+            businessConfig={businessConfig}
+            onSaveBusinessConfig={handleSaveBusinessConfig}
             onToast={showToast}
           />
         )}
@@ -899,6 +1121,7 @@ export default function App() {
         {/* PANTALLA 404 PERSONALIZADA */}
         {currentTab === '404' && (
           <NotFoundScreen
+            services={services}
             onNavigateHome={() => setCurrentTab('servicios')}
             onNavigateToBooking={() => setCurrentTab('reservar')}
             onNavigateToSpecialists={() => setCurrentTab('especialistas')}
@@ -957,7 +1180,7 @@ export default function App() {
           </button>
         </div>
         <p className="text-[11px] text-[#5A4A43]">
-          © {new Date().getFullYear()} {BUSINESS_CONFIG.brandName} · {BUSINESS_CONFIG.businessName} (NIT: {BUSINESS_CONFIG.nit}) · {BUSINESS_CONFIG.branchName} · {BUSINESS_CONFIG.address}, {BUSINESS_CONFIG.city}
+          © {new Date().getFullYear()} {businessConfig.brandName} · {businessConfig.businessName} (NIT: {businessConfig.nit}) · {businessConfig.branchName} · {businessConfig.address}, {businessConfig.city}
         </p>
       </footer>
 
@@ -997,6 +1220,7 @@ export default function App() {
         onBookWithSpecialist={handleBookWithSpecialist}
         currentUser={currentUser}
         onUpdateSpecialistAvatar={handleUpdateSpecialistAvatar}
+        onOpenLogin={() => setIsLoginModalOpen(true)}
       />
 
       {/* Service Detail Modal */}
@@ -1006,6 +1230,7 @@ export default function App() {
         onBookService={handleQuickBook}
         currentUser={currentUser}
         onUpdateServiceImage={handleUpdateServiceImage}
+        onOpenLogin={() => setIsLoginModalOpen(true)}
       />
 
       {/* Experience & Ritual Modal */}

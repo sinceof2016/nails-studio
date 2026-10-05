@@ -81,7 +81,7 @@ export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({
             </h3>
             <ul className="space-y-2.5 list-disc pl-5">
               <li>
-                <strong>Cookies Técnicas y Estrictamente Necesarias:</strong> Imprescindibles para la navegación, autenticación en el panel administrativo y registro de tu consentimiento de privacidad. No se pueden desactivar.
+                <strong>Cookies Técnicas y Estrictamente Necesarias:</strong> Imprescindibles para la navegación, autenticación en el panel administrativo, prevención de fraudes y registro de tu consentimiento de privacidad. Este sitio usa Google reCAPTCHA (Fraud Defense) para prevenir abuso automatizado; aplican la Política de Privacidad y los Términos de Google. No se pueden desactivar.
               </li>
               <li>
                 <strong>Cookies y Almacenamiento de Preferencias:</strong> Permiten guardar parámetros locales como tus preferencias de visualización y plantillas de notificación.

@@ -94,6 +94,57 @@
         "sucursalId": { "type": "string" }
       },
       "required": ["fecha", "baseInicial", "entradasEfectivo", "efectivoEsperado", "efectivoContado", "estado"]
+    },
+    "Service": {
+      "title": "Service",
+      "description": "Servicio de la carta del salón sincronizado en la nube.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "categoryLabel": { "type": "string" },
+        "price": { "type": "number" },
+        "durationMinutes": { "type": "number" },
+        "rating": { "type": "number" },
+        "reviewsCount": { "type": "number" },
+        "tag": { "type": "string" },
+        "tagType": { "type": "string" },
+        "description": { "type": "string" },
+        "image": { "type": "string" },
+        "steps": { "type": "array" }
+      },
+      "required": ["id", "name", "category", "price", "durationMinutes"]
+    },
+    "Specialist": {
+      "title": "Specialist",
+      "description": "Perfil de manicurista / especialista del santuario.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "rating": { "type": "number" },
+        "reviewsCount": { "type": "number" },
+        "avatar": { "type": "string" },
+        "bio": { "type": "string" },
+        "availableDays": { "type": "array" },
+        "specialties": { "type": "array" },
+        "commissionRate": { "type": "number" }
+      },
+      "required": ["id", "name", "role", "avatar", "availableDays"]
+    },
+    "ServiceCategory": {
+      "title": "ServiceCategory",
+      "description": "Categoría o tipo de servicio en la carta.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "icon": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "required": ["id", "label"]
     }
   },
   "firestore": {
@@ -112,6 +163,18 @@
     "/cash_closes/{closeId}": {
       "schema": "CashRegisterClose",
       "description": "Historial de arqueos y cierres de caja por fecha."
+    },
+    "/services/{serviceId}": {
+      "schema": "Service",
+      "description": "Carta de servicios sincronizada en vivo."
+    },
+    "/specialists/{specialistId}": {
+      "schema": "Specialist",
+      "description": "Equipo de manicuristas sincronizado en vivo."
+    },
+    "/service_categories/{categoryId}": {
+      "schema": "ServiceCategory",
+      "description": "Categorías de la carta sincronizadas en vivo."
     }
   }
 }

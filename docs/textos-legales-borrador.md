@@ -105,3 +105,14 @@ Si se presenta levantamiento o anomalía técnica en el esmalte semipermanente o
 
 ### 4.4. Reembolsos
 El pago se realiza presencialmente al verificar el servicio a entera satisfacción, por lo que rige la garantía técnica de ajuste y no devoluciones en dinero salvo mandato legal expreso.
+
+---
+
+## 5. POLÍTICA DE COOKIES Y PROTECCIÓN ANTIFRAUDE (reCAPTCHA ENTERPRISE)
+**Versión:** `v1.0-2026-BORRADOR`  
+**Estado:** `PENDIENTE REVISIÓN LEGAL`
+
+Este sitio utiliza cookies técnicas necesarias y Google reCAPTCHA (Fraud Defense / App Check) para prevenir abuso automatizado y garantizar la seguridad de las transacciones y citas agendadas; aplican la [Política de Privacidad](https://policies.google.com/privacy) y los [Términos de Servicio](https://policies.google.com/terms) de Google.
+- Las cookies de seguridad y análisis técnico se consideran estrictamente necesarias para el funcionamiento íntegro de la agenda digital y la prevención de reservas fraudulentas.
+- El usuario puede consultar la configuración de almacenamiento y cookies en cualquier momento desde el Centro de Preferencias de Cookies del sitio web.
+

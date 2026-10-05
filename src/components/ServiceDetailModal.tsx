@@ -9,6 +9,7 @@ interface ServiceDetailModalProps {
   onBookService: (service: Service) => void;
   currentUser?: SystemUser | null;
   onUpdateServiceImage?: (serviceId: string, newImage: string) => void;
+  onOpenLogin?: () => void;
 }
 
 export const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
@@ -16,7 +17,8 @@ export const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
   onClose,
   onBookService,
   currentUser,
-  onUpdateServiceImage
+  onUpdateServiceImage,
+  onOpenLogin
 }) => {
   const [uploading, setUploading] = useState(false);
 
@@ -69,11 +71,11 @@ export const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
 
           {/* SuperAdmin: Subir foto de servicio desde equipo local */}
           {isSuperAdmin && onUpdateServiceImage && (
-            <label className="absolute bottom-3 right-3 cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/80 hover:bg-black text-white text-xs font-bold backdrop-blur-md shadow-lg border border-white/40 transition-all select-none">
+            <label className="absolute bottom-3 right-3 cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/85 hover:bg-black text-white text-xs font-bold backdrop-blur-md shadow-lg border border-white/40 transition-all select-none">
               <span className="material-symbols-outlined text-[16px]">
                 {uploading ? 'sync' : 'upload_file'}
               </span>
-              <span>{uploading ? 'Cargando...' : 'Cambiar foto local (SuperAdmin)'}</span>
+              <span>{uploading ? 'Cargando foto...' : '📷 Subir foto local'}</span>
               <input
                 type="file"
                 accept="image/*"
@@ -82,6 +84,21 @@ export const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
                 onChange={handleImageUpload}
               />
             </label>
+          )}
+
+          {/* Si no ha iniciado sesión como SuperAdmin, mostrar acceso directo */}
+          {!isSuperAdmin && onOpenLogin && (
+            <button
+              onClick={() => {
+                onClose();
+                onOpenLogin();
+              }}
+              className="absolute bottom-3 right-3 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-black/75 hover:bg-black text-white text-[11px] font-medium backdrop-blur-md shadow-md border border-white/30 transition-all cursor-pointer select-none"
+              title="Inicia sesión con tu rol de SuperAdmin para cambiar esta foto desde tu equipo"
+            >
+              <span className="material-symbols-outlined text-[13px]">photo_camera</span>
+              <span>Cambiar foto (SuperAdmin)</span>
+            </button>
           )}
         </div>
 

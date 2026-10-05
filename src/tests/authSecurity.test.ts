@@ -179,7 +179,47 @@ async function runTestSuite() {
   assert.strictEqual(resOverflow.code, 'OVERFLOW');
   console.log('   ✅ Resultado: Bloqueado sin saturar la CPU con hash gigante.');
 
-  console.log('\n✨ TODAS LAS PRUEBAS DE SEGURIDAD PASARON SATISFACTORIAMENTE (6/6).\n');
+  // PRUEBA 7: Rate limiting real en cliente - 'booking' y separación de 'corte_rapido'
+  console.log('7. [Rate Limiting Cliente] 5 reservas por minuto y aislamiento de corte_rapido');
+  const { checkRateLimit, recordLoginFailure, resetLoginAttempts } = await import('../utils/security');
+  // 5 bookings permitidos
+  for (let i = 1; i <= 5; i++) {
+    const bCheck = checkRateLimit('booking');
+    assert.strictEqual(bCheck.allowed, true, `Reserva ${i} debió ser permitida`);
+  }
+  // 6ta reserva bloqueada
+  const bCheckBlocked = checkRateLimit('booking');
+  assert.strictEqual(bCheckBlocked.allowed, false, 'La 6ta reserva consecutiva debe ser bloqueada');
+  assert.ok((bCheckBlocked.retryAfterSeconds || 0) > 0, 'Debe devolver retryAfterSeconds');
+
+  // Comprobar que corte_rapido no se ve afectado por las 5 reservas previas
+  const cutCheck = checkRateLimit('corte_rapido');
+  assert.strictEqual(cutCheck.allowed, true, 'corte_rapido debe tener su propia cuota independiente');
+  console.log('   ✅ Resultado: 6ta reserva bloqueada y clave corte_rapido aislada correctamente.');
+
+  // PRUEBA 8: Bloqueo de login por 5 fallos consecutivos (localStorage)
+  console.log('8. [Login Lockout] Bloqueo de 5 minutos tras 5 fallos consecutivos y reset en éxito');
+  resetLoginAttempts();
+  for (let i = 1; i <= 4; i++) {
+    const fCheck = recordLoginFailure();
+    assert.strictEqual(fCheck.allowed, true, `Fallo ${i} aún no debe bloquear`);
+  }
+  // 5to fallo -> activa bloqueo de 5 minutos (300 segundos)
+  const fifthFail = recordLoginFailure();
+  assert.strictEqual(fifthFail.allowed, false, 'El 5to fallo consecutivo debe activar el bloqueo');
+  assert.strictEqual(fifthFail.retryAfterSeconds, 300, 'El bloqueo debe ser de 300 segundos (5 minutos)');
+
+  // Comprobación de que checkRateLimit('login_attempt') rechaza mientras esté bloqueado
+  const loginAttemptCheck = checkRateLimit('login_attempt');
+  assert.strictEqual(loginAttemptCheck.allowed, false, 'Intento de login debe ser rechazado mientras dure el bloqueo');
+
+  // Reset por login exitoso
+  resetLoginAttempts();
+  const afterResetCheck = checkRateLimit('login_attempt');
+  assert.strictEqual(afterResetCheck.allowed, true, 'Tras login exitoso el bloqueo debe eliminarse');
+  console.log('   ✅ Resultado: 5 fallos seguidos bloquearon 300s y el login exitoso reseteó el contador.');
+
+  console.log('\n✨ TODAS LAS PRUEBAS DE SEGURIDAD PASARON SATISFACTORIAMENTE (8/8).\n');
 }
 
 runTestSuite();

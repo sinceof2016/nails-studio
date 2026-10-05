@@ -1,6 +1,6 @@
 {
-  "name": "Aura Nails & Spa",
-  "description": "Boutique de manicura rusa, spa relajante y nail art en un santuario de autocuidado y bienestar.",
+  "name": "La Pelu SPA",
+  "description": "Reserva tu turno en La Pelu SPA, Patio Bonito, Bogota. Consulta servicios, especialistas y horarios disponibles.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

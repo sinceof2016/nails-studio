@@ -9,7 +9,7 @@ import {
   computeSlotAvailability,
   CalendarDayOption
 } from '../utils/calendarAvailability';
-import { validateOnlyPlainText, sanitizeToPlainText, validateColombianPhone } from '../utils/security';
+import { validateOnlyPlainText, sanitizeToPlainText, validateColombianPhone, checkRateLimit, validateAndClean, isValidEmail } from '../utils/security';
 import { BUSINESS_CONFIG } from '../config/businessConfig';
 import { getColombiaDateISO, generateSecureId, generateBookingCode, formatDisplayDate } from '../utils/dateAndId';
 import { BookingConfirmationView } from '../components/booking/BookingConfirmationView';
@@ -145,8 +145,20 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
     initialSpecialist ? initialSpecialist.id : 'any'
   );
 
+  // Determinar día inicial con disponibilidad (si hoy ya pasaron las horas, comenzar en mañana)
+  const initialCalendarDay = useMemo(() => {
+    if (calendarDays.length > 1) {
+      const todaySlots = computeSlotAvailability(calendarDays[0], 'any', appointments, slotLocks, new Date(), specialists);
+      const freeCount = todaySlots.filter((s) => s.status === 'available').length;
+      if (freeCount === 0) {
+        return calendarDays[1];
+      }
+    }
+    return calendarDays[0];
+  }, [calendarDays, appointments, slotLocks, specialists]);
+
   const [selectedDateOption, setSelectedDateOption] = useState<CalendarDayOption>(
-    calendarDays[0] || {
+    initialCalendarDay || calendarDays[0] || {
       id: '2026-09-28',
       label: 'Hoy',
       dayName: 'Hoy',
@@ -157,6 +169,17 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       dateObj: new Date()
     }
   );
+
+  // Si en el primer render hoy no tiene turnos libres, mover al día con disponibilidad
+  useEffect(() => {
+    if (initialCalendarDay && selectedDateOption.isToday) {
+      const todaySlots = computeSlotAvailability(selectedDateOption, selectedSpecialistId, appointments, slotLocks, new Date(), specialists);
+      const freeCount = todaySlots.filter((s) => s.status === 'available').length;
+      if (freeCount === 0 && calendarDays[1]) {
+        setSelectedDateOption(calendarDays[1]);
+      }
+    }
+  }, [initialCalendarDay]);
 
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [selectedPolish, setSelectedPolish] = useState<string>('Hailey Glazed Pearl');
@@ -243,26 +266,48 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       return;
     }
 
-    // 1. Validaciones de Texto Plano Estricto
-    const textFieldsToValidate = [
-      { value: clientName, label: 'Nombre Completo' },
-      { value: clientNotes, label: 'Observaciones y Notas' },
-      { value: selectedPolish, label: 'Tono de Esmalte' },
-      { value: selectedShape, label: 'Forma de Uña' }
-    ];
-
-    for (const field of textFieldsToValidate) {
-      const check = validateOnlyPlainText(field.value, field.label);
-      if (!check.isValid) {
-        setFormError(check.reason || 'Solo se admite texto plano descriptivo.');
-        return;
-      }
+    // 1. Validaciones y Saneamiento Centralizado de Texto Plano
+    const nameClean = validateAndClean(clientName, 'Nombre Completo', 100);
+    if (!nameClean.ok) {
+      setFormError(nameClean.error || 'Nombre completo no válido.');
+      return;
     }
-
-    // Validar nombre obligatorio
-    if (!clientName.trim()) {
+    if (!nameClean.value.trim()) {
       setFormError('El nombre completo es obligatorio para confirmar tu reserva.');
       return;
+    }
+
+    const notesClean = validateAndClean(clientNotes, 'Observaciones y Notas', 500);
+    if (!notesClean.ok) {
+      setFormError(notesClean.error || 'Observaciones no válidas.');
+      return;
+    }
+
+    const polishClean = validateAndClean(selectedPolish, 'Tono de Esmalte', 100);
+    if (!polishClean.ok) {
+      setFormError(polishClean.error || 'Tono de esmalte no válido.');
+      return;
+    }
+
+    const shapeClean = validateAndClean(selectedShape, 'Forma de Uña', 100);
+    if (!shapeClean.ok) {
+      setFormError(shapeClean.error || 'Forma de uña no válida.');
+      return;
+    }
+
+    // Validar correo opcional si se ingresó
+    let cleanClientEmail = '';
+    if (clientEmail && clientEmail.trim()) {
+      const emailRes = validateAndClean(clientEmail, 'Correo Electrónico', 120);
+      if (!emailRes.ok) {
+        setFormError(emailRes.error || 'Correo electrónico inválido.');
+        return;
+      }
+      if (!isValidEmail(emailRes.value)) {
+        setFormError('El formato del correo electrónico no es válido (ej. usuario@dominio.com).');
+        return;
+      }
+      cleanClientEmail = emailRes.value.toLowerCase();
     }
 
     // Validar horario obligatorio
@@ -299,13 +344,12 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       return;
     }
 
-    // 2. Sanitizar a texto plano puro
-    const cleanClientName = sanitizeToPlainText(clientName) || `Clienta ${BUSINESS_CONFIG.brandName}`;
+    // 2. Valores limpios garantizados
+    const cleanClientName = nameClean.value || `Clienta ${BUSINESS_CONFIG.brandName}`;
     const cleanClientPhone = sanitizeToPlainText(clientPhone);
-    const cleanClientEmail = sanitizeToPlainText(clientEmail);
-    const cleanClientNotes = sanitizeToPlainText(clientNotes);
-    const cleanPolish = sanitizeToPlainText(selectedPolish);
-    const cleanShape = sanitizeToPlainText(selectedShape);
+    const cleanClientNotes = notesClean.value;
+    const cleanPolish = polishClean.value;
+    const cleanShape = shapeClean.value;
 
     // B2: Resolver especialista asignada o rechazar con mensaje claro si no hay disponibilidad
     let assignedSpecialist = currentSpecialist;
@@ -336,11 +380,11 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       serviceName: selectedService.name,
       servicePrice: selectedService.price,
       serviceDuration: selectedService.durationMinutes,
-      serviceImage: selectedService.image,
+      serviceImage: selectedService.image || '',
       specialistId: assignedSpecialist.id,
       specialistName: assignedSpecialist.name,
       specialistRole: assignedSpecialist.role,
-      specialistAvatar: assignedSpecialist.avatar,
+      specialistAvatar: assignedSpecialist.avatar || '',
       date: selectedDateOption.id,
       time: selectedTime,
       clientName: cleanClientName,
@@ -358,6 +402,13 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       autorizacionFecha: getColombiaDateISO(),
       autorizacionVersion: BUSINESS_CONFIG.dataPolicyVersion
     };
+
+    // Limite solo en el cliente. La proteccion real contra reservas masivas es Firebase App Check (pendiente).
+    const rateCheck = checkRateLimit('booking');
+    if (!rateCheck.allowed) {
+      setFormError(`Has hecho muchas reservas seguidas. Espera ${rateCheck.retryAfterSeconds ?? 60} segundos.`);
+      return;
+    }
 
     setIsSendingWhatsApp(true);
 

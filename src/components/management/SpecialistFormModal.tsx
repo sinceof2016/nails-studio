@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Specialist } from '../../types';
-import { validateOnlyPlainText, sanitizeToPlainText } from '../../utils/security';
+import { validateAndClean, sanitizeToPlainText } from '../../utils/security';
 import { compressImageFile } from '../../utils/imageCompressor';
 
 interface SpecialistFormModalProps {
@@ -64,9 +64,31 @@ export const SpecialistFormModal: React.FC<SpecialistFormModalProps> = ({
     e.preventDefault();
     setFormError(null);
 
-    const nameVal = validateOnlyPlainText(name, 'Nombre de la Especialista', 80);
-    if (!nameVal.isValid) {
-      setFormError(nameVal.reason || 'Nombre inválido.');
+    const nameRes = validateAndClean(name, 'Nombre de la Especialista', 80);
+    if (!nameRes.ok) {
+      setFormError(nameRes.error || 'Nombre inválido.');
+      return;
+    }
+    if (!nameRes.value.trim()) {
+      setFormError('El nombre de la especialista es obligatorio.');
+      return;
+    }
+
+    const roleRes = validateAndClean(role, 'Cargo o Rol', 60);
+    if (!roleRes.ok) {
+      setFormError(roleRes.error || 'Cargo inválido.');
+      return;
+    }
+
+    const bioRes = validateAndClean(bio, 'Biografía', 500);
+    if (!bioRes.ok) {
+      setFormError(bioRes.error || 'Biografía inválida.');
+      return;
+    }
+
+    const avatarRes = validateAndClean(avatar, 'Avatar', 150000);
+    if (!avatarRes.ok) {
+      setFormError(avatarRes.error || 'Avatar inválido.');
       return;
     }
 
@@ -80,32 +102,46 @@ export const SpecialistFormModal: React.FC<SpecialistFormModalProps> = ({
       return;
     }
 
-    const cleanName = sanitizeToPlainText(name);
+    const cleanName = nameRes.value;
     const idSlug = specialistToEdit
       ? specialistToEdit.id
       : cleanName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').slice(0, 20) || `spec-${Date.now().toString().slice(-4)}`;
 
-    const specialties = specialtiesText
-      .split(',')
-      .map((s) => sanitizeToPlainText(s))
-      .filter((s) => s.length > 0);
+    const cleanSpecialties: string[] = [];
+    for (const s of specialtiesText.split(',')) {
+      const trimmed = s.trim();
+      if (!trimmed) continue;
+      const specRes = validateAndClean(trimmed, 'Especialidad', 60);
+      if (!specRes.ok) {
+        setFormError(specRes.error || 'Especialidad inválida.');
+        return;
+      }
+      cleanSpecialties.push(specRes.value);
+    }
 
-    const certifications = certificationsText
-      .split(',')
-      .map((s) => sanitizeToPlainText(s))
-      .filter((s) => s.length > 0);
+    const cleanCertifications: string[] = [];
+    for (const c of certificationsText.split(',')) {
+      const trimmed = c.trim();
+      if (!trimmed) continue;
+      const certRes = validateAndClean(trimmed, 'Certificación', 80);
+      if (!certRes.ok) {
+        setFormError(certRes.error || 'Certificación inválida.');
+        return;
+      }
+      cleanCertifications.push(certRes.value);
+    }
 
     const specialist: Specialist = {
       id: idSlug,
       name: cleanName,
-      role: sanitizeToPlainText(role) || 'Master Manicurista',
+      role: roleRes.value || 'Master Manicurista',
       rating: specialistToEdit ? specialistToEdit.rating : 5.0,
       reviewsCount: specialistToEdit ? specialistToEdit.reviewsCount : 0,
-      avatar: sanitizeToPlainText(avatar) || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
-      bio: sanitizeToPlainText(bio),
-      certifications: certifications.length > 0 ? certifications : ['Técnica Certificada en Manicura'],
+      avatar: avatarRes.value || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
+      bio: bioRes.value,
+      certifications: cleanCertifications.length > 0 ? cleanCertifications : ['Técnica Certificada en Manicura'],
       availableDays,
-      specialties: specialties.length > 0 ? specialties : ['Manicura Rusa', 'Esmaltado Semipermanente'],
+      specialties: cleanSpecialties.length > 0 ? cleanSpecialties : ['Manicura Rusa', 'Esmaltado Semipermanente'],
       commissionRate: Number(commissionRate) || 50
     };
 

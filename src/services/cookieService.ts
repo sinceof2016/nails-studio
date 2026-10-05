@@ -30,6 +30,14 @@ export const COOKIE_CATALOG: CookieInfo[] = [
     duration: 'Sesión activa (15 min inactividad)',
     type: 'Session'
   },
+  {
+    name: '_GRECAPTCHA, rc::*',
+    category: 'necessary',
+    purpose: 'Google reCAPTCHA (Fraud Defense / App Check): Previene abuso automatizado y valida solicitudes legítimas contra ataques de bots; aplican la Política de Privacidad y los Términos de Google.',
+    provider: 'Google LLC (Seguridad necesaria)',
+    duration: 'Sesión / 6 meses',
+    type: 'HTTP Cookie'
+  },
 
   // 2. Preferencias
   {

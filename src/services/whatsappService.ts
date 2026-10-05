@@ -27,7 +27,7 @@ export const DEFAULT_ULTRAMSG_CONFIG: UltraMsgConfig = {
   autoConfirmOnBooking: true,
   autoNotifyStatusChange: true,
   autoNotifyPayment: true,
-  confirmationTemplate: `✨ *${BUSINESS_CONFIG.brandName.toUpperCase()}* - Confirmación de Reserva ✨\n\nHola *{cliente}*, tu cita para *{servicio}* ha sido agendada con éxito.\n\n📌 *Código de Turno:* {codigo}\n📅 *Fecha:* {fecha}\n⏰ *Hora:* {hora}\n📍 *Sede:* {sede}\n\n¡Te esperamos para consentirte en nuestro santuario de belleza! 💅✨`,
+  confirmationTemplate: `✨ *${BUSINESS_CONFIG.brandName.toUpperCase()}* - Confirmación de Reserva ✨\n\nHola *{cliente}*, tu cita para *{servicio}* ha sido agendada con éxito.\n\n📌 *Código de Turno:* {codigo}\n📅 *Fecha:* {fecha}\n⏰ *Hora:* {hora}\n📍 *Sede:* {sede}\n\n¡Te esperamos en ${BUSINESS_CONFIG.brandName}! 💅✨`,
   statusChangeTemplate: `🔔 *${BUSINESS_CONFIG.brandName.toUpperCase()}* - Actualización de Turno 🔔\n\nHola *{cliente}*, tu cita *{codigo}* ha cambiado de estado a: *{estado}*.\n\n📍 *Sede:* {sede}\n💅 *Servicio:* {servicio}\n\nGracias por confiar en ${BUSINESS_CONFIG.brandName}.`,
   paymentTemplate: `💳 *${BUSINESS_CONFIG.brandName.toUpperCase()}* - Recibo de Pago 💳\n\nHola *{cliente}*, confirmamos la recepción del pago por tu servicio *{servicio}* por un valor de *$ {monto} COP*.\n\n📌 *Código de Cita:* {codigo}\n\n¡Muchas gracias por tu visita!`
 };

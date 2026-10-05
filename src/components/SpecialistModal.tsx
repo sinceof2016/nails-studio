@@ -8,6 +8,7 @@ interface SpecialistModalProps {
   onBookWithSpecialist: (specialist: Specialist) => void;
   currentUser?: SystemUser | null;
   onUpdateSpecialistAvatar?: (specialistId: string, newAvatar: string) => void;
+  onOpenLogin?: () => void;
 }
 
 export const SpecialistModal: React.FC<SpecialistModalProps> = ({
@@ -15,7 +16,8 @@ export const SpecialistModal: React.FC<SpecialistModalProps> = ({
   onClose,
   onBookWithSpecialist,
   currentUser,
-  onUpdateSpecialistAvatar
+  onUpdateSpecialistAvatar,
+  onOpenLogin
 }) => {
   const [uploading, setUploading] = useState(false);
 
@@ -87,7 +89,7 @@ export const SpecialistModal: React.FC<SpecialistModalProps> = ({
                   <span className="material-symbols-outlined text-[13px]">
                     {uploading ? 'sync' : 'photo_camera'}
                   </span>
-                  <span>{uploading ? 'Cargando...' : 'Cambiar foto local'}</span>
+                  <span>{uploading ? 'Cargando...' : '📷 Subir foto local'}</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -96,6 +98,20 @@ export const SpecialistModal: React.FC<SpecialistModalProps> = ({
                     onChange={handleAvatarUpload}
                   />
                 </label>
+              )}
+
+              {!isSuperAdmin && onOpenLogin && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    onOpenLogin();
+                  }}
+                  className="cursor-pointer inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#F4EFE9] border border-[#C6BDAC] hover:bg-[#C6BDAC]/40 text-[#2B2420] text-[9px] font-semibold transition-all select-none"
+                  title="Inicia sesión con rol SuperAdmin para cambiar esta foto desde tu equipo"
+                >
+                  <span className="material-symbols-outlined text-[12px]">photo_camera</span>
+                  <span>Cambiar foto</span>
+                </button>
               )}
             </div>
             <div>
