@@ -483,19 +483,24 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   return (
     <div ref={bookingContainerRef} className="max-w-4xl mx-auto space-y-6 pb-12 animate-in fade-in duration-200">
       {/* Header Banner */}
-      <div className="rounded-3xl bg-gradient-to-r from-[#C6BDAC]/35 via-[#F4EFE9] to-white p-6 sm:p-7 border border-[#C6BDAC] shadow-xs relative overflow-hidden">
+      <div className="rounded-3xl bg-gradient-to-r from-[#C6BDAC]/35 via-[#F4EFE9] to-white sm:p-7 border border-[#C6BDAC] shadow-xs relative overflow-hidden">
         {/* Banner de la marca difuminado de fondo (se desvanece hacia la izquierda para no tapar el texto) */}
-        <picture>
-          <source media="(max-width: 639px)" srcSet={`${import.meta.env.BASE_URL}banner-la-pelu-movil.webp`} />
-          <img
-            src={`${import.meta.env.BASE_URL}banner-la-pelu.webp`}
-            alt=""
-            aria-hidden="true"
-            className="absolute inset-0 w-full h-full object-cover object-center sm:object-right opacity-25 sm:opacity-60 pointer-events-none select-none [mask-image:linear-gradient(to_right,transparent_5%,black_85%)] [-webkit-mask-image:linear-gradient(to_right,transparent_5%,black_85%)]"
-            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-          />
-        </picture>
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Celular: franja difuminada arriba. Pantallas grandes: de fondo, desvaneciéndose hacia la izquierda para no tapar el texto */}
+        <img
+          src={`${import.meta.env.BASE_URL}banner-reserva.svg`}
+          alt=""
+          aria-hidden="true"
+          className="block sm:hidden w-full h-auto opacity-60 pointer-events-none select-none"
+          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        />
+        <img
+          src={`${import.meta.env.BASE_URL}banner-reserva.svg`}
+          alt=""
+          aria-hidden="true"
+          className="hidden sm:block absolute inset-0 w-full h-full object-cover object-right opacity-60 pointer-events-none select-none [mask-image:linear-gradient(to_right,transparent_5%,black_85%)] [-webkit-mask-image:linear-gradient(to_right,transparent_5%,black_85%)]"
+          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        />
+        <div className="relative z-10 p-6 sm:p-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/95 text-[#2B2420] text-xs font-semibold mb-2 border border-[#C6BDAC]">
               <span className="material-symbols-outlined text-[15px] text-[#2B2420]">event_available</span>
