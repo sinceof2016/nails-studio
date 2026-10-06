@@ -77,15 +77,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {!bannerFailed ? (
         <div className="rounded-3xl overflow-hidden border border-[#C6BDAC] shadow-xs bg-[#D3B8A8]">
           <h2 className="sr-only">Uña, belleza y bienestar en {BUSINESS_CONFIG.brandName}</h2>
-          <img
-            src={`${import.meta.env.BASE_URL}banner-la-pelu.webp`}
-            alt={`${BUSINESS_CONFIG.brandName}: uña, belleza y bienestar`}
-            width={2000}
-            height={400}
-            decoding="async"
-            className="block w-full h-28 sm:h-auto object-cover object-center"
-            onError={() => setBannerFailed(true)}
-          />
+          <picture>
+            <source media="(max-width: 639px)" srcSet={`${import.meta.env.BASE_URL}banner-la-pelu-movil.webp`} />
+            <img
+              src={`${import.meta.env.BASE_URL}banner-la-pelu.webp`}
+              alt={`${BUSINESS_CONFIG.brandName}: uña, belleza y bienestar`}
+              width={2000}
+              height={400}
+              decoding="async"
+              className="block w-full h-auto"
+              onError={() => setBannerFailed(true)}
+            />
+          </picture>
         </div>
       ) : (
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#C6BDAC]/35 via-[#F4EFE9] to-white p-6 sm:p-8 md:p-10 shadow-xs border border-[#C6BDAC] flex flex-col justify-between">
