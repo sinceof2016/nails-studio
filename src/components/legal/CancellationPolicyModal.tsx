@@ -1,5 +1,5 @@
 import React from 'react';
-import { BUSINESS_CONFIG } from '../../config/businessConfig';
+import { BUSINESS_CONFIG, LEGAL_LAST_UPDATE } from '../../config/businessConfig';
 
 interface CancellationPolicyModalProps {
   isOpen: boolean;
@@ -22,14 +22,6 @@ export const CancellationPolicyModal: React.FC<CancellationPolicyModalProps> = (
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
       <div className="relative w-full max-w-2xl max-h-[90vh] bg-[#F4EFE9] rounded-3xl p-5 sm:p-7 shadow-2xl border border-[#C6BDAC] z-10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-        {/* Banner de Advertencia Legal */}
-        <div className="mb-3 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] flex items-center gap-2">
-          <span className="material-symbols-outlined text-amber-700 text-[16px] shrink-0">gavel</span>
-          <span>
-            <strong>BORRADOR PARA REVISIÓN LEGAL</strong> · PENDIENTE REVISIÓN LEGAL POR UN ABOGADO TITULADO
-          </span>
-        </div>
-
         {/* Header */}
         <div className="flex items-start justify-between border-b border-[#C6BDAC]/70 pb-3 shrink-0">
           <div>
@@ -40,7 +32,7 @@ export const CancellationPolicyModal: React.FC<CancellationPolicyModalProps> = (
               Política de Cancelación, Cambios y Reembolsos
             </h2>
             <p className="text-xs text-[#5A4A43]">
-              Versión: {BUSINESS_CONFIG.cancellationPolicyVersion} · {BUSINESS_CONFIG.brandName}
+              Versión {BUSINESS_CONFIG.cancellationPolicyVersion} · Última actualización: {LEGAL_LAST_UPDATE}
             </p>
           </div>
           <button
@@ -60,7 +52,7 @@ export const CancellationPolicyModal: React.FC<CancellationPolicyModalProps> = (
               1. Cancelación y Reprogramación Oportuna
             </h3>
             <p>
-              Entendemos que pueden surgir imprevistos. Para cancelar o reprogramar una cita sin inconvenientes, solicitamos notificarnos con al menos <strong>{BUSINESS_CONFIG.cancellationNoticeHours} horas de anticipación</strong> a través de nuestra línea de WhatsApp <strong>{BUSINESS_CONFIG.whatsappFormatted || BUSINESS_CONFIG.whatsapp}</strong> o correo <strong>{BUSINESS_CONFIG.email}</strong>. <em>(PENDIENTE REVISIÓN LEGAL: Confirmar horas de anticipación requeridas por el negocio)</em>.
+              Entendemos que pueden surgir imprevistos. Para cancelar o reprogramar una cita sin inconvenientes, solicitamos notificarnos con al menos <strong>{BUSINESS_CONFIG.cancellationNoticeHours} horas de anticipación</strong> a través de nuestra línea de WhatsApp <strong>{BUSINESS_CONFIG.whatsappFormatted || BUSINESS_CONFIG.whatsapp}</strong> o correo <strong>{BUSINESS_CONFIG.email}</strong>.
             </p>
           </section>
 
@@ -84,7 +76,7 @@ export const CancellationPolicyModal: React.FC<CancellationPolicyModalProps> = (
             </p>
             <ul className="list-disc list-inside space-y-1 pl-2">
               <li>Comunícate de inmediato con soporte adjuntando una fotografía clara de las uñas afectadas.</li>
-              <li>Coordinaremos una revisión y corrección sin costo adicional en el establecimiento, siempre que el desprendimiento no haya sido causado por golpes, arrancamiento forzado o uso de químicos agresivos sin guantes. <em>(PENDIENTE REVISIÓN LEGAL)</em>.</li>
+              <li>Coordinaremos una revisión y corrección sin costo adicional en el establecimiento, siempre que el desprendimiento no haya sido causado por golpes, arrancamiento forzado o uso de químicos agresivos sin guantes.</li>
             </ul>
           </section>
 
@@ -94,7 +86,7 @@ export const CancellationPolicyModal: React.FC<CancellationPolicyModalProps> = (
               4. Reembolsos
             </h3>
             <p>
-              Dado que los servicios se pagan presencialmente al culminar la atención y tras la verificación a entera satisfacción del cliente, no aplican reembolsos en efectivo posteriores, sino la aplicación de la garantía de corrección técnica descrita en el numeral anterior. <em>(PENDIENTE REVISIÓN LEGAL)</em>.
+              Dado que los servicios se pagan presencialmente al culminar la atención y tras la verificación a entera satisfacción del cliente, no aplican reembolsos en efectivo posteriores, sino la aplicación de la garantía de corrección técnica descrita en el numeral anterior.
             </p>
           </section>
         </div>

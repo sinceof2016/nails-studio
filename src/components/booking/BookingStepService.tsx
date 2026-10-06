@@ -164,7 +164,7 @@ export const BookingStepService: React.FC<BookingStepServiceProps> = ({
                 title="Haz clic para seleccionar o doble clic para avanzar directamente"
               >
                 <div className="flex gap-3.5 items-start">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={service.image}
                     alt={service.name}
                     className="w-16 h-16 rounded-2xl object-cover shrink-0 shadow-2xs group-hover:scale-105 transition-transform"

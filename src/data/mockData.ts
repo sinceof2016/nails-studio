@@ -1,9 +1,5 @@
-export * from './catalogo';
-import { SystemUser, Appointment, AppNotification, SavedDesign } from '../types';
-
 /**
- * Colecciones iniciales vacías para producción (datos limpios en cero).
+ * Catálogo semilla de La Pelu SPA (servicios, especialistas y tipos de servicio iniciales).
+ * Se usa como respaldo mientras Firestore no tiene catálogo cargado.
  */
-export const SYSTEM_USERS: SystemUser[] = [];
-export const NOTIFICATIONS: AppNotification[] = [];
-export const SAVED_DESIGNS: SavedDesign[] = [];
+export * from './catalogo';

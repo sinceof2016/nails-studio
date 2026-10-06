@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Service, ServiceCategory } from '../../types';
-import { validateAndClean, sanitizeToPlainText } from '../../utils/security';
+import { validateAndClean } from '../../utils/security';
 import { compressImageFile } from '../../utils/imageCompressor';
 
 interface ServiceFormModalProps {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { COOKIE_CATALOG } from '../services/cookieService';
-import { BUSINESS_CONFIG } from '../config/businessConfig';
+import { BUSINESS_CONFIG, LEGAL_LAST_UPDATE } from '../config/businessConfig';
 
 interface CookiePolicyModalProps {
   isOpen: boolean;
@@ -27,14 +27,6 @@ export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
       <div className="relative bg-[#F4EFE9] rounded-3xl w-full max-w-3xl max-h-[92vh] flex flex-col shadow-2xl border border-[#C6BDAC] overflow-hidden z-10 animate-in zoom-in-95 duration-200">
-        {/* Banner de Advertencia Legal */}
-        <div className="p-3 bg-amber-50 border-b border-amber-200 text-amber-900 text-[11px] flex items-center gap-2">
-          <span className="material-symbols-outlined text-amber-700 text-[16px] shrink-0">gavel</span>
-          <span>
-            <strong>BORRADOR PARA REVISIÓN LEGAL</strong> · PENDIENTE REVISIÓN LEGAL
-          </span>
-        </div>
-
         {/* Modal Header */}
         <div className="p-5 sm:p-6 bg-white border-b border-[#C6BDAC]/70 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
@@ -46,7 +38,7 @@ export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({
                 Política de Cookies y Almacenamiento
               </h2>
               <p className="text-xs text-[#5A4A43]">
-                {BUSINESS_CONFIG.brandName} · Conforme a la Política de Tratamiento de Datos Personales
+                Versión {BUSINESS_CONFIG.dataPolicyVersion} · Última actualización: {LEGAL_LAST_UPDATE}
               </p>
             </div>
           </div>

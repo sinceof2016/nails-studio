@@ -1,39 +1,15 @@
 import {
   Service,
   Specialist,
-  PolishSwatch,
   NailShape,
   AddOnOption,
-  ServiceCategory,
-  AdminUser
+  ServiceCategory
 } from '../types';
-import { BUSINESS_CONFIG } from '../config/businessConfig';
 
 /**
  * Catálogo Oficial de Servicios, Categorías y Especialistas de La Pelu SPA.
  * Tarifas oficiales actualizadas según la lista vigente.
  */
-
-export const ADMIN_USER: AdminUser = {
-  id: 'admin-01',
-  name: 'Administración',
-  role: 'SuperAdmin',
-  title: 'Dirección de Operaciones',
-  email: 'contacto@lapelu-spa.com',
-  phone: '',
-  branch: 'Santuario Central · Bogotá',
-  branchId: 'chico',
-  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
-  permissions: [
-    'Control total de usuarios y sedes',
-    'Consola REST API y pruebas de integración',
-    'Gestión integral de citas y agenda en tiempo real',
-    'Caja rápida y libro maestro de liquidación a especialistas',
-    'Arqueo de caja y gaveta física diaria',
-    'Disparos automáticos de WhatsApp con UltraMsg',
-    'Base y reporte de clientes con historial de visitas'
-  ]
-};
 
 export const INITIAL_SERVICE_CATEGORIES: ServiceCategory[] = [
   { id: 'manicura', label: 'Manicure', icon: 'palette', description: 'Cuidado profesional, esmaltado y embellecimiento de manos' },
@@ -42,8 +18,6 @@ export const INITIAL_SERVICE_CATEGORIES: ServiceCategory[] = [
   { id: 'extensiones', label: 'Acrílico & Polygel', icon: 'diamond', description: 'Estructuras, pres on, jelly tips y baños de alta duración' },
   { id: 'adicionales', label: 'Retiros & Extras', icon: 'brush', description: 'Retiros seguros, extensiones por uña, arreglos y secado rápido' }
 ];
-
-export const LOGO_URL = './lumina-logo.svg';
 
 export const SERVICES: Service[] = [
   // --- PEDICURE ---
@@ -562,17 +536,6 @@ export const SPECIALISTS: Specialist[] = [
     specialties: ['Base Rubber + tradicional', 'Manicure hombre semipermanente', 'Retiro de sistemas', 'Limpieza de manos'],
     commissionRate: 50
   }
-];
-
-export const POLISH_SWATCHES: PolishSwatch[] = [
-  { id: 'glazed-pearl', name: 'Hailey Glazed Pearl', hex: '#f6eff2', accentHex: '#eedbe1', finish: 'glazed' },
-  { id: 'milk-bath', name: 'Milky Bath Nude', hex: '#faf4ef', accentHex: '#efe5db', finish: 'creamy' },
-  { id: 'rose-blush', name: 'Dusty Rose Bloom', hex: '#C6BDAC', accentHex: '#cb9296', finish: 'creamy' },
-  { id: 'lavender-mist', name: 'Lavanda Mist Pastel', hex: '#e1d0e8', accentHex: '#c7b0d0', finish: 'pastel' },
-  { id: 'peach-sorbet', name: 'Melocotón Velouté', hex: '#fad4c0', accentHex: '#eab89e', finish: 'pastel' },
-  { id: 'matcha-latte', name: 'Matcha Calm Cream', hex: '#dce8dc', accentHex: '#b8ccb8', finish: 'pastel' },
-  { id: 'chrome-champagne', name: 'Champaña Cromo', hex: '#ede6db', accentHex: '#d8cdbe', finish: 'chrome' },
-  { id: 'deep-plum', name: 'Plum Velvet', hex: '#583c4b', accentHex: '#3e2733', finish: 'creamy' }
 ];
 
 export const NAIL_SHAPES: NailShape[] = [

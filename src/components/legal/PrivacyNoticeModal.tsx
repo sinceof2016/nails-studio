@@ -1,5 +1,5 @@
 import React from 'react';
-import { BUSINESS_CONFIG } from '../../config/businessConfig';
+import { BUSINESS_CONFIG, LEGAL_LAST_UPDATE } from '../../config/businessConfig';
 
 interface PrivacyNoticeModalProps {
   isOpen: boolean;
@@ -24,11 +24,6 @@ export const PrivacyNoticeModal: React.FC<PrivacyNoticeModalProps> = ({
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
       <div className="relative w-full max-w-lg bg-[#F4EFE9] rounded-3xl p-6 shadow-2xl border border-[#C6BDAC] z-10 flex flex-col space-y-4 animate-in zoom-in-95 duration-200">
-        <div className="px-3 py-1 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] flex items-center gap-1.5">
-          <span className="material-symbols-outlined text-[15px] text-amber-700">gavel</span>
-          <span>BORRADOR PENDIENTE REVISIÓN LEGAL</span>
-        </div>
-
         <div className="flex items-start justify-between border-b border-[#C6BDAC]/70 pb-3">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-[#BB9C87]/10 text-[#2B2420] flex items-center justify-center">
@@ -39,7 +34,7 @@ export const PrivacyNoticeModal: React.FC<PrivacyNoticeModalProps> = ({
                 Aviso de Privacidad
               </h3>
               <p className="text-xs text-[#5A4A43]">
-                {BUSINESS_CONFIG.brandName} · {BUSINESS_CONFIG.privacyNoticeVersion}
+                Versión {BUSINESS_CONFIG.privacyNoticeVersion} · Última actualización: {LEGAL_LAST_UPDATE}
               </p>
             </div>
           </div>

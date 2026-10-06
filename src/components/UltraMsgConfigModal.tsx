@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { validateOnlyPlainText, sanitizeToPlainText, validateAndClean } from '../utils/security';
+import { validateAndClean } from '../utils/security';
 import { BUSINESS_CONFIG } from '../config/businessConfig';
 import {
   getUltraMsgConfig,

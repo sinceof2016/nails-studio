@@ -107,7 +107,7 @@ export const AdminCortesTab: React.FC<AdminCortesTabProps> = ({
           >
             <div>
               <div className="flex items-center gap-3">
-                <img
+                <img loading="lazy" decoding="async"
                   src={spec.avatar}
                   alt={spec.name}
                   className="w-12 h-12 rounded-full object-cover ring-2 ring-[#2B2420]/30"

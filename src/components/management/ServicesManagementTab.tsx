@@ -100,7 +100,7 @@ export const ServicesManagementTab: React.FC<ServicesManagementTabProps> = ({
           >
             <div>
               <div className="relative h-32 rounded-xl overflow-hidden mb-3 bg-[#F4EFE9]">
-                <img
+                <img loading="lazy" decoding="async"
                   src={service.image}
                   alt={service.name}
                   className="w-full h-full object-cover"

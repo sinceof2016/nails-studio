@@ -15,7 +15,7 @@ import { QrCodeModal } from '../components/QrCodeModal';
 import { ClientHistoryModal } from '../components/ClientHistoryModal';
 import { UltraMsgConfigModal } from '../components/UltraMsgConfigModal';
 import { formatCOP } from '../utils/format';
-import { validateOnlyPlainText, sanitizeToPlainText, validateColombianPhone, checkRateLimit, validateAndClean } from '../utils/security';
+import { sanitizeToPlainText, validateColombianPhone, checkRateLimit, validateAndClean } from '../utils/security';
 import { sendUltraMsgWhatsApp, getUltraMsgConfig, renderTemplate } from '../services/whatsappService';
 import { BUSINESS_CONFIG } from '../config/businessConfig';
 import { getColombiaDateISO, getColombiaTimeStr, generateSecureId, generateBookingCode, formatDisplayDate } from '../utils/dateAndId';

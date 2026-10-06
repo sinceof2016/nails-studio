@@ -60,7 +60,7 @@ export const SpecialistsManagementTab: React.FC<SpecialistsManagementTabProps> =
             <div>
               <div className="flex items-start gap-3">
                 <div className="relative shrink-0 flex flex-col items-center gap-1">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={spec.avatar}
                     alt={spec.name}
                     className="w-14 h-14 rounded-full object-cover ring-2 ring-[#918380]/60 shrink-0"

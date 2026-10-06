@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Specialist } from '../../types';
-import { validateAndClean, sanitizeToPlainText } from '../../utils/security';
+import { validateAndClean } from '../../utils/security';
 import { compressImageFile } from '../../utils/imageCompressor';
+import { DEFAULT_COMMISSION_RATE } from '../../config/businessConfig';
 
 interface SpecialistFormModalProps {
   isOpen: boolean;
@@ -142,7 +143,7 @@ export const SpecialistFormModal: React.FC<SpecialistFormModalProps> = ({
       certifications: cleanCertifications.length > 0 ? cleanCertifications : ['Técnica Certificada en Manicura'],
       availableDays,
       specialties: cleanSpecialties.length > 0 ? cleanSpecialties : ['Manicura Rusa', 'Esmaltado Semipermanente'],
-      commissionRate: Number(commissionRate) || 50
+      commissionRate: Number.isFinite(Number(commissionRate)) ? Number(commissionRate) : DEFAULT_COMMISSION_RATE
     };
 
     onSave(specialist);

@@ -1,8 +1,13 @@
 /**
  * Configuración centralizada de datos legales y de contacto de La Pelu SPA.
- * PENDIENTE REVISIÓN LEGAL: Los datos marcados con PENDIENTE_ son marcadores que deben ser
- * completados con la información jurídica y corporativa real del negocio.
+ * Textos publicados sin revisión de abogado por decisión del dueño (2026-10-05).
+ * Los datos marcados con PENDIENTE_ son marcadores que se completan desde la administración del negocio.
  */
+
+/** Comisión por defecto de una especialista nueva (en porcentaje). */
+export const DEFAULT_COMMISSION_RATE = 50;
+
+export const LEGAL_LAST_UPDATE = '2026-10-05';
 
 function getEnv(key: string, fallback: string): string {
   let val: string | undefined;
@@ -70,14 +75,14 @@ export const BUSINESS_CONFIG: BusinessConfig = {
 
   // Régimen comercial y consumidor (Ley 1480 de 2011)
   taxNotice: 'Precios en pesos colombianos (COP).',
-  cancellationNoticeHours: 24, // PENDIENTE REVISIÓN LEGAL: Confirmar plazo de anticipación para cancelación
+  cancellationNoticeHours: 24, // Plazo de anticipación para cancelación (en horas)
   advancePaymentRequired: false, // La reserva online NO cobra anticipo ni solicita datos de pago en línea
 
   // Versiones de documentos legales (Habeas Data & Consumidor)
-  dataPolicyVersion: 'v1.0-2026-BORRADOR',
-  privacyNoticeVersion: 'v1.0-2026-BORRADOR',
-  termsVersion: 'v1.0-2026-BORRADOR',
-  cancellationPolicyVersion: 'v1.0-2026-BORRADOR'
+  dataPolicyVersion: 'v1.0-2026',
+  privacyNoticeVersion: 'v1.0-2026',
+  termsVersion: 'v1.0-2026',
+  cancellationPolicyVersion: 'v1.0-2026'
 };
 
 /**

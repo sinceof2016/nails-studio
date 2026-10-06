@@ -3,8 +3,7 @@ import { Specialist } from '../../types';
 import { SPECIALISTS } from '../../data/mockData';
 import {
   CalendarDayOption,
-  SlotAvailability,
-  isSpecialistWorkingOnDay
+  SlotAvailability
 } from '../../utils/calendarAvailability';
 
 interface BookingStepDateTimeProps {
@@ -144,7 +143,7 @@ export const BookingStepDateTime: React.FC<BookingStepDateTimeProps> = ({
                     : 'bg-white border-[#C6BDAC] hover:bg-[#F4EFE9]/50'
                 }`}
               >
-                <img
+                <img loading="lazy" decoding="async"
                   src={spec.avatar}
                   alt={spec.name}
                   className="w-10 h-10 rounded-full object-cover shrink-0 border border-[#C6BDAC]"

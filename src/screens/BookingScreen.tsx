@@ -9,7 +9,7 @@ import {
   computeSlotAvailability,
   CalendarDayOption
 } from '../utils/calendarAvailability';
-import { validateOnlyPlainText, sanitizeToPlainText, validateColombianPhone, checkRateLimit, validateAndClean, isValidEmail } from '../utils/security';
+import { sanitizeToPlainText, validateColombianPhone, checkRateLimit, validateAndClean, isValidEmail } from '../utils/security';
 import { BUSINESS_CONFIG } from '../config/businessConfig';
 import { getColombiaDateISO, generateSecureId, generateBookingCode, formatDisplayDate } from '../utils/dateAndId';
 import { BookingConfirmationView } from '../components/booking/BookingConfirmationView';

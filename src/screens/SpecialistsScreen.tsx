@@ -66,7 +66,7 @@ export const SpecialistsScreen: React.FC<SpecialistsScreenProps> = ({
               <div className="flex items-center gap-4 mb-4">
                 <div className="relative shrink-0 flex flex-col items-center gap-1">
                   <div className="relative">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={specialist.avatar}
                       alt={specialist.name}
                       className="w-16 h-16 rounded-full object-cover ring-2 ring-[#C6BDAC] ring-offset-2 ring-offset-white group-hover:scale-105 transition-transform"

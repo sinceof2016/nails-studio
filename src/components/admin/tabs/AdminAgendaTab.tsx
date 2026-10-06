@@ -196,7 +196,7 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
                     : 'bg-[#F4EFE9] text-[#2B2420] border border-[#C6BDAC]/60 hover:bg-[#C6BDAC]/40'
                 }`}
               >
-                <img
+                <img loading="lazy" decoding="async"
                   src={spec.avatar}
                   alt={spec.name}
                   className="w-4 h-4 rounded-full object-cover"
@@ -319,7 +319,7 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
 
                 {/* Client info & Service in COP */}
                 <div className="flex gap-3 items-center">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={apt.serviceImage}
                     alt={apt.serviceName}
                     className="w-14 h-14 rounded-2xl object-cover shrink-0"
@@ -339,7 +339,7 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
                     </p>
 
                     <div className="flex items-center gap-1.5 text-xs text-[#2B2420] mt-1">
-                      <img
+                      <img loading="lazy" decoding="async"
                         src={apt.specialistAvatar}
                         alt={apt.specialistName}
                         className="w-4 h-4 rounded-full object-cover"

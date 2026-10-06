@@ -65,7 +65,7 @@ export const UsersManagementTab: React.FC<UsersManagementTabProps> = ({
               <div>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-3 min-w-0">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={user.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200'}
                       alt={user.nombre}
                       className="w-11 h-11 rounded-full object-cover ring-2 ring-[#918380]/50 shrink-0"

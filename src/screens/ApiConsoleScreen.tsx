@@ -180,9 +180,9 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
     setSelectedEndpoint(endpoint);
     let chosenKey = '';
     if (keyToUseForApi === 'primary') {
-      chosenKey = kmsData?.primaryKey.rawSecret || 'aura_live_k1_8f9c2d1e0b4a736458291a7e4b';
+      chosenKey = kmsData?.primaryKey.rawSecret || 'clave-demo-primaria';
     } else if (keyToUseForApi === 'secondary') {
-      chosenKey = kmsData?.secondaryKey.rawSecret || 'aura_live_k2_3a7b1c9e8d2f405167382b6c9d';
+      chosenKey = kmsData?.secondaryKey.rawSecret || 'clave-demo-secundaria';
     } else {
       chosenKey = 'aura_invalid_key_xyz_000';
     }
@@ -229,7 +229,7 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
   };
 
   const curlCommand = `curl -X GET "https://lapeluspa.com/api/v1/citas/activas" \\
-  -H "X-API-Key: ${kmsData?.primaryKey.rawSecret || 'pelu_live_k1_8f9c2d1e0b4a736458291a7e4b'}" \\
+  -H "X-API-Key: ${kmsData?.primaryKey.rawSecret || 'clave-demo-primaria'}" \\
   -H "Content-Type: application/json"`;
 
   const copyCurlToClipboard = () => {

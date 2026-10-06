@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { lazy, Suspense, useState, useEffect, useRef, useMemo } from 'react';
 import { Header } from './components/Header';
 import { Toast } from './components/Toast';
 import { LoginModal } from './components/LoginModal';
@@ -21,18 +21,13 @@ import { enableAnalytics, disableAnalytics, trackPageView, trackBookingConfirmed
 import { HomeScreen } from './screens/HomeScreen';
 import { BookingScreen } from './screens/BookingScreen';
 import { SpecialistsScreen } from './screens/SpecialistsScreen';
-import { AdminScreen } from './screens/AdminScreen';
-import { UsersManagementScreen } from './screens/UsersManagementScreen';
-import { ApiConsoleScreen } from './screens/ApiConsoleScreen';
 import { NotFoundScreen } from './screens/NotFoundScreen';
 import { BUSINESS_CONFIG } from './config/businessConfig';
-import { getColombiaDateISO } from './utils/dateAndId';
 import {
   Service,
   Specialist,
   ServiceCategory,
   Appointment,
-  AppNotification,
   SalonCutRecord,
   ExpenseRecord,
   CashRegisterClose,
@@ -57,16 +52,9 @@ import {
   getActiveSession
 } from './services/sessionManager';
 import { logoutVault } from './services/securityVault';
-import {
-  NOTIFICATIONS,
-  SERVICES,
-  INITIAL_SERVICE_CATEGORIES,
-  SPECIALISTS,
-  ADMIN_USER,
-  SYSTEM_USERS
-} from './data/mockData';
-import { doc, deleteDoc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from './firebase';
+import { SERVICES, INITIAL_SERVICE_CATEGORIES, SPECIALISTS } from './data/mockData';
+import { STORAGE_KEYS } from './config/storageKeys';
+import { addUnique } from './utils/collections';
 import {
   subscribeToAppointments,
   saveAppointmentWithLockInFirestore,
@@ -75,7 +63,6 @@ import {
   cancelAppointmentWithLockReleaseInFirestore,
   deleteAppointmentInFirestore,
   subscribeToSlotLocks,
-  getSlotLockDocId,
   subscribeToSalonCuts,
   addSalonCutToFirestore,
   deleteSalonCutFromFirestore,
@@ -102,6 +89,23 @@ import {
 import { updateBusinessConfigFromFirestore, BusinessConfig } from './config/businessConfig';
 import { SpecialistPublic, SpecialistPrivate } from './types';
 
+// Pantallas de personal: se descargan solo cuando alguien entra a ellas, no con la página pública
+const AdminScreen = lazy(() => import('./screens/AdminScreen').then((m) => ({ default: m.AdminScreen })));
+const UsersManagementScreen = lazy(() =>
+  import('./screens/UsersManagementScreen').then((m) => ({ default: m.UsersManagementScreen }))
+);
+const ApiConsoleScreen = lazy(() => import('./screens/ApiConsoleScreen').then((m) => ({ default: m.ApiConsoleScreen })));
+
+function ScreenLoading() {
+  return (
+    <div role="status" aria-live="polite" className="p-8 text-center text-xs text-[#5A4A43]">
+      Cargando…
+    </div>
+  );
+}
+
+const TOUCH_SESSION_MIN_INTERVAL_MS = 15 * 1000;
+
 export default function App() {
   // Current active tab: Defaults to 'reservar' as the primary home screen
   const [currentTab, setCurrentTab] = useState<AppTab>('reservar');
@@ -124,7 +128,12 @@ export default function App() {
     }, 30 * 1000);
 
     // Event listeners to refresh user activity
+    // touchSession lee y escribe sessionStorage: basta con refrescar la actividad cada pocos segundos
+    let lastTouch = 0;
     const onUserAction = () => {
+      const now = Date.now();
+      if (now - lastTouch < TOUCH_SESSION_MIN_INTERVAL_MS) return;
+      lastTouch = now;
       touchSession();
     };
 
@@ -194,11 +203,12 @@ export default function App() {
   const [isCookieSettingsOpen, setIsCookieSettingsOpen] = useState<boolean>(false);
   const [isCookiePolicyOpen, setIsCookiePolicyOpen] = useState<boolean>(false);
 
-  // Limpieza de datos demo en montaje y versionado de localStorage v2
+  // Limpieza en el montaje de claves antiguas de localStorage que ya no se usan
   useEffect(() => {
     try {
       localStorage.removeItem('pelu_system_users');
       localStorage.removeItem('aura_notifications');
+      localStorage.removeItem('aura_system_users');
       localStorage.removeItem('aura_current_user');
       localStorage.removeItem('pelu_services');
       localStorage.removeItem('pelu_specialists');
@@ -236,7 +246,7 @@ export default function App() {
   // Services catalog list (SuperAdmin editable, syncs with Firestore)
   const [services, setServices] = useState<Service[]>(() => {
     try {
-      const saved = localStorage.getItem('aura_tarifas_2026_services');
+      const saved = localStorage.getItem(STORAGE_KEYS.services);
       return saved ? JSON.parse(saved) : SERVICES;
     } catch {
       return SERVICES;
@@ -246,7 +256,7 @@ export default function App() {
   // Service categories list (SuperAdmin editable, syncs with Firestore)
   const [serviceCategories, setServiceCategories] = useState<ServiceCategory[]>(() => {
     try {
-      const saved = localStorage.getItem('aura_tarifas_2026_categories');
+      const saved = localStorage.getItem(STORAGE_KEYS.categories);
       return saved ? JSON.parse(saved) : INITIAL_SERVICE_CATEGORIES;
     } catch {
       return INITIAL_SERVICE_CATEGORIES;
@@ -256,7 +266,7 @@ export default function App() {
   // Public specialists list (from Firestore specialists collection)
   const [publicSpecialists, setPublicSpecialists] = useState<SpecialistPublic[]>(() => {
     try {
-      const saved = localStorage.getItem('aura_tarifas_2026_specialists');
+      const saved = localStorage.getItem(STORAGE_KEYS.specialists);
       return saved ? JSON.parse(saved) : SPECIALISTS;
     } catch {
       return SPECIALISTS;
@@ -299,9 +309,6 @@ export default function App() {
 
   // Slot Locks State (prevents double booking)
   const [slotLocks, setSlotLocks] = useState<SlotLock[]>([]);
-
-  // Notifications State (datos en cero)
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
   // Toast feedback
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -381,13 +388,13 @@ export default function App() {
         if (liveServices.length > 0) {
           setServices(liveServices);
           try {
-            localStorage.setItem('aura_tarifas_2026_services', JSON.stringify(liveServices));
+            localStorage.setItem(STORAGE_KEYS.services, JSON.stringify(liveServices));
           } catch {
             /* localStorage no disponible */
           }
         } else {
           // Si Firestore está vacío (catálogo inicial aún no cargado), el visitante mantiene el catálogo local
-          const saved = localStorage.getItem('aura_tarifas_2026_services');
+          const saved = localStorage.getItem(STORAGE_KEYS.services);
           if (saved) {
             try {
               const parsed = JSON.parse(saved);
@@ -408,12 +415,12 @@ export default function App() {
         if (liveSpecialists.length > 0) {
           setPublicSpecialists(liveSpecialists);
           try {
-            localStorage.setItem('aura_tarifas_2026_specialists', JSON.stringify(liveSpecialists));
+            localStorage.setItem(STORAGE_KEYS.specialists, JSON.stringify(liveSpecialists));
           } catch {
             /* localStorage no disponible */
           }
         } else {
-          const saved = localStorage.getItem('aura_tarifas_2026_specialists');
+          const saved = localStorage.getItem(STORAGE_KEYS.specialists);
           if (saved) {
             try {
               const parsed = JSON.parse(saved);
@@ -434,12 +441,12 @@ export default function App() {
         if (liveCats.length > 0) {
           setServiceCategories(liveCats);
           try {
-            localStorage.setItem('aura_tarifas_2026_categories', JSON.stringify(liveCats));
+            localStorage.setItem(STORAGE_KEYS.categories, JSON.stringify(liveCats));
           } catch {
             /* localStorage no disponible */
           }
         } else {
-          const saved = localStorage.getItem('aura_tarifas_2026_categories');
+          const saved = localStorage.getItem(STORAGE_KEYS.categories);
           if (saved) {
             try {
               const parsed = JSON.parse(saved);
@@ -565,36 +572,7 @@ export default function App() {
     };
   }, [isStaff, isCaja, currentUser?.sucursalAsignada, currentUser?.rol, branchFilter]);
 
-  // Persist user and notifications
-  useEffect(() => {
-    try {
-      if (currentUser) {
-        localStorage.setItem('aura_current_user', JSON.stringify(currentUser));
-      } else {
-        localStorage.removeItem('aura_current_user');
-      }
-    } catch (e) {
-      console.warn('Could not save user to localStorage', e);
-    }
-  }, [currentUser]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('aura_system_users', JSON.stringify(systemUsers));
-    } catch (e) {
-      console.warn('Could not save system users to localStorage', e);
-    }
-  }, [systemUsers]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('aura_notifications', JSON.stringify(notifications));
-    } catch (e) {
-      console.warn('Could not save notifications to localStorage', e);
-    }
-  }, [notifications]);
-
-  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = (message: string) => {
     if (toastTimeoutRef.current) {
@@ -634,14 +612,14 @@ export default function App() {
   };
 
   const handleBookingSuccess = (newAppointment: Appointment) => {
-    setAppointments((prev) => [newAppointment, ...prev]);
+    setAppointments((prev) => addUnique(prev, newAppointment));
     showToast(`¡Cita ${newAppointment.bookingCode} confirmada exitosamente!`);
     trackBookingConfirmed(newAppointment.serviceId, BUSINESS_CONFIG.branchName);
   };
 
   const handleAddExpressAppointment = async (newAppointment: Appointment) => {
     await saveAppointmentWithLockInFirestore(newAppointment);
-    setAppointments((prev) => [newAppointment, ...prev]);
+    setAppointments((prev) => addUnique(prev, newAppointment));
     showToast(`¡Turno express ${newAppointment.bookingCode} guardado en Firestore!`);
   };
 
@@ -712,7 +690,7 @@ export default function App() {
   const handleRegisterCut = async (cut: SalonCutRecord) => {
     try {
       await addSalonCutToFirestore(cut);
-      setCuts((prev) => [cut, ...prev]);
+      setCuts((prev) => addUnique(prev, cut));
       showToast(`Cobro de ${cut.clienteNombre} registrado en caja.`);
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Error al registrar el cobro en Firestore.';
@@ -736,7 +714,7 @@ export default function App() {
   const handleAddExpense = async (expense: ExpenseRecord) => {
     try {
       await addExpenseToFirestore(expense);
-      setExpenses((prev) => [expense, ...prev]);
+      setExpenses((prev) => addUnique(prev, expense));
       showToast(`Gasto registrado en caja menor.`);
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Error al registrar el gasto en Firestore.';
@@ -748,19 +726,13 @@ export default function App() {
   const handleSaveCashClose = async (close: CashRegisterClose) => {
     try {
       await addCashCloseToFirestore(close);
-      setCashCloses((prev) => [close, ...prev]);
+      setCashCloses((prev) => addUnique(prev, close));
       showToast(`Arqueo de caja del día guardado en Firestore.`);
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Error al guardar el arqueo de caja.';
       showToast(`⚠ Error: ${msg}`);
       throw error;
     }
-  };
-
-  const handleMarkNotificationAsRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isUnread: false } : n))
-    );
   };
 
   const handleLogin = (user: SystemUser) => {
@@ -829,7 +801,7 @@ export default function App() {
       setServices((prev) => {
         const updated = [newService, ...prev.filter((s) => s.id !== newService.id)];
         try {
-          localStorage.setItem('aura_tarifas_2026_services', JSON.stringify(updated));
+          localStorage.setItem(STORAGE_KEYS.services, JSON.stringify(updated));
         } catch {
           /* localStorage no disponible */
         }
@@ -849,7 +821,7 @@ export default function App() {
       setServices((prev) => {
         const updated = prev.map((s) => (s.id === updatedService.id ? updatedService : s));
         try {
-          localStorage.setItem('aura_tarifas_2026_services', JSON.stringify(updated));
+          localStorage.setItem(STORAGE_KEYS.services, JSON.stringify(updated));
         } catch {
           /* localStorage no disponible */
         }
@@ -872,7 +844,7 @@ export default function App() {
       setServices((prev) => {
         const updated = prev.map((s) => (s.id === serviceId ? updatedService : s));
         try {
-          localStorage.setItem('aura_tarifas_2026_services', JSON.stringify(updated));
+          localStorage.setItem(STORAGE_KEYS.services, JSON.stringify(updated));
         } catch {
           /* localStorage no disponible */
         }
@@ -894,9 +866,9 @@ export default function App() {
         const updated = prev.filter((s) => s.id !== serviceId);
         try {
           if (updated.length > 0) {
-            localStorage.setItem('aura_tarifas_2026_services', JSON.stringify(updated));
+            localStorage.setItem(STORAGE_KEYS.services, JSON.stringify(updated));
           } else {
-            localStorage.removeItem('aura_tarifas_2026_services');
+            localStorage.removeItem(STORAGE_KEYS.services);
           }
         } catch {
           /* localStorage no disponible */
@@ -917,7 +889,7 @@ export default function App() {
       setServiceCategories((prev) => {
         const updated = [...prev.filter((c) => c.id !== newCategory.id), newCategory];
         try {
-          localStorage.setItem('aura_tarifas_2026_categories', JSON.stringify(updated));
+          localStorage.setItem(STORAGE_KEYS.categories, JSON.stringify(updated));
         } catch {
           /* localStorage no disponible */
         }
@@ -937,7 +909,7 @@ export default function App() {
       setServiceCategories((prev) => {
         const updated = prev.map((c) => (c.id === updatedCategory.id ? updatedCategory : c));
         try {
-          localStorage.setItem('aura_tarifas_2026_categories', JSON.stringify(updated));
+          localStorage.setItem(STORAGE_KEYS.categories, JSON.stringify(updated));
         } catch {
           /* localStorage no disponible */
         }
@@ -958,9 +930,9 @@ export default function App() {
         const updated = prev.filter((c) => c.id !== categoryId);
         try {
           if (updated.length > 0) {
-            localStorage.setItem('aura_tarifas_2026_categories', JSON.stringify(updated));
+            localStorage.setItem(STORAGE_KEYS.categories, JSON.stringify(updated));
           } else {
-            localStorage.removeItem('aura_tarifas_2026_categories');
+            localStorage.removeItem(STORAGE_KEYS.categories);
           }
         } catch {
           /* localStorage no disponible */
@@ -1108,6 +1080,7 @@ export default function App() {
           currentTab === 'liquidaciones' ||
           currentTab === 'caja' ||
           currentTab === 'clientes') && isStaff && currentUser ? (
+          <Suspense fallback={<ScreenLoading />}>
           <AdminScreen
             admin={currentUser}
             currentUser={currentUser}
@@ -1135,6 +1108,7 @@ export default function App() {
               else if (adminTab === 'clientes') handleNavigateTab('clientes');
             }}
           />
+          </Suspense>
         ) : (currentTab === 'agenda' ||
           currentTab === 'cobro' ||
           currentTab === 'liquidaciones' ||
@@ -1157,6 +1131,7 @@ export default function App() {
 
         {/* GESTIÓN DE USUARIOS, SERVICIOS, CATEGORÍAS & MANICURISTAS - EXCLUSIVO PARA SUPERADMIN */}
         {currentTab === 'usuarios' && currentUser && (
+          <Suspense fallback={<ScreenLoading />}>
           <UsersManagementScreen
             currentUser={currentUser}
             systemUsers={systemUsers}
@@ -1179,14 +1154,17 @@ export default function App() {
             onSaveBusinessConfig={handleSaveBusinessConfig}
             onToast={showToast}
           />
+          </Suspense>
         )}
 
         {/* CONSOLA DE API REST & ULTRAMSG - EXCLUSIVO PARA DAVID */}
         {currentTab === 'api' && currentUser && (
+          <Suspense fallback={<ScreenLoading />}>
           <ApiConsoleScreen
             currentUser={currentUser}
             onSendFeedback={showToast}
           />
+          </Suspense>
         )}
 
         {/* PANTALLA 404 PERSONALIZADA */}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BusinessConfig } from '../../config/businessConfig';
-import { validateAndClean, validateEmail, isValidEmail } from '../../utils/security';
+import { validateAndClean, validateEmail } from '../../utils/security';
 
 interface BusinessConfigManagementTabProps {
   config: BusinessConfig;
@@ -422,7 +422,7 @@ export const BusinessConfigManagementTab: React.FC<BusinessConfigManagementTabPr
                   type="text"
                   value={formData.dataPolicyVersion}
                   onChange={(e) => handleChange('dataPolicyVersion', e.target.value)}
-                  placeholder="v1.0-2026-BORRADOR"
+                  placeholder="v1.0-2026"
                   className="w-full h-9 px-3 rounded-xl bg-[#F4EFE9]/40 border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20 font-mono"
                 />
               </div>
@@ -433,7 +433,7 @@ export const BusinessConfigManagementTab: React.FC<BusinessConfigManagementTabPr
                   type="text"
                   value={formData.privacyNoticeVersion}
                   onChange={(e) => handleChange('privacyNoticeVersion', e.target.value)}
-                  placeholder="v1.0-2026-BORRADOR"
+                  placeholder="v1.0-2026"
                   className="w-full h-9 px-3 rounded-xl bg-[#F4EFE9]/40 border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20 font-mono"
                 />
               </div>
@@ -444,7 +444,7 @@ export const BusinessConfigManagementTab: React.FC<BusinessConfigManagementTabPr
                   type="text"
                   value={formData.termsVersion}
                   onChange={(e) => handleChange('termsVersion', e.target.value)}
-                  placeholder="v1.0-2026-BORRADOR"
+                  placeholder="v1.0-2026"
                   className="w-full h-9 px-3 rounded-xl bg-[#F4EFE9]/40 border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20 font-mono"
                 />
               </div>
@@ -455,7 +455,7 @@ export const BusinessConfigManagementTab: React.FC<BusinessConfigManagementTabPr
                   type="text"
                   value={formData.cancellationPolicyVersion}
                   onChange={(e) => handleChange('cancellationPolicyVersion', e.target.value)}
-                  placeholder="v1.0-2026-BORRADOR"
+                  placeholder="v1.0-2026"
                   className="w-full h-9 px-3 rounded-xl bg-[#F4EFE9]/40 border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20 font-mono"
                 />
               </div>

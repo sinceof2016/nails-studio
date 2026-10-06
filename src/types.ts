@@ -68,7 +68,10 @@ export interface AddOnOption {
   description: string;
 }
 
-export type PaymentMethod = 'efectivo' | 'nequi_daviplata' | 'tarjeta_datafono' | 'mixto';
+export type DigitalMethod = 'nequi_daviplata' | 'tarjeta_datafono';
+export type PaymentMethod = 'efectivo' | DigitalMethod | 'mixto';
+export type ExpenseCategory = 'insumos' | 'servicios' | 'mantenimiento' | 'caja_menor';
+export type Role = 'SuperAdmin' | 'Administrador' | 'Caja';
 
 export interface SlotLock {
   id?: string;
@@ -103,7 +106,7 @@ export interface Appointment {
   paymentMethod?: PaymentMethod;
   montoEfectivo?: number;
   montoDigital?: number;
-  digitalMethod?: 'nequi_daviplata' | 'tarjeta_datafono';
+  digitalMethod?: DigitalMethod;
   tipAmount?: number;
   status: 'confirmada' | 'en_preparacion' | 'completada' | 'cancelada';
   bookingCode: string;
@@ -134,7 +137,7 @@ export interface SalonCutRecord {
   metodoPago: PaymentMethod;
   montoEfectivo?: number;
   montoDigital?: number;
-  digitalMethod?: 'nequi_daviplata' | 'tarjeta_datafono';
+  digitalMethod?: DigitalMethod;
   sucursalId: string;
   nota?: string;
   appointmentId?: string;
@@ -144,7 +147,7 @@ export interface ExpenseRecord {
   id: string;
   fecha: string;
   concepto: string;
-  categoria: 'insumos' | 'servicios' | 'mantenimiento' | 'caja_menor';
+  categoria: ExpenseCategory;
   monto: number;
   sucursalId: string;
   registradoPor: string;
@@ -184,7 +187,7 @@ export interface ClientProfile {
 export interface AdminUser {
   id: string;
   name: string;
-  role: 'SuperAdmin' | 'Administrador' | 'Caja';
+  role: Role;
   title: string;
   email: string;
   phone: string;
@@ -207,7 +210,7 @@ export interface SystemUser {
   id: string;
   nombre: string;
   email: string;
-  rol: 'SuperAdmin' | 'Administrador' | 'Caja';
+  rol: Role;
   sucursalAsignada: string;
   avatar?: string;
   creadoEn?: string;

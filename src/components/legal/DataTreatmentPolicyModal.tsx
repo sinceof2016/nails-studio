@@ -1,5 +1,5 @@
 import React from 'react';
-import { BUSINESS_CONFIG } from '../../config/businessConfig';
+import { BUSINESS_CONFIG, LEGAL_LAST_UPDATE } from '../../config/businessConfig';
 
 interface DataTreatmentPolicyModalProps {
   isOpen: boolean;
@@ -22,14 +22,6 @@ export const DataTreatmentPolicyModal: React.FC<DataTreatmentPolicyModalProps> =
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
       <div className="relative w-full max-w-2xl max-h-[90vh] bg-[#F4EFE9] rounded-3xl p-5 sm:p-7 shadow-2xl border border-[#C6BDAC] z-10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-        {/* Banner de Advertencia Legal */}
-        <div className="mb-3 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] flex items-center gap-2">
-          <span className="material-symbols-outlined text-amber-700 text-[16px] shrink-0">gavel</span>
-          <span>
-            <strong>BORRADOR PARA REVISIÓN LEGAL</strong> · PENDIENTE REVISIÓN LEGAL POR UN ABOGADO TITULADO
-          </span>
-        </div>
-
         {/* Header */}
         <div className="flex items-start justify-between border-b border-[#C6BDAC]/70 pb-3 shrink-0">
           <div>
@@ -40,7 +32,7 @@ export const DataTreatmentPolicyModal: React.FC<DataTreatmentPolicyModalProps> =
               Política de Tratamiento de Datos Personales
             </h2>
             <p className="text-xs text-[#5A4A43]">
-              Versión: {BUSINESS_CONFIG.dataPolicyVersion}
+              Versión {BUSINESS_CONFIG.dataPolicyVersion} · Última actualización: {LEGAL_LAST_UPDATE}
             </p>
           </div>
           <button
@@ -143,10 +135,10 @@ export const DataTreatmentPolicyModal: React.FC<DataTreatmentPolicyModalProps> =
             </p>
             <div className="space-y-1.5 text-[11px] bg-[#F4EFE9] p-2.5 rounded-xl border border-[#C6BDAC]">
               <p>
-                <strong>Consultas:</strong> Serán atendidas en un término máximo de <strong>diez (10) días hábiles</strong> contados a partir de la fecha de recibo. Si no fuere posible, se informará al interesado antes del vencimiento con plazo adicional no superior a <strong>cinco (5) días hábiles</strong>. <em>(PENDIENTE REVISIÓN LEGAL)</em>.
+                <strong>Consultas:</strong> Serán atendidas en un término máximo de <strong>diez (10) días hábiles</strong> contados a partir de la fecha de recibo. Si no fuere posible, se informará al interesado antes del vencimiento con plazo adicional no superior a <strong>cinco (5) días hábiles</strong>.
               </p>
               <p>
-                <strong>Reclamos (Corrección, Actualización o Supresión):</strong> Serán atendidos en un término máximo de <strong>quince (15) días hábiles</strong> contados a partir del día siguiente a la fecha de su recibo, con prórroga máxima de <strong>ocho (8) días hábiles</strong> debidamente informada. <em>(PENDIENTE REVISIÓN LEGAL)</em>.
+                <strong>Reclamos (Corrección, Actualización o Supresión):</strong> Serán atendidos en un término máximo de <strong>quince (15) días hábiles</strong> contados a partir del día siguiente a la fecha de su recibo, con prórroga máxima de <strong>ocho (8) días hábiles</strong> debidamente informada.
               </p>
             </div>
           </section>

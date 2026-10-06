@@ -1,5 +1,5 @@
 import React from 'react';
-import { BUSINESS_CONFIG } from '../../config/businessConfig';
+import { BUSINESS_CONFIG, LEGAL_LAST_UPDATE } from '../../config/businessConfig';
 
 interface TermsAndConditionsModalProps {
   isOpen: boolean;
@@ -24,14 +24,6 @@ export const TermsAndConditionsModal: React.FC<TermsAndConditionsModalProps> = (
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
       <div className="relative w-full max-w-2xl max-h-[90vh] bg-[#F4EFE9] rounded-3xl p-5 sm:p-7 shadow-2xl border border-[#C6BDAC] z-10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-        {/* Banner de Advertencia Legal */}
-        <div className="mb-3 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] flex items-center gap-2">
-          <span className="material-symbols-outlined text-amber-700 text-[16px] shrink-0">gavel</span>
-          <span>
-            <strong>BORRADOR PARA REVISIÓN LEGAL</strong> · PENDIENTE REVISIÓN LEGAL POR UN ABOGADO TITULADO
-          </span>
-        </div>
-
         {/* Header */}
         <div className="flex items-start justify-between border-b border-[#C6BDAC]/70 pb-3 shrink-0">
           <div>
@@ -42,7 +34,7 @@ export const TermsAndConditionsModal: React.FC<TermsAndConditionsModalProps> = (
               Términos y Condiciones del Servicio
             </h2>
             <p className="text-xs text-[#5A4A43]">
-              Versión: {BUSINESS_CONFIG.termsVersion} · {BUSINESS_CONFIG.brandName}
+              Versión {BUSINESS_CONFIG.termsVersion} · Última actualización: {LEGAL_LAST_UPDATE}
             </p>
           </div>
           <button
@@ -105,7 +97,7 @@ export const TermsAndConditionsModal: React.FC<TermsAndConditionsModalProps> = (
             </p>
             <ul className="list-disc list-inside space-y-1 pl-2">
               <li>Se solicita llegar con <strong>diez (10) minutos de anticipación</strong> a la hora pactada.</li>
-              <li>Existe un tiempo máximo de tolerancia de <strong>diez (10) minutos</strong> de retraso. <em>(PENDIENTE REVISIÓN LEGAL)</em>.</li>
+              <li>Existe un tiempo máximo de tolerancia de <strong>diez (10) minutos</strong> de retraso.</li>
               <li>Pasado el tiempo de tolerancia, el establecimiento podrá modificar el diseño a uno más sencillo acorde al tiempo restante o reasignar el turno para no afectar a los clientes siguientes.</li>
             </ul>
           </section>
@@ -116,7 +108,7 @@ export const TermsAndConditionsModal: React.FC<TermsAndConditionsModalProps> = (
               5. Peticiones, Quejas, Reclamos y Sugerencias (PQRS)
             </h3>
             <p>
-              De conformidad con la Ley 1480 de 2011, los usuarios pueden formular sus solicitudes o reclamos a través del correo <strong>{BUSINESS_CONFIG.email}</strong> o en el libro físico de sugerencias disponible en recepción. Las PQRS serán resueltas dentro de los <strong>quince (15) días hábiles</strong> siguientes a su radicación. <em>(PENDIENTE REVISIÓN LEGAL)</em>.
+              De conformidad con la Ley 1480 de 2011, los usuarios pueden formular sus solicitudes o reclamos a través del correo <strong>{BUSINESS_CONFIG.email}</strong> o en el libro físico de sugerencias disponible en recepción. Las PQRS serán resueltas dentro de los <strong>quince (15) días hábiles</strong> siguientes a su radicación.
             </p>
           </section>
 

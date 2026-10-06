@@ -88,12 +88,6 @@ export function subscribeToAppointments(
   );
 }
 
-// Save or create appointment in Firestore
-export async function saveAppointmentToFirestore(appointment: Appointment): Promise<void> {
-  const docRef = doc(db, APPOINTMENTS_COLLECTION, appointment.id);
-  await setDoc(docRef, appointment, { merge: true });
-}
-
 // Guarda una cita atómicamente junto con un bloqueo de horario en slot_locks para impedir doble reserva
 export async function saveAppointmentWithLockInFirestore(appointment: Appointment): Promise<void> {
   const aptDocRef = doc(db, APPOINTMENTS_COLLECTION, appointment.id);
@@ -613,10 +607,10 @@ export async function saveBusinessConfigInFirestore(config: BusinessConfig): Pro
     taxNotice: String(config.taxNotice || '').slice(0, 300),
     cancellationNoticeHours: Number(config.cancellationNoticeHours) || 24,
     advancePaymentRequired: Boolean(config.advancePaymentRequired),
-    dataPolicyVersion: String(config.dataPolicyVersion || 'v1.0-2026-BORRADOR').slice(0, 40),
-    privacyNoticeVersion: String(config.privacyNoticeVersion || 'v1.0-2026-BORRADOR').slice(0, 40),
-    termsVersion: String(config.termsVersion || 'v1.0-2026-BORRADOR').slice(0, 40),
-    cancellationPolicyVersion: String(config.cancellationPolicyVersion || 'v1.0-2026-BORRADOR').slice(0, 40)
+    dataPolicyVersion: String(config.dataPolicyVersion || 'v1.0-2026').slice(0, 40),
+    privacyNoticeVersion: String(config.privacyNoticeVersion || 'v1.0-2026').slice(0, 40),
+    termsVersion: String(config.termsVersion || 'v1.0-2026').slice(0, 40),
+    cancellationPolicyVersion: String(config.cancellationPolicyVersion || 'v1.0-2026').slice(0, 40)
   };
 
   await setDoc(docRef, cleanData);
