@@ -18,7 +18,16 @@ export default defineConfig(() => {
         output: {
           entryFileNames: 'assets/app.js',
           chunkFileNames: 'assets/[name].js',
-          assetFileNames: 'assets/[name].[ext]'
+          assetFileNames: 'assets/[name].[ext]',
+          // Librerías que casi no cambian en archivos aparte: el navegador las guarda y las visitas siguientes bajan menos
+          manualChunks(id: string) {
+            if (!id.includes('node_modules')) return undefined;
+            if (id.includes('/@firebase/firestore') || id.includes('/firebase/firestore')) return 'vendor-firestore';
+            if (id.includes('/@firebase/auth') || id.includes('/firebase/auth')) return 'vendor-auth';
+            if (id.includes('/firebase/') || id.includes('/@firebase/')) return 'vendor-firebase';
+            if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/scheduler/')) return 'vendor-react';
+            return undefined;
+          }
         }
       }
     },
