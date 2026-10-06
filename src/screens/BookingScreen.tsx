@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Service, Specialist, Appointment, SlotLock } from '../types';
+import { Service, Specialist, Appointment, SlotLock, AgendaBlock } from '../types';
 import { SERVICES, SPECIALISTS, ADD_ON_OPTIONS } from '../data/mockData';
 import { formatCOP } from '../utils/format';
 import { sendUltraMsgWhatsApp, getUltraMsgConfig, renderTemplate } from '../services/whatsappService';
@@ -25,6 +25,7 @@ interface BookingScreenProps {
   promoDiscountPercent?: number;
   appointments?: Appointment[];
   slotLocks?: SlotLock[];
+  agendaBlocks?: AgendaBlock[];
   onBookingSuccess: (appointment: Appointment) => void;
   onNavigateToAppointments: () => void;
   onNavigateToServices?: () => void;
@@ -43,6 +44,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   promoDiscountPercent = 0,
   appointments = [],
   slotLocks = [],
+  agendaBlocks = [],
   onBookingSuccess,
   onNavigateToAppointments,
   onNavigateToServices,
@@ -145,17 +147,19 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
     initialSpecialist ? initialSpecialist.id : 'any'
   );
 
+  const serviceDuration = selectedService?.durationMinutes || 60;
+
   // Determinar día inicial con disponibilidad (si hoy ya pasaron las horas, comenzar en mañana)
   const initialCalendarDay = useMemo(() => {
     if (calendarDays.length > 1) {
-      const todaySlots = computeSlotAvailability(calendarDays[0], 'any', appointments, slotLocks, new Date(), specialists);
+      const todaySlots = computeSlotAvailability(calendarDays[0], 'any', appointments, slotLocks, new Date(), specialists, serviceDuration, agendaBlocks);
       const freeCount = todaySlots.filter((s) => s.status === 'available').length;
       if (freeCount === 0) {
         return calendarDays[1];
       }
     }
     return calendarDays[0];
-  }, [calendarDays, appointments, slotLocks, specialists]);
+  }, [calendarDays, appointments, slotLocks, specialists, serviceDuration, agendaBlocks]);
 
   const [selectedDateOption, setSelectedDateOption] = useState<CalendarDayOption>(
     initialCalendarDay || calendarDays[0] || {
@@ -173,13 +177,13 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   // Si en el primer render hoy no tiene turnos libres, mover al día con disponibilidad
   useEffect(() => {
     if (initialCalendarDay && selectedDateOption.isToday) {
-      const todaySlots = computeSlotAvailability(selectedDateOption, selectedSpecialistId, appointments, slotLocks, new Date(), specialists);
+      const todaySlots = computeSlotAvailability(selectedDateOption, selectedSpecialistId, appointments, slotLocks, new Date(), specialists, serviceDuration, agendaBlocks);
       const freeCount = todaySlots.filter((s) => s.status === 'available').length;
       if (freeCount === 0 && calendarDays[1]) {
         setSelectedDateOption(calendarDays[1]);
       }
     }
-  }, [initialCalendarDay]);
+  }, [initialCalendarDay, serviceDuration, agendaBlocks]);
 
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [selectedPolish, setSelectedPolish] = useState<string>('Hailey Glazed Pearl');
@@ -224,20 +228,22 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       appointments,
       slotLocks,
       new Date(),
-      specialists
+      specialists,
+      serviceDuration,
+      agendaBlocks
     );
-  }, [selectedSpecialistId, selectedDateOption, appointments, slotLocks, specialists]);
+  }, [selectedSpecialistId, selectedDateOption, appointments, slotLocks, specialists, serviceDuration, agendaBlocks]);
 
   // Compute day stats for each specialist
   const daySpecialistStats = useMemo(() => {
     const map: Record<string, { total: number; booked: number; free: number }> = {};
     for (const spec of specialists) {
-      const slots = computeSlotAvailability(selectedDateOption, spec.id, appointments, slotLocks, new Date(), specialists);
+      const slots = computeSlotAvailability(selectedDateOption, spec.id, appointments, slotLocks, new Date(), specialists, serviceDuration, agendaBlocks);
       const freeCount = slots.filter((s) => s.status === 'available').length;
       map[spec.id] = { total: slots.length, booked: slots.length - freeCount, free: freeCount };
     }
     return map;
-  }, [selectedDateOption, appointments, slotLocks, specialists]);
+  }, [selectedDateOption, appointments, slotLocks, specialists, serviceDuration, agendaBlocks]);
 
   // Pricing Calculation in COP
   const basePrice = selectedService ? selectedService.price : 0;
@@ -355,7 +361,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
     let assignedSpecialist = currentSpecialist;
     if (!assignedSpecialist) {
       const freeCandidate = specialists.find((spec) => {
-        const slots = computeSlotAvailability(selectedDateOption, spec.id, appointments, slotLocks, new Date(), specialists);
+        const slots = computeSlotAvailability(selectedDateOption, spec.id, appointments, slotLocks, new Date(), specialists, serviceDuration, agendaBlocks);
         return slots.find((s) => s.slot === selectedTime)?.status === 'available';
       });
       if (!freeCandidate) {
@@ -364,7 +370,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
       }
       assignedSpecialist = freeCandidate;
     } else {
-      const slots = computeSlotAvailability(selectedDateOption, assignedSpecialist.id, appointments, slotLocks, new Date(), specialists);
+      const slots = computeSlotAvailability(selectedDateOption, assignedSpecialist.id, appointments, slotLocks, new Date(), specialists, serviceDuration, agendaBlocks);
       const isAvailable = slots.find((s) => s.slot === selectedTime)?.status === 'available';
       if (!isAvailable) {
         setFormError(`La especialista ${assignedSpecialist.name} ya no tiene disponibilidad a las ${selectedTime}. Por favor selecciona otro horario disponible.`);
@@ -507,7 +513,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
 
       {/* Booking Stepper */}
       <div ref={stepperRef} className="bg-white rounded-3xl p-4 sm:p-5 border border-[#C6BDAC] shadow-xs scroll-mt-24">
-        <div className="grid grid-cols-4 gap-2 text-center text-xs">
+        <div className="grid grid-cols-4 gap-1 sm:gap-2 text-center text-xs">
           {[
             { num: 1, title: 'Servicio', icon: 'spa' },
             { num: 2, title: 'Horario', icon: 'calendar_month' },
@@ -525,19 +531,32 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
                   if (s.num <= step) goToStep(s.num);
                 }}
                 disabled={s.num > step}
-                className={`py-2 px-2 rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer ${
+                aria-current={isCurrent ? 'step' : undefined}
+                className={`py-1.5 px-1 sm:px-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all ${
                   isCurrent
-                    ? 'bg-[#BB9C87] text-[#2B2420] font-bold font-bold shadow-xs scale-[1.02]'
+                    ? 'bg-[#BB9C87]/25 text-[#2B2420] font-bold cursor-default'
                     : isCompleted
-                    ? 'bg-[#F4EFE9] text-[#2B2420] font-semibold hover:bg-[#C6BDAC]/40'
-                    : 'bg-transparent text-[#5A4A43] opacity-50 cursor-not-allowed'
+                    ? 'text-[#2B2420] font-semibold hover:bg-[#C6BDAC]/30 cursor-pointer'
+                    : 'text-[#5A4A43] opacity-50 cursor-not-allowed'
                 }`}
                 title={`Paso ${s.num}: ${s.title}`}
               >
-                <div className="flex items-center gap-1">
-                  <span className="text-xs">{s.num}.</span>
-                  <span className="hidden sm:inline">{s.title}</span>
-                </div>
+                <span
+                  className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs font-bold border transition-all ${
+                    isCurrent
+                      ? 'bg-[#BB9C87] border-[#BB9C87] text-[#2B2420] shadow-xs'
+                      : isCompleted
+                      ? 'bg-[#2B2420] border-[#2B2420] text-white'
+                      : 'bg-white border-[#C6BDAC] text-[#5A4A43]'
+                  }`}
+                >
+                  {isCompleted ? (
+                    <span className="material-symbols-outlined text-[16px]">check</span>
+                  ) : (
+                    s.num
+                  )}
+                </span>
+                <span className="text-[10px] sm:text-xs leading-tight">{s.title}</span>
               </button>
             );
           })}
@@ -572,6 +591,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
             availableTimeSlots={availableTimeSlots}
             selectedTime={selectedTime}
             setSelectedTime={setSelectedTime}
+            serviceDuration={serviceDuration}
             specialists={specialists}
             onBack={() => goToStep(1)}
             onNext={() => goToStep(3)}

@@ -19,6 +19,7 @@ interface BookingStepDateTimeProps {
   setSelectedTime: (time: string) => void;
   onBack: () => void;
   onNext: () => void;
+  serviceDuration?: number;
   specialists?: Specialist[];
   redirectionSlot?: string | null;
   setRedirectionSlot?: (slot: string | null) => void;
@@ -37,6 +38,7 @@ export const BookingStepDateTime: React.FC<BookingStepDateTimeProps> = ({
   setSelectedTime,
   onBack,
   onNext,
+  serviceDuration,
   specialists = SPECIALISTS
 }) => {
   return (
@@ -194,6 +196,19 @@ export const BookingStepDateTime: React.FC<BookingStepDateTimeProps> = ({
               Pasado
             </span>
           </div>
+        </div>
+
+        {/* Aviso de servicio largo (ocupa 2 horarios seguidos) */}
+        {(serviceDuration || 60) > 60 && (
+          <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
+            <span className="material-symbols-outlined text-amber-700 text-[18px] shrink-0">info</span>
+            <span>Este servicio dura {serviceDuration} minutos y ocupa 2 horarios seguidos.</span>
+          </div>
+        )}
+
+        <div className="text-[11px] text-[#5A4A43] flex items-center gap-1.5">
+          <span className="material-symbols-outlined text-[15px]">schedule</span>
+          <span>Horario de atención: 10:00 AM a 07:00 PM (última cita empieza a las 06:00 PM).</span>
         </div>
 
         {/* Banner cuando no hay turnos libres en el día seleccionado */}

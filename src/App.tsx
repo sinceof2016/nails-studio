@@ -34,7 +34,8 @@ import {
   SystemUser,
   AppTab,
   CookiePreferences,
-  SlotLock
+  SlotLock,
+  AgendaBlock
 } from './types';
 import {
   getCookieConsent,
@@ -63,6 +64,9 @@ import {
   cancelAppointmentWithLockReleaseInFirestore,
   deleteAppointmentInFirestore,
   subscribeToSlotLocks,
+  subscribeToAgendaBlocks,
+  addAgendaBlocksInFirestore,
+  deleteAgendaBlockInFirestore,
   subscribeToSalonCuts,
   addSalonCutToFirestore,
   deleteSalonCutFromFirestore,
@@ -310,6 +314,9 @@ export default function App() {
   // Slot Locks State (prevents double booking)
   const [slotLocks, setSlotLocks] = useState<SlotLock[]>([]);
 
+  // Agenda Blocks State (bloqueos de día completo)
+  const [agendaBlocks, setAgendaBlocks] = useState<AgendaBlock[]>([]);
+
   // Toast feedback
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -381,6 +388,10 @@ export default function App() {
   useEffect(() => {
     const unsubLocks = subscribeToSlotLocks((data) => {
       setSlotLocks(data || []);
+    });
+
+    const unsubBlocks = subscribeToAgendaBlocks((data) => {
+      setAgendaBlocks(data || []);
     });
 
     const unsubServices = subscribeToServices((liveServices) => {
@@ -471,6 +482,7 @@ export default function App() {
 
     return () => {
       unsubLocks();
+      unsubBlocks();
       unsubServices();
       unsubSpecialists();
       unsubCategories();
@@ -669,15 +681,16 @@ export default function App() {
 
   const handleDeleteAppointment = async (
     id: string,
-    extra?: { date?: string; specialistId?: string; time?: string }
+    extra?: { date?: string; specialistId?: string; time?: string; serviceDuration?: number }
   ) => {
     const previous = appointments.find((a) => a.id === id);
     const date = extra?.date || previous?.date;
     const specialistId = extra?.specialistId || previous?.specialistId;
     const time = extra?.time || previous?.time;
+    const serviceDuration = extra?.serviceDuration || previous?.serviceDuration;
 
     try {
-      await deleteAppointmentInFirestore(id, { date, specialistId, time });
+      await deleteAppointmentInFirestore(id, { date, specialistId, time, serviceDuration });
       setAppointments((prev) => prev.filter((a) => a.id !== id));
       showToast('Cita eliminada permanentemente y horario liberado.');
     } catch (error) {
@@ -685,6 +698,19 @@ export default function App() {
       showToast(`⚠ Error: ${msg}`);
       throw error;
     }
+  };
+
+  const handleAddAgendaBlocks = async (specialistIds: string[], dates: string[]) => {
+    const items = specialistIds.flatMap((specialistId) =>
+      dates.map((date) => ({ specialistId, date }))
+    );
+    await addAgendaBlocksInFirestore(items);
+    showToast(`✓ Se bloquearon ${items.length} agenda(s)`);
+  };
+
+  const handleRemoveAgendaBlock = async (blockId: string) => {
+    await deleteAgendaBlockInFirestore(blockId);
+    showToast('✓ Bloqueo eliminado');
   };
 
   const handleRegisterCut = async (cut: SalonCutRecord) => {
@@ -1050,6 +1076,7 @@ export default function App() {
             promoDiscountPercent={promoDiscount}
             appointments={appointments}
             slotLocks={slotLocks}
+            agendaBlocks={agendaBlocks}
             onBookingSuccess={handleBookingSuccess}
             onNavigateToAppointments={() => handleNavigateTab('agenda')}
             onNavigateToServices={() => handleNavigateTab('servicios')}
@@ -1090,6 +1117,9 @@ export default function App() {
             cashCloses={cashCloses}
             services={services}
             specialists={specialists}
+            agendaBlocks={agendaBlocks}
+            onAddAgendaBlocks={handleAddAgendaBlocks}
+            onRemoveAgendaBlock={handleRemoveAgendaBlock}
             onUpdateStatus={handleUpdateStatus}
             onCancelAppointment={(id) => handleUpdateStatus(id, 'cancelada')}
             onDeleteAppointment={handleDeleteAppointment}

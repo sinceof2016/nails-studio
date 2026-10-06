@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Specialist } from '../../types';
-import { validateAndClean } from '../../utils/security';
+import { validateAndClean, validateColombianPhone } from '../../utils/security';
 import { compressImageFile } from '../../utils/imageCompressor';
 import { DEFAULT_COMMISSION_RATE } from '../../config/businessConfig';
 
@@ -23,6 +23,7 @@ export const SpecialistFormModal: React.FC<SpecialistFormModalProps> = ({
   const [role, setRole] = useState('Master Manicurista');
   const [avatar, setAvatar] = useState('');
   const [commissionRate, setCommissionRate] = useState<number>(50);
+  const [phone, setPhone] = useState('');
   const [bio, setBio] = useState('');
   const [specialtiesText, setSpecialtiesText] = useState('');
   const [certificationsText, setCertificationsText] = useState('');
@@ -35,6 +36,7 @@ export const SpecialistFormModal: React.FC<SpecialistFormModalProps> = ({
       setRole(specialistToEdit.role);
       setAvatar(specialistToEdit.avatar || '');
       setCommissionRate(specialistToEdit.commissionRate ?? 50);
+      setPhone(specialistToEdit.phone || specialistToEdit.telefono || '');
       setBio(specialistToEdit.bio || '');
       setSpecialtiesText((specialistToEdit.specialties || []).join(', '));
       setCertificationsText((specialistToEdit.certifications || []).join(', '));
@@ -45,6 +47,7 @@ export const SpecialistFormModal: React.FC<SpecialistFormModalProps> = ({
       setRole('Master Manicurista');
       setAvatar('https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200');
       setCommissionRate(50);
+      setPhone('');
       setBio('Especialista certificada en técnicas avanzadas de manicura, estructura y cuidado holístico de manos.');
       setSpecialtiesText('Manicura Rusa, Glazed Nails, Kapping');
       setCertificationsText('Certified Russian Manicure Master, Hospital-Grade Sterilization');
@@ -103,6 +106,16 @@ export const SpecialistFormModal: React.FC<SpecialistFormModalProps> = ({
       return;
     }
 
+    let cleanPhone = '';
+    if (phone.trim()) {
+      const phoneCheck = validateColombianPhone(phone);
+      if (!phoneCheck.isValid) {
+        setFormError(phoneCheck.reason || 'Teléfono no válido.');
+        return;
+      }
+      cleanPhone = phone.replace(/\D/g, '').slice(-10);
+    }
+
     const cleanName = nameRes.value;
     const idSlug = specialistToEdit
       ? specialistToEdit.id
@@ -143,7 +156,9 @@ export const SpecialistFormModal: React.FC<SpecialistFormModalProps> = ({
       certifications: cleanCertifications.length > 0 ? cleanCertifications : ['Técnica Certificada en Manicura'],
       availableDays,
       specialties: cleanSpecialties.length > 0 ? cleanSpecialties : ['Manicura Rusa', 'Esmaltado Semipermanente'],
-      commissionRate: Number.isFinite(Number(commissionRate)) ? Number(commissionRate) : DEFAULT_COMMISSION_RATE
+      commissionRate: Number.isFinite(Number(commissionRate)) ? Number(commissionRate) : DEFAULT_COMMISSION_RATE,
+      phone: cleanPhone || undefined,
+      telefono: cleanPhone || undefined
     };
 
     onSave(specialist);
@@ -222,6 +237,25 @@ export const SpecialistFormModal: React.FC<SpecialistFormModalProps> = ({
               </div>
             </div>
 
+            <div>
+              <label htmlFor="specialist-phone" className="block font-semibold text-[#5A4A43] mb-1">
+                Teléfono / WhatsApp (privado)
+              </label>
+              <input
+                id="specialist-phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Ej. 3101234567"
+                maxLength={15}
+                className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20"
+              />
+              <p className="text-[10px] text-[#5A4A43] mt-0.5">
+                Uso interno exclusivo del personal para avisar turnos por WhatsApp. No es visible para clientes.
+              </p>
+            </div>
+          </div>
+
           <div className="space-y-1.5">
             <label className="block font-semibold text-[#5A4A43]">Foto de Perfil</label>
             <div className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-[#C6BDAC]">
@@ -273,10 +307,12 @@ export const SpecialistFormModal: React.FC<SpecialistFormModalProps> = ({
               </div>
             </div>
           </div>
-          </div>
 
           <div>
-            <label className="block font-semibold text-[#5A4A43] mb-1.5">Días Disponibles para Citas</label>
+            <label className="block font-semibold text-[#5A4A43] mb-1">Días Disponibles para Citas</label>
+            <p className="text-[11px] text-[#5A4A43] mb-2 leading-relaxed">
+              Los días de descanso fijos (Dayana y Natalia: miércoles; Geraldine: lunes; Diana: sin día fijo) y la rotación dominical de la agenda mandan sobre los días seleccionados aquí.
+            </p>
             <div className="flex flex-wrap gap-1.5">
               {ALL_WEEK_DAYS.map((day) => {
                 const isSelected = availableDays.includes(day);

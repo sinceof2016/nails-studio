@@ -84,6 +84,11 @@ export const ServiceFormModal: React.FC<ServiceFormModalProps> = ({
       return;
     }
 
+    if (durationMinutes > 120) {
+      setFormError('La duración máxima permitida es de 120 minutos (2 horas).');
+      return;
+    }
+
     const descRes = validateAndClean(description, 'Descripción', 1000);
     if (!descRes.ok) {
       setFormError(descRes.error || 'Descripción inválida.');
@@ -219,6 +224,7 @@ export const ServiceFormModal: React.FC<ServiceFormModalProps> = ({
               <input
                 type="number"
                 min="15"
+                max="120"
                 step="15"
                 required
                 value={durationMinutes}

@@ -19,6 +19,7 @@ import {
   ExpenseRecord,
   CashRegisterClose,
   SlotLock,
+  AgendaBlock,
   Service,
   Specialist,
   SpecialistPublic,
@@ -29,9 +30,11 @@ import {
 import { BusinessConfig } from '../config/businessConfig';
 import { getColombiaDateISO } from '../utils/dateAndId';
 import { validateImageSize } from '../utils/imageCompressor';
+import { getCoveredSlots, getOccupiedSlots } from '../utils/calendarAvailability';
 
 const APPOINTMENTS_COLLECTION = 'appointments';
 const SLOT_LOCKS_COLLECTION = 'slot_locks';
+const AGENDA_BLOCKS_COLLECTION = 'agenda_blocks';
 const CUTS_COLLECTION = 'salon_cuts';
 const EXPENSES_COLLECTION = 'expenses';
 const CLOSES_COLLECTION = 'cash_closes';
@@ -45,6 +48,16 @@ const USERS_COLLECTION = 'users';
 export function getSlotLockDocId(date: string, specialistId: string, time: string): string {
   const cleanSlot = time.replace(/[: ]/g, '-');
   return `${date}_${specialistId}_${cleanSlot}`;
+}
+
+export function getAppointmentLockIds(
+  date: string,
+  specialistId: string,
+  time: string,
+  durationMinutes: number = 60
+): string[] {
+  const slots = getCoveredSlots(time, durationMinutes) || getOccupiedSlots(time, durationMinutes);
+  return slots.map((slot) => getSlotLockDocId(date, specialistId, slot));
 }
 
 // Subscribes to real-time slot locks (publicly readable to prevent double booking without personal data)
@@ -64,6 +77,53 @@ export function subscribeToSlotLocks(callback: (locks: SlotLock[]) => void, onEr
       else console.warn('Error fetching slot locks:', error);
     }
   );
+}
+
+// Subscribes to real-time agenda blocks (publicly readable to reflect full-day blocks)
+export function subscribeToAgendaBlocks(
+  callback: (blocks: AgendaBlock[]) => void,
+  onError?: (error: unknown) => void
+) {
+  const colRef = collection(db, AGENDA_BLOCKS_COLLECTION);
+  return onSnapshot(
+    colRef,
+    (snapshot) => {
+      const list: AgendaBlock[] = [];
+      snapshot.forEach((docSnap) => {
+        list.push({ id: docSnap.id, ...(docSnap.data() as Omit<AgendaBlock, 'id'>) });
+      });
+      callback(list);
+    },
+    (error) => {
+      if (onError) onError(error);
+      else console.warn('Error fetching Firestore agenda blocks:', error);
+    }
+  );
+}
+
+export async function addAgendaBlocksInFirestore(
+  blocks: { specialistId: string; date: string }[]
+): Promise<void> {
+  if (!blocks || blocks.length === 0) return;
+  const batch = writeBatch(db);
+  const now = getColombiaDateISO();
+
+  for (const block of blocks) {
+    const blockId = `${block.date}_${block.specialistId}`;
+    const docRef = doc(db, AGENDA_BLOCKS_COLLECTION, blockId);
+    batch.set(docRef, {
+      specialistId: block.specialistId,
+      date: block.date,
+      createdAt: now
+    });
+  }
+
+  await batch.commit();
+}
+
+export async function deleteAgendaBlockInFirestore(blockId: string): Promise<void> {
+  const docRef = doc(db, AGENDA_BLOCKS_COLLECTION, blockId);
+  await deleteDoc(docRef);
 }
 
 // Subscribes to real-time appointments (exclusivo para staff, respeta snapshots vacíos)
@@ -88,11 +148,11 @@ export function subscribeToAppointments(
   );
 }
 
-// Guarda una cita atómicamente junto con un bloqueo de horario en slot_locks para impedir doble reserva
+// Guarda una cita atómicamente junto con todos los bloqueos de horario en slot_locks para impedir doble reserva
 export async function saveAppointmentWithLockInFirestore(appointment: Appointment): Promise<void> {
   const aptDocRef = doc(db, APPOINTMENTS_COLLECTION, appointment.id);
-  const lockId = getSlotLockDocId(appointment.date, appointment.specialistId, appointment.time);
-  const lockDocRef = doc(db, SLOT_LOCKS_COLLECTION, lockId);
+  const duration = appointment.serviceDuration || 60;
+  const slots = getCoveredSlots(appointment.time, duration) || getOccupiedSlots(appointment.time, duration);
 
   // Limpiar propiedades undefined y null para garantizar compatibilidad estricta con Firestore
   const cleanAppointment = Object.entries(appointment).reduce<Record<string, unknown>>((acc, [key, val]) => {
@@ -102,24 +162,34 @@ export async function saveAppointmentWithLockInFirestore(appointment: Appointmen
     return acc;
   }, {});
 
-  const lockData: SlotLock = {
-    appointmentId: appointment.id,
-    slot: appointment.time,
-    date: appointment.date,
-    specialistId: appointment.specialistId,
-    createdAt: appointment.createdAt || getColombiaDateISO()
-  };
+  const now = appointment.createdAt || getColombiaDateISO();
+  const lockEntries = slots.map((slot) => {
+    const lockId = getSlotLockDocId(appointment.date, appointment.specialistId, slot);
+    const lockDocRef = doc(db, SLOT_LOCKS_COLLECTION, lockId);
+    const lockData: SlotLock = {
+      appointmentId: appointment.id,
+      slot: slot,
+      date: appointment.date,
+      specialistId: appointment.specialistId,
+      createdAt: now
+    };
+    return { lockDocRef, lockData, slot };
+  });
 
   try {
     await runTransaction(db, async (transaction) => {
-      // 1. Verificar si el horario ya está bloqueado
-      const lockSnap = await transaction.get(lockDocRef);
-      if (lockSnap.exists()) {
-        throw new Error(`El horario de las ${appointment.time} ya se encuentra ocupado con esta especialista.`);
+      // 1. Verificar si alguno de los horarios ya está bloqueado
+      for (const { lockDocRef, slot } of lockEntries) {
+        const lockSnap = await transaction.get(lockDocRef);
+        if (lockSnap.exists()) {
+          throw new Error(`El horario de las ${slot} ya se encuentra ocupado con esta especialista.`);
+        }
       }
 
-      // 2. Escribir atómicamente el bloqueo y la nueva cita
-      transaction.set(lockDocRef, lockData);
+      // 2. Escribir atómicamente todos los bloqueos y la nueva cita
+      for (const { lockDocRef, lockData } of lockEntries) {
+        transaction.set(lockDocRef, lockData);
+      }
       transaction.set(aptDocRef, cleanAppointment);
     });
   } catch (error: unknown) {
@@ -130,7 +200,9 @@ export async function saveAppointmentWithLockInFirestore(appointment: Appointmen
 
     // Fallback de reintento directo si la transacción falló por concurrencia
     try {
-      await setDoc(lockDocRef, lockData);
+      for (const { lockDocRef, lockData } of lockEntries) {
+        await setDoc(lockDocRef, lockData);
+      }
       await setDoc(aptDocRef, cleanAppointment);
     } catch {
       throw error;
@@ -147,60 +219,84 @@ export async function updateAppointmentStatusInFirestore(
   await updateDoc(docRef, { status: newStatus });
 }
 
-// Reactivate a cancelled appointment with slot lock in a single transaction
+// Reactivate a cancelled appointment with slot locks in a single transaction
 export async function reactivateAppointmentWithLockInFirestore(
   appointment: Appointment,
   newStatus: Appointment['status']
 ): Promise<void> {
-  const lockId = getSlotLockDocId(appointment.date, appointment.specialistId, appointment.time);
-  const lockDocRef = doc(db, SLOT_LOCKS_COLLECTION, lockId);
+  const duration = appointment.serviceDuration || 60;
+  const slots = getCoveredSlots(appointment.time, duration) || getOccupiedSlots(appointment.time, duration);
   const aptDocRef = doc(db, APPOINTMENTS_COLLECTION, appointment.id);
+  const now = getColombiaDateISO();
+
+  const lockEntries = slots.map((slot) => {
+    const lockId = getSlotLockDocId(appointment.date, appointment.specialistId, slot);
+    const lockDocRef = doc(db, SLOT_LOCKS_COLLECTION, lockId);
+    return { lockDocRef, slot };
+  });
 
   await runTransaction(db, async (transaction) => {
-    const lockSnap = await transaction.get(lockDocRef);
-    if (lockSnap.exists()) {
-      throw new Error(`El horario de las ${appointment.time} con ${appointment.specialistName} ya se encuentra ocupado por otra cita.`);
+    for (const { lockDocRef, slot } of lockEntries) {
+      const lockSnap = await transaction.get(lockDocRef);
+      if (lockSnap.exists()) {
+        throw new Error(`El horario de las ${slot} con ${appointment.specialistName} ya se encuentra ocupado por otra cita.`);
+      }
     }
 
-    transaction.set(lockDocRef, {
-      appointmentId: appointment.id,
-      slot: appointment.time,
-      date: appointment.date,
-      specialistId: appointment.specialistId,
-      createdAt: getColombiaDateISO()
-    });
+    for (const { lockDocRef, slot } of lockEntries) {
+      transaction.set(lockDocRef, {
+        appointmentId: appointment.id,
+        slot: slot,
+        date: appointment.date,
+        specialistId: appointment.specialistId,
+        createdAt: now
+      });
+    }
 
     transaction.update(aptDocRef, { status: newStatus });
   });
 }
 
-// Cancels an appointment and releases its slot lock in a single atomic transaction
+// Cancels an appointment and releases all its slot locks in a single atomic transaction
 export async function cancelAppointmentWithLockReleaseInFirestore(
   appointment: Appointment
 ): Promise<void> {
-  const lockId = getSlotLockDocId(appointment.date, appointment.specialistId, appointment.time);
-  const lockDocRef = doc(db, SLOT_LOCKS_COLLECTION, lockId);
+  const duration = appointment.serviceDuration || 60;
+  const slots = getCoveredSlots(appointment.time, duration) || getOccupiedSlots(appointment.time, duration);
   const aptDocRef = doc(db, APPOINTMENTS_COLLECTION, appointment.id);
 
+  const lockDocRefs = slots.map((slot) => {
+    const lockId = getSlotLockDocId(appointment.date, appointment.specialistId, slot);
+    return doc(db, SLOT_LOCKS_COLLECTION, lockId);
+  });
+
   await runTransaction(db, async (transaction) => {
-    transaction.delete(lockDocRef);
+    for (const lockDocRef of lockDocRefs) {
+      transaction.delete(lockDocRef);
+    }
     transaction.update(aptDocRef, { status: 'cancelada' as const });
   });
 }
 
-// Delete appointment and its slot lock in Firestore
+// Delete appointment and all its slot locks in Firestore
 export async function deleteAppointmentInFirestore(
   appointmentId: string,
-  extra?: { date?: string; specialistId?: string; time?: string }
+  extra?: { date?: string; specialistId?: string; time?: string; serviceDuration?: number }
 ): Promise<void> {
   const aptDocRef = doc(db, APPOINTMENTS_COLLECTION, appointmentId);
 
   if (extra?.date && extra?.specialistId && extra?.time) {
-    const lockId = getSlotLockDocId(extra.date, extra.specialistId, extra.time);
-    const lockDocRef = doc(db, SLOT_LOCKS_COLLECTION, lockId);
+    const duration = extra.serviceDuration || 60;
+    const slots = getCoveredSlots(extra.time, duration) || getOccupiedSlots(extra.time, duration);
+    const lockDocRefs = slots.map((slot) => {
+      const lockId = getSlotLockDocId(extra.date!, extra.specialistId!, slot);
+      return doc(db, SLOT_LOCKS_COLLECTION, lockId);
+    });
 
     await runTransaction(db, async (transaction) => {
-      transaction.delete(lockDocRef);
+      for (const lockDocRef of lockDocRefs) {
+        transaction.delete(lockDocRef);
+      }
       transaction.delete(aptDocRef);
     });
   } else {

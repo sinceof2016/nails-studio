@@ -9,7 +9,8 @@ import {
   ClientProfile,
   PaymentMethod,
   Service,
-  Specialist
+  Specialist,
+  AgendaBlock
 } from '../types';
 import { QrCodeModal } from '../components/QrCodeModal';
 import { ClientHistoryModal } from '../components/ClientHistoryModal';
@@ -19,7 +20,7 @@ import { sanitizeToPlainText, validateColombianPhone, checkRateLimit, validateAn
 import { sendUltraMsgWhatsApp, getUltraMsgConfig, renderTemplate } from '../services/whatsappService';
 import { BUSINESS_CONFIG } from '../config/businessConfig';
 import { getColombiaDateISO, getColombiaTimeStr, generateSecureId, generateBookingCode, formatDisplayDate } from '../utils/dateAndId';
-import { HOURLY_TIME_SLOTS } from '../utils/calendarAvailability';
+import { HOURLY_TIME_SLOTS, getCoveredSlots } from '../utils/calendarAvailability';
 
 // Subcomponents for tabs and modals
 import { AdminAgendaTab } from '../components/admin/tabs/AdminAgendaTab';
@@ -30,6 +31,7 @@ import { ExpressAppointmentModal } from '../components/admin/modals/ExpressAppoi
 import { NewCutModal } from '../components/admin/modals/NewCutModal';
 import { NewExpenseModal } from '../components/admin/modals/NewExpenseModal';
 import { CashCloseModal } from '../components/admin/modals/CashCloseModal';
+import { AgendaBlockModal } from '../components/admin/modals/AgendaBlockModal';
 
 interface AdminScreenProps {
   admin: AdminUser | SystemUser;
@@ -40,9 +42,12 @@ interface AdminScreenProps {
   cashCloses: CashRegisterClose[];
   services: Service[];
   specialists: Specialist[];
+  agendaBlocks?: AgendaBlock[];
+  onAddAgendaBlocks?: (specialistIds: string[], dates: string[]) => Promise<void>;
+  onRemoveAgendaBlock?: (blockId: string) => Promise<void>;
   onUpdateStatus: (appointmentId: string, newStatus: Appointment['status']) => Promise<void> | void;
   onCancelAppointment: (appointmentId: string) => Promise<void> | void;
-  onDeleteAppointment?: (appointmentId: string, extra?: { date?: string; specialistId?: string; time?: string }) => Promise<void> | void;
+  onDeleteAppointment?: (appointmentId: string, extra?: { date?: string; specialistId?: string; time?: string; serviceDuration?: number }) => Promise<void> | void;
   onNavigateToBooking: () => void;
   onRegisterCut: (cut: SalonCutRecord) => Promise<void>;
   onAddExpense: (expense: ExpenseRecord) => Promise<void>;
@@ -63,6 +68,9 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
   cashCloses,
   services,
   specialists,
+  agendaBlocks = [],
+  onAddAgendaBlocks,
+  onRemoveAgendaBlock,
   onUpdateStatus,
   onCancelAppointment,
   onDeleteAppointment,
@@ -86,6 +94,9 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 
   // Base inicial en caja (editable)
   const [cashBase, setCashBase] = useState<number>(200000);
+
+  // Modal para bloquear agenda
+  const [showAgendaBlockModal, setShowAgendaBlockModal] = useState(false);
 
   useEffect(() => {
     if (initialTab) {
@@ -420,6 +431,16 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
     const selectedSpec = specialists.find((s) => s.id === expressSpecialistId) || specialists[0];
     const bookingCode = generateBookingCode(appointments.map((a) => a.bookingCode));
     const currentDateISO = getColombiaDateISO();
+
+    if (agendaBlocks.some((b) => b.specialistId === selectedSpec.id && b.date === currentDateISO)) {
+      setExpressValidationError(`La agenda de ${selectedSpec.name} está bloqueada para el día de hoy.`);
+      return;
+    }
+
+    if (getCoveredSlots(expressTime, selectedServ.durationMinutes) === null) {
+      setExpressValidationError(`Este servicio dura ${selectedServ.durationMinutes} minutos y terminaría después de la hora de cierre (07:00 PM).`);
+      return;
+    }
 
     const newApt: Appointment = {
       id: generateSecureId('apt-walkin'),
@@ -928,9 +949,12 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
           onStatusChangeWithNotification={handleStatusChangeWithNotification}
           onSelectAppointmentForQr={setSelectedAppointmentForQr}
           onOpenCutForAppointment={handleOpenCutForAppointment}
-          onDeleteAppointment={onDeleteAppointment ? (apt) => onDeleteAppointment(apt.id, { date: apt.date, specialistId: apt.specialistId, time: apt.time }) : undefined}
+          onDeleteAppointment={onDeleteAppointment ? (apt) => onDeleteAppointment(apt.id, { date: apt.date, specialistId: apt.specialistId, time: apt.time, serviceDuration: apt.serviceDuration }) : undefined}
           userRole={activeUserRole}
           specialists={specialists}
+          agendaBlocks={agendaBlocks}
+          onOpenAgendaBlockModal={() => setShowAgendaBlockModal(true)}
+          onRemoveAgendaBlock={onRemoveAgendaBlock}
         />
       )}
 
@@ -1097,6 +1121,20 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         isOpen={isUltraMsgModalOpen}
         onClose={() => setIsUltraMsgModalOpen(false)}
         onToast={notify}
+      />
+
+      {/* MODAL 8: BLOQUEAR AGENDA */}
+      <AgendaBlockModal
+        isOpen={showAgendaBlockModal}
+        onClose={() => setShowAgendaBlockModal(false)}
+        specialists={specialists}
+        appointments={appointments}
+        existingBlocks={agendaBlocks}
+        onSubmit={async (specialistIds, dates) => {
+          if (onAddAgendaBlocks) {
+            await onAddAgendaBlocks(specialistIds, dates);
+          }
+        }}
       />
     </div>
   );

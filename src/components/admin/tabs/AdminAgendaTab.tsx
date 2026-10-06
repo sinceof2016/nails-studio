@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { Appointment, Specialist, SalonCutRecord } from '../../../types';
+import { Appointment, Specialist, SalonCutRecord, AgendaBlock } from '../../../types';
 import { SPECIALISTS as DEFAULT_SPECIALISTS } from '../../../data/mockData';
 import { formatCOP } from '../../../utils/format';
 import { formatDisplayDate } from '../../../utils/dateAndId';
+import { buildWaMeUrl } from '../../../services/whatsappService';
 
 interface AdminAgendaTabProps {
   searchQuery: string;
@@ -31,6 +32,9 @@ interface AdminAgendaTabProps {
   onDeleteAppointment?: (apt: Appointment) => void;
   userRole?: string;
   specialists?: Specialist[];
+  agendaBlocks?: AgendaBlock[];
+  onOpenAgendaBlockModal?: () => void;
+  onRemoveAgendaBlock?: (blockId: string) => Promise<void>;
 }
 
 export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
@@ -59,10 +63,14 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
   onOpenCutForAppointment,
   onDeleteAppointment,
   userRole,
-  specialists = DEFAULT_SPECIALISTS
+  specialists = DEFAULT_SPECIALISTS,
+  agendaBlocks = [],
+  onOpenAgendaBlockModal,
+  onRemoveAgendaBlock
 }) => {
   const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null);
   const canDeleteAppointments = userRole === 'SuperAdmin' || userRole === 'Administrador';
+  const canManageBlocks = userRole === 'SuperAdmin' || userRole === 'Administrador';
 
   const chargedAppointmentIds = useMemo(() => {
     return new Set(cuts.filter((c) => c.appointmentId).map((c) => c.appointmentId as string));
@@ -132,6 +140,19 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* BOTÓN BLOQUEAR AGENDA (SuperAdmin y Administrador) */}
+          {canManageBlocks && onOpenAgendaBlockModal && (
+            <button
+              type="button"
+              onClick={onOpenAgendaBlockModal}
+              className="h-10 px-4 rounded-full bg-white hover:bg-rose-50 border border-rose-300 text-rose-800 text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs shrink-0 cursor-pointer active:scale-95 transition-all"
+              title="Bloquear el día completo de una o varias especialistas"
+            >
+              <span className="material-symbols-outlined text-[16px] text-rose-700">event_busy</span>
+              <span>Bloquear agenda</span>
+            </button>
+          )}
+
           {/* BUTTON 1: WALK-IN / TURNO EXPRESS */}
           <button
             onClick={onOpenExpressModal}
@@ -151,6 +172,48 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
           </button>
         </div>
       </div>
+
+      {/* LISTA DE AGENDAS BLOQUEADAS */}
+      {agendaBlocks.length > 0 && (
+        <div className="p-4 bg-white rounded-3xl border border-[#C6BDAC] shadow-xs space-y-2.5">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-bold text-[#2B2420] flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[16px] text-rose-700">event_busy</span>
+              <span>Agendas Bloqueadas ({agendaBlocks.length})</span>
+            </h4>
+            {!canManageBlocks && (
+              <span className="text-[10px] text-[#5A4A43]">(Solo lectura para Caja)</span>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {agendaBlocks.map((block) => {
+              const spec = specialists.find((s) => s.id === block.specialistId);
+              const specName = spec?.name || block.specialistId;
+              return (
+                <span
+                  key={block.id}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-50 text-rose-900 border border-rose-200 text-[11px] font-semibold"
+                >
+                  <span>{specName}</span>
+                  <span className="text-rose-400">·</span>
+                  <span>{block.date}</span>
+                  {canManageBlocks && onRemoveAgendaBlock && (
+                    <button
+                      type="button"
+                      onClick={() => onRemoveAgendaBlock(block.id)}
+                      className="ml-1 text-rose-600 hover:text-rose-900 cursor-pointer"
+                      title="Quitar bloqueo"
+                      aria-label={`Quitar bloqueo de ${specName} el ${block.date}`}
+                    >
+                      <span className="material-symbols-outlined text-[14px]">close</span>
+                    </button>
+                  )}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Quick Specialist Filter Chips */}
       <div className="p-3 rounded-2xl bg-white border border-[#C6BDAC]/70 space-y-2 shadow-2xs">
@@ -386,6 +449,29 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
                     >
                       <span className="material-symbols-outlined text-[16px]">open_in_new</span>
                     </a>
+
+                    {/* Botón avisar a la especialista por WhatsApp */}
+                    {(() => {
+                      const spec = specialists.find((s) => s.id === apt.specialistId);
+                      const specPhone = spec?.phone || spec?.telefono;
+                      if (!specPhone) return null;
+                      const specFirstName = apt.specialistName.split(' ')[0] || apt.specialistName;
+                      const msg = `Hola ${apt.specialistName}, tienes un turno programado:\n\n📅 Fecha: ${apt.date}\n⏰ Hora: ${apt.time}\n💅 Servicio: ${apt.serviceName}\n👤 Clienta: ${apt.clientName}\n📌 Código: #${apt.bookingCode}`;
+                      const waUrl = buildWaMeUrl(specPhone, msg);
+
+                      return (
+                        <a
+                          href={waUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-2.5 py-1 rounded-full bg-white hover:bg-emerald-50 text-emerald-800 text-[10px] font-bold border border-emerald-300 flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+                          title={`Avisar a ${apt.specialistName} por WhatsApp`}
+                        >
+                          <span className="material-symbols-outlined text-[13px]">send</span>
+                          <span>Avisar a {specFirstName}</span>
+                        </a>
+                      );
+                    })()}
                   </div>
                 </div>
 

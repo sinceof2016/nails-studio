@@ -93,7 +93,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="flex items-center gap-2.5 sm:gap-3 cursor-pointer min-w-0 group select-none"
               onClick={() => onNavigate('reservar')}
             >
-              <BrandLogo className="h-11 sm:h-12 w-11 sm:w-12 rounded-full object-cover shrink-0 border border-[#C6BDAC] group-hover:scale-105 transition-transform" />
+              <BrandLogo className="h-11 sm:h-12 w-auto shrink-0 group-hover:scale-105 transition-transform" />
               <div className="flex flex-col min-w-0">
                 <span className="text-[10px] sm:text-[11px] tracking-widest uppercase font-bold text-[#2B2420] truncate font-['Plus_Jakarta_Sans',sans-serif]">
                   {BUSINESS_CONFIG.brandName}
