@@ -33,8 +33,9 @@ interface AdminAgendaTabProps {
   userRole?: string;
   specialists?: Specialist[];
   agendaBlocks?: AgendaBlock[];
-  onOpenAgendaBlockModal?: () => void;
-  onRemoveAgendaBlock?: (blockId: string) => Promise<void>;
+  canManageBlocks?: boolean;
+  onOpenBlockModal?: () => void;
+  onRemoveBlock?: (blockId: string) => void;
 }
 
 export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
@@ -65,16 +66,22 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
   userRole,
   specialists = DEFAULT_SPECIALISTS,
   agendaBlocks = [],
-  onOpenAgendaBlockModal,
-  onRemoveAgendaBlock
+  canManageBlocks = false,
+  onOpenBlockModal,
+  onRemoveBlock
 }) => {
   const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null);
   const canDeleteAppointments = userRole === 'SuperAdmin' || userRole === 'Administrador';
-  const canManageBlocks = userRole === 'SuperAdmin' || userRole === 'Administrador';
 
   const chargedAppointmentIds = useMemo(() => {
     return new Set(cuts.filter((c) => c.appointmentId).map((c) => c.appointmentId as string));
   }, [cuts]);
+
+  // Bloqueos de agenda futuros, ordenados por fecha
+  const sortedBlocks = useMemo(
+    () => [...agendaBlocks].sort((a, b) => a.date.localeCompare(b.date) || a.specialistId.localeCompare(b.specialistId)),
+    [agendaBlocks]
+  );
 
   const confirmDelete = () => {
     if (appointmentToDelete && onDeleteAppointment) {
@@ -140,15 +147,14 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* BOTÓN BLOQUEAR AGENDA (SuperAdmin y Administrador) */}
-          {canManageBlocks && onOpenAgendaBlockModal && (
+          {canManageBlocks && onOpenBlockModal && (
             <button
               type="button"
-              onClick={onOpenAgendaBlockModal}
-              className="h-10 px-4 rounded-full bg-white hover:bg-rose-50 border border-rose-300 text-rose-800 text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs shrink-0 cursor-pointer active:scale-95 transition-all"
-              title="Bloquear el día completo de una o varias especialistas"
+              onClick={onOpenBlockModal}
+              className="h-10 px-4 rounded-full bg-white hover:bg-[#C6BDAC]/40 border border-[#C6BDAC] text-[#2B2420] text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs shrink-0 cursor-pointer active:scale-95 transition-all"
+              title="Bloquear la agenda de una especialista por días completos"
             >
-              <span className="material-symbols-outlined text-[16px] text-rose-700">event_busy</span>
+              <span className="material-symbols-outlined text-[16px]">event_busy</span>
               <span>Bloquear agenda</span>
             </button>
           )}
@@ -173,39 +179,32 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
         </div>
       </div>
 
-      {/* LISTA DE AGENDAS BLOQUEADAS */}
-      {agendaBlocks.length > 0 && (
-        <div className="p-4 bg-white rounded-3xl border border-[#C6BDAC] shadow-xs space-y-2.5">
-          <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold text-[#2B2420] flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[16px] text-rose-700">event_busy</span>
-              <span>Agendas Bloqueadas ({agendaBlocks.length})</span>
-            </h4>
-            {!canManageBlocks && (
-              <span className="text-[10px] text-[#5A4A43]">(Solo lectura para Caja)</span>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {agendaBlocks.map((block) => {
+      {/* Agendas bloqueadas (descansos y ausencias) */}
+      {sortedBlocks.length > 0 && (
+        <div className="p-3 rounded-2xl bg-amber-50/60 border border-amber-200/80 space-y-2 shadow-2xs">
+          <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1">
+            <span className="material-symbols-outlined text-[15px]">event_busy</span>
+            <span>Agendas bloqueadas ({sortedBlocks.length})</span>
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {sortedBlocks.map((block) => {
               const spec = specialists.find((s) => s.id === block.specialistId);
-              const specName = spec?.name || block.specialistId;
+              const name = (spec?.name || block.specialistId).split(' ')[0];
               return (
                 <span
                   key={block.id}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-50 text-rose-900 border border-rose-200 text-[11px] font-semibold"
+                  className="pl-2.5 pr-1.5 py-1 rounded-full bg-white border border-amber-300 text-[11px] font-semibold text-amber-950 flex items-center gap-1"
                 >
-                  <span>{specName}</span>
-                  <span className="text-rose-400">·</span>
-                  <span>{block.date}</span>
-                  {canManageBlocks && onRemoveAgendaBlock && (
+                  <span>{name} · {formatDisplayDate(block.date)}</span>
+                  {canManageBlocks && onRemoveBlock && (
                     <button
                       type="button"
-                      onClick={() => onRemoveAgendaBlock(block.id)}
-                      className="ml-1 text-rose-600 hover:text-rose-900 cursor-pointer"
+                      onClick={() => onRemoveBlock(block.id)}
+                      aria-label={`Quitar el bloqueo de ${name} del ${formatDisplayDate(block.date)}`}
                       title="Quitar bloqueo"
-                      aria-label={`Quitar bloqueo de ${specName} el ${block.date}`}
+                      className="w-4 h-4 rounded-full hover:bg-amber-100 flex items-center justify-center cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-[14px]">close</span>
+                      <span className="material-symbols-outlined text-[13px]">close</span>
                     </button>
                   )}
                 </span>
@@ -450,25 +449,32 @@ export const AdminAgendaTab: React.FC<AdminAgendaTabProps> = ({
                       <span className="material-symbols-outlined text-[16px]">open_in_new</span>
                     </a>
 
-                    {/* Botón avisar a la especialista por WhatsApp */}
                     {(() => {
-                      const spec = specialists.find((s) => s.id === apt.specialistId);
-                      const specPhone = spec?.phone || spec?.telefono;
-                      if (!specPhone) return null;
-                      const specFirstName = apt.specialistName.split(' ')[0] || apt.specialistName;
-                      const msg = `Hola ${apt.specialistName}, tienes un turno programado:\n\n📅 Fecha: ${apt.date}\n⏰ Hora: ${apt.time}\n💅 Servicio: ${apt.serviceName}\n👤 Clienta: ${apt.clientName}\n📌 Código: #${apt.bookingCode}`;
-                      const waUrl = buildWaMeUrl(specPhone, msg);
-
+                      const assigned = specialists.find((s) => s.id === apt.specialistId);
+                      const firstName = (assigned?.name || apt.specialistName || 'especialista').split(' ')[0];
+                      const specPhone = assigned?.phone || assigned?.telefono || '';
+                      if (!specPhone) {
+                        return (
+                          <span
+                            className="px-2.5 py-1 rounded-full bg-white text-[#5A4A43] text-[10px] font-bold border border-dashed border-[#C6BDAC] flex items-center gap-1 cursor-help"
+                            title="Esta especialista no tiene teléfono cargado. Agrégalo en Usuarios → Manicuristas → Editar."
+                          >
+                            <span className="material-symbols-outlined text-[13px]">phone_disabled</span>
+                            <span>{firstName} sin teléfono</span>
+                          </span>
+                        );
+                      }
+                      const message = `Hola ${firstName}, tienes una cita: ${apt.clientName} · ${apt.serviceName} · ${formatDisplayDate(apt.date)} a las ${apt.time}. Código ${apt.bookingCode}.`;
                       return (
                         <a
-                          href={waUrl}
+                          href={buildWaMeUrl(specPhone, message)}
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener noreferrer"
                           className="px-2.5 py-1 rounded-full bg-white hover:bg-emerald-50 text-emerald-800 text-[10px] font-bold border border-emerald-300 flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
-                          title={`Avisar a ${apt.specialistName} por WhatsApp`}
+                          title={`Avisar a ${firstName} por WhatsApp`}
                         >
                           <span className="material-symbols-outlined text-[13px]">send</span>
-                          <span>Avisar a {specFirstName}</span>
+                          <span>Avisar a {firstName}</span>
                         </a>
                       );
                     })()}

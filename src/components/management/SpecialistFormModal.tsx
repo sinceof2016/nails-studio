@@ -3,6 +3,7 @@ import { Specialist } from '../../types';
 import { validateAndClean, validateColombianPhone } from '../../utils/security';
 import { compressImageFile } from '../../utils/imageCompressor';
 import { DEFAULT_COMMISSION_RATE } from '../../config/businessConfig';
+import { WEEKLY_REST_DAYS } from '../../config/agendaConfig';
 
 interface SpecialistFormModalProps {
   isOpen: boolean;
@@ -106,16 +107,6 @@ export const SpecialistFormModal: React.FC<SpecialistFormModalProps> = ({
       return;
     }
 
-    let cleanPhone = '';
-    if (phone.trim()) {
-      const phoneCheck = validateColombianPhone(phone);
-      if (!phoneCheck.isValid) {
-        setFormError(phoneCheck.reason || 'Teléfono no válido.');
-        return;
-      }
-      cleanPhone = phone.replace(/\D/g, '').slice(-10);
-    }
-
     const cleanName = nameRes.value;
     const idSlug = specialistToEdit
       ? specialistToEdit.id
@@ -145,6 +136,18 @@ export const SpecialistFormModal: React.FC<SpecialistFormModalProps> = ({
       cleanCertifications.push(certRes.value);
     }
 
+    // Teléfono privado de la especialista (solo lo ve el personal): se guarda como 10 dígitos
+    let cleanPhone = '';
+    if (phone.trim()) {
+      const phoneCheck = validateColombianPhone(phone);
+      if (!phoneCheck.isValid) {
+        setFormError(phoneCheck.reason || 'Teléfono inválido.');
+        return;
+      }
+      const digits = phone.replace(/\D/g, '');
+      cleanPhone = digits.length === 12 && digits.startsWith('57') ? digits.slice(2) : digits.slice(-10);
+    }
+
     const specialist: Specialist = {
       id: idSlug,
       name: cleanName,
@@ -157,8 +160,7 @@ export const SpecialistFormModal: React.FC<SpecialistFormModalProps> = ({
       availableDays,
       specialties: cleanSpecialties.length > 0 ? cleanSpecialties : ['Manicura Rusa', 'Esmaltado Semipermanente'],
       commissionRate: Number.isFinite(Number(commissionRate)) ? Number(commissionRate) : DEFAULT_COMMISSION_RATE,
-      phone: cleanPhone || undefined,
-      telefono: cleanPhone || undefined
+      phone: cleanPhone
     };
 
     onSave(specialist);
@@ -238,21 +240,17 @@ export const SpecialistFormModal: React.FC<SpecialistFormModalProps> = ({
             </div>
 
             <div>
-              <label htmlFor="specialist-phone" className="block font-semibold text-[#5A4A43] mb-1">
-                Teléfono / WhatsApp (privado)
-              </label>
+              <label htmlFor="specialist-phone" className="block font-semibold text-[#5A4A43] mb-1">Teléfono / WhatsApp (privado)</label>
               <input
                 id="specialist-phone"
                 type="tel"
+                inputMode="numeric"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="Ej. 3101234567"
-                maxLength={15}
+                placeholder="Ej. 300 123 4567"
                 className="w-full h-9 px-3 rounded-xl bg-white border border-[#C6BDAC] text-xs text-[#2B2420] focus:outline-none focus:ring-2 focus:ring-[#2B2420]/20"
               />
-              <p className="text-[10px] text-[#5A4A43] mt-0.5">
-                Uso interno exclusivo del personal para avisar turnos por WhatsApp. No es visible para clientes.
-              </p>
+              <p className="text-[10px] text-[#5A4A43] mt-1">Solo lo ve el personal. No se muestra en el sitio público.</p>
             </div>
           </div>
 
@@ -332,6 +330,15 @@ export const SpecialistFormModal: React.FC<SpecialistFormModalProps> = ({
                 );
               })}
             </div>
+            {specialistToEdit && WEEKLY_REST_DAYS[specialistToEdit.id] && (
+              <p className="text-[10px] text-[#5A4A43] mt-1.5">
+                Para {specialistToEdit.name.split(' ')[0]} los días los define la agenda del salón:{' '}
+                {WEEKLY_REST_DAYS[specialistToEdit.id].length > 0
+                  ? `descansa el ${WEEKLY_REST_DAYS[specialistToEdit.id].map((d) => d.toLowerCase()).join(' y el ')}`
+                  : 'no tiene día de descanso fijo (se bloquea con el botón "Bloquear agenda")'}
+                , y los domingos trabaja según la rotación. Esta selección no cambia su calendario.
+              </p>
+            )}
           </div>
 
           <div>

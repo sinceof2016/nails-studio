@@ -596,6 +596,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
         {/* STEP 2: DATE & SPECIALIST */}
         {step === 2 && (
           <BookingStepDateTime
+            serviceDurationMinutes={serviceDuration}
             calendarDays={calendarDays}
             selectedDateOption={selectedDateOption}
             setSelectedDateOption={setSelectedDateOption}
@@ -606,7 +607,6 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
             availableTimeSlots={availableTimeSlots}
             selectedTime={selectedTime}
             setSelectedTime={setSelectedTime}
-            serviceDuration={serviceDuration}
             specialists={specialists}
             onBack={() => goToStep(1)}
             onNext={() => goToStep(3)}

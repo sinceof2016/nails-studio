@@ -23,6 +23,7 @@ import { BookingScreen } from './screens/BookingScreen';
 import { SpecialistsScreen } from './screens/SpecialistsScreen';
 import { NotFoundScreen } from './screens/NotFoundScreen';
 import { BUSINESS_CONFIG } from './config/businessConfig';
+import { getColombiaDateISO } from './utils/dateAndId';
 import {
   Service,
   Specialist,
@@ -390,9 +391,13 @@ export default function App() {
       setSlotLocks(data || []);
     });
 
-    const unsubBlocks = subscribeToAgendaBlocks((data) => {
-      setAgendaBlocks(data || []);
-    });
+    const unsubAgendaBlocks = subscribeToAgendaBlocks(
+      (data) => {
+        setAgendaBlocks(data || []);
+      },
+      getColombiaDateISO(),
+      (err) => console.warn('Error en suscripción de bloqueos de agenda:', err)
+    );
 
     const unsubServices = subscribeToServices((liveServices) => {
       if (Array.isArray(liveServices)) {
@@ -482,7 +487,7 @@ export default function App() {
 
     return () => {
       unsubLocks();
-      unsubBlocks();
+      unsubAgendaBlocks();
       unsubServices();
       unsubSpecialists();
       unsubCategories();
@@ -687,7 +692,7 @@ export default function App() {
     const date = extra?.date || previous?.date;
     const specialistId = extra?.specialistId || previous?.specialistId;
     const time = extra?.time || previous?.time;
-    const serviceDuration = extra?.serviceDuration || previous?.serviceDuration;
+    const serviceDuration = extra?.serviceDuration ?? previous?.serviceDuration;
 
     try {
       await deleteAppointmentInFirestore(id, { date, specialistId, time, serviceDuration });
@@ -701,16 +706,25 @@ export default function App() {
   };
 
   const handleAddAgendaBlocks = async (specialistIds: string[], dates: string[]) => {
-    const items = specialistIds.flatMap((specialistId) =>
-      dates.map((date) => ({ specialistId, date }))
-    );
-    await addAgendaBlocksInFirestore(items);
-    showToast(`✓ Se bloquearon ${items.length} agenda(s)`);
+    try {
+      const total = await addAgendaBlocksInFirestore(specialistIds, dates);
+      showToast(`✓ Agenda bloqueada: ${total} ${total === 1 ? 'día' : 'días'}.`);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Error al bloquear la agenda.';
+      showToast(`⚠ No se pudo bloquear la agenda: ${msg}`);
+      throw error;
+    }
   };
 
   const handleRemoveAgendaBlock = async (blockId: string) => {
-    await deleteAgendaBlockInFirestore(blockId);
-    showToast('✓ Bloqueo eliminado');
+    try {
+      await deleteAgendaBlockInFirestore(blockId);
+      showToast('✓ Agenda desbloqueada.');
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Error al desbloquear la agenda.';
+      showToast(`⚠ No se pudo desbloquear la agenda: ${msg}`);
+      throw error;
+    }
   };
 
   const handleRegisterCut = async (cut: SalonCutRecord) => {

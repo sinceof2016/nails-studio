@@ -25,8 +25,8 @@ function simulateSuperAdminLogin(user: SystemUser) {
 
 const mockSuperAdmin: SystemUser = {
   id: 'USR-SUPERADMIN-01',
-  nombre: 'David Orjuela',
-  email: 'orjueladavid32@gmail.com',
+  nombre: 'Administrador de Prueba',
+  email: 'admin@ejemplo.com',
   rol: 'SuperAdmin',
   sucursalAsignada: 'todas',
   creadoEn: new Date().toISOString(),

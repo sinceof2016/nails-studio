@@ -19,8 +19,8 @@ interface BookingStepDateTimeProps {
   setSelectedTime: (time: string) => void;
   onBack: () => void;
   onNext: () => void;
-  serviceDuration?: number;
   specialists?: Specialist[];
+  serviceDurationMinutes?: number;
   redirectionSlot?: string | null;
   setRedirectionSlot?: (slot: string | null) => void;
   redirectionAvailableSpecialists?: Specialist[];
@@ -38,8 +38,8 @@ export const BookingStepDateTime: React.FC<BookingStepDateTimeProps> = ({
   setSelectedTime,
   onBack,
   onNext,
-  serviceDuration,
-  specialists = SPECIALISTS
+  specialists = SPECIALISTS,
+  serviceDurationMinutes = 60
 }) => {
   return (
     <div className="space-y-5 animate-in fade-in duration-150">
@@ -179,7 +179,13 @@ export const BookingStepDateTime: React.FC<BookingStepDateTimeProps> = ({
             </h3>
             <p className="text-[11px] text-[#5A4A43]">
               Horarios en verde tienen turno libre. Horarios en gris/ámbar están reservados o fuera de atención.
+              {' '}Atendemos de 10:00 a. m. a 7:00 p. m.; la última cita empieza a las 6:00 p. m.
             </p>
+            {serviceDurationMinutes > 60 && (
+              <p className="text-[11px] text-[#5A4A43] font-semibold mt-1">
+                Este servicio dura {serviceDurationMinutes} minutos y ocupa 2 horarios seguidos. Solo se muestran libres los horarios donde cabe completo.
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-3 text-[11px] text-[#5A4A43]">
@@ -199,10 +205,10 @@ export const BookingStepDateTime: React.FC<BookingStepDateTimeProps> = ({
         </div>
 
         {/* Aviso de servicio largo (ocupa 2 horarios seguidos) */}
-        {(serviceDuration || 60) > 60 && (
+        {(serviceDurationMinutes || 60) > 60 && (
           <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
             <span className="material-symbols-outlined text-amber-700 text-[18px] shrink-0">info</span>
-            <span>Este servicio dura {serviceDuration} minutos y ocupa 2 horarios seguidos.</span>
+            <span>Este servicio dura {serviceDurationMinutes} minutos y ocupa 2 horarios seguidos.</span>
           </div>
         )}
 

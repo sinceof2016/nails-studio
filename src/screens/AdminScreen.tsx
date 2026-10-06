@@ -20,7 +20,8 @@ import { sanitizeToPlainText, validateColombianPhone, checkRateLimit, validateAn
 import { sendUltraMsgWhatsApp, getUltraMsgConfig, renderTemplate } from '../services/whatsappService';
 import { BUSINESS_CONFIG } from '../config/businessConfig';
 import { getColombiaDateISO, getColombiaTimeStr, generateSecureId, generateBookingCode, formatDisplayDate } from '../utils/dateAndId';
-import { HOURLY_TIME_SLOTS, getCoveredSlots } from '../utils/calendarAvailability';
+import { HOURLY_TIME_SLOTS, getCoveredSlots, isSpecialistBlockedOnDate } from '../utils/calendarAvailability';
+import { AgendaBlockModal } from '../components/admin/modals/AgendaBlockModal';
 
 // Subcomponents for tabs and modals
 import { AdminAgendaTab } from '../components/admin/tabs/AdminAgendaTab';
@@ -31,7 +32,6 @@ import { ExpressAppointmentModal } from '../components/admin/modals/ExpressAppoi
 import { NewCutModal } from '../components/admin/modals/NewCutModal';
 import { NewExpenseModal } from '../components/admin/modals/NewExpenseModal';
 import { CashCloseModal } from '../components/admin/modals/CashCloseModal';
-import { AgendaBlockModal } from '../components/admin/modals/AgendaBlockModal';
 
 interface AdminScreenProps {
   admin: AdminUser | SystemUser;
@@ -143,7 +143,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
   const [expressClientPhone, setExpressClientPhone] = useState('+57 3');
   const [expressServiceId, setExpressServiceId] = useState(services[0]?.id || 'manicura-rusa-glazed');
   const [expressSpecialistId, setExpressSpecialistId] = useState(specialists[0]?.id || 'valentina-r');
-  const [expressTime, setExpressTime] = useState(HOURLY_TIME_SLOTS[2] || '10:00 AM');
+  const [expressTime, setExpressTime] = useState(HOURLY_TIME_SLOTS[0] || '10:00 AM');
+  const [showBlockModal, setShowBlockModal] = useState(false);
   const [expressStatus, setExpressStatus] = useState<'en_preparacion' | 'confirmada'>('en_preparacion');
   const [expressNotes, setExpressNotes] = useState('');
   const [expressSendWhatsApp, setExpressSendWhatsApp] = useState(true);
@@ -432,13 +433,12 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
     const bookingCode = generateBookingCode(appointments.map((a) => a.bookingCode));
     const currentDateISO = getColombiaDateISO();
 
-    if (agendaBlocks.some((b) => b.specialistId === selectedSpec.id && b.date === currentDateISO)) {
-      setExpressValidationError(`La agenda de ${selectedSpec.name} está bloqueada para el día de hoy.`);
+    if (isSpecialistBlockedOnDate(selectedSpec.id, currentDateISO, agendaBlocks)) {
+      setExpressValidationError(`La agenda de ${selectedSpec.name} está bloqueada hoy. Elige otra especialista.`);
       return;
     }
-
     if (getCoveredSlots(expressTime, selectedServ.durationMinutes) === null) {
-      setExpressValidationError(`Este servicio dura ${selectedServ.durationMinutes} minutos y terminaría después de la hora de cierre (07:00 PM).`);
+      setExpressValidationError(`Este servicio dura ${selectedServ.durationMinutes} minutos y terminaría después de las 7:00 p. m. Elige un horario más temprano.`);
       return;
     }
 
@@ -953,8 +953,9 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
           userRole={activeUserRole}
           specialists={specialists}
           agendaBlocks={agendaBlocks}
-          onOpenAgendaBlockModal={() => setShowAgendaBlockModal(true)}
-          onRemoveAgendaBlock={onRemoveAgendaBlock}
+          canManageBlocks={!isCajaRole && Boolean(onAddAgendaBlocks)}
+          onOpenBlockModal={() => setShowBlockModal(true)}
+          onRemoveBlock={onRemoveAgendaBlock ? (id) => { onRemoveAgendaBlock(id).catch(() => undefined); } : undefined}
         />
       )}
 
@@ -997,6 +998,18 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         <AdminClientesTab
           clientProfiles={clientProfiles}
           onSelectClientForHistory={setSelectedClientForHistory}
+        />
+      )}
+
+      {/* MODAL: BLOQUEAR AGENDA (solo SuperAdmin y Administrador) */}
+      {!isCajaRole && onAddAgendaBlocks && (
+        <AgendaBlockModal
+          isOpen={showBlockModal}
+          onClose={() => setShowBlockModal(false)}
+          specialists={specialists}
+          appointments={appointments}
+          existingBlocks={agendaBlocks}
+          onSubmit={onAddAgendaBlocks}
         />
       )}
 
@@ -1121,20 +1134,6 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         isOpen={isUltraMsgModalOpen}
         onClose={() => setIsUltraMsgModalOpen(false)}
         onToast={notify}
-      />
-
-      {/* MODAL 8: BLOQUEAR AGENDA */}
-      <AgendaBlockModal
-        isOpen={showAgendaBlockModal}
-        onClose={() => setShowAgendaBlockModal(false)}
-        specialists={specialists}
-        appointments={appointments}
-        existingBlocks={agendaBlocks}
-        onSubmit={async (specialistIds, dates) => {
-          if (onAddAgendaBlocks) {
-            await onAddAgendaBlocks(specialistIds, dates);
-          }
-        }}
       />
     </div>
   );

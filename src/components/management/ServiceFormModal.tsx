@@ -85,7 +85,7 @@ export const ServiceFormModal: React.FC<ServiceFormModalProps> = ({
     }
 
     if (durationMinutes > 120) {
-      setFormError('La duración máxima permitida es de 120 minutos (2 horas).');
+      setFormError('La agenda admite servicios de hasta 120 minutos (2 horas). Divide el servicio en dos o reduce la duración.');
       return;
     }
 
