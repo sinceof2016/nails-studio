@@ -35,6 +35,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [activeCategory, setActiveCategory] = useState<string>('todos');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [uploadingServiceId, setUploadingServiceId] = useState<string | null>(null);
+  // Si el banner de la marca no se puede cargar, se muestra el bloque de texto de siempre
+  const [bannerFailed, setBannerFailed] = useState(false);
 
   const isSuperAdmin = currentUser?.rol === 'SuperAdmin';
 
@@ -71,33 +73,48 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   return (
     <div className="w-full space-y-6 pb-12 animate-in fade-in duration-200">
-      {/* Top Banner: Protocolo Signature & Ritual de Bienestar (Full Width) */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#C6BDAC]/35 via-[#F4EFE9] to-white p-6 sm:p-8 md:p-10 shadow-xs border border-[#C6BDAC] flex flex-col justify-between">
-        <div className="absolute -right-10 -bottom-10 w-60 h-60 rounded-full bg-white/50 blur-2xl pointer-events-none" />
-        <div className="relative z-10 space-y-3 max-w-3xl">
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/95 text-[#2B2420] text-xs font-semibold backdrop-blur-md shadow-2xs border border-[#C6BDAC] font-['Plus_Jakarta_Sans',sans-serif]">
-            <span className="material-symbols-outlined text-[15px] text-[#2B2420] fill">
-              auto_awesome
-            </span>
-            Protocolo Signature · {BUSINESS_CONFIG.brandName}
+      {/* Banner de la marca (ancho completo). Si el archivo no carga, se muestra el bloque de texto anterior. */}
+      {!bannerFailed ? (
+        <div className="rounded-3xl overflow-hidden border border-[#C6BDAC] shadow-xs bg-[#D3B8A8]">
+          <h2 className="sr-only">Uña, belleza y bienestar en {BUSINESS_CONFIG.brandName}</h2>
+          <img
+            src={`${import.meta.env.BASE_URL}banner-la-pelu.webp`}
+            alt={`${BUSINESS_CONFIG.brandName}: uña, belleza y bienestar`}
+            width={2000}
+            height={400}
+            decoding="async"
+            className="block w-full h-28 sm:h-auto object-cover object-center"
+            onError={() => setBannerFailed(true)}
+          />
+        </div>
+      ) : (
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#C6BDAC]/35 via-[#F4EFE9] to-white p-6 sm:p-8 md:p-10 shadow-xs border border-[#C6BDAC] flex flex-col justify-between">
+          <div className="absolute -right-10 -bottom-10 w-60 h-60 rounded-full bg-white/50 blur-2xl pointer-events-none" />
+          <div className="relative z-10 space-y-3 max-w-3xl">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/95 text-[#2B2420] text-xs font-semibold backdrop-blur-md shadow-2xs border border-[#C6BDAC] font-['Plus_Jakarta_Sans',sans-serif]">
+              <span className="material-symbols-outlined text-[15px] text-[#2B2420] fill">
+                auto_awesome
+              </span>
+              Protocolo Signature · {BUSINESS_CONFIG.brandName}
+            </div>
+
+            <h2 className="text-2xl sm:text-4xl text-[#2B2420] font-bold tracking-tight font-['Plus_Jakarta_Sans',sans-serif] leading-tight">
+              El Ritual de Manicura Rusa &amp; Bienestar Clínico
+            </h2>
+
+            <p className="text-sm sm:text-base text-[#5A4A43] leading-relaxed">
+              Un santuario de belleza y salud ungueal de alta precisión. Combinamos esterilización hospitalaria en autoclave a 134°C, limpieza en seco con tecnología de fresas diamantadas y nutrición regenerativa con aceites botánicos orgánicos para unas uñas impecables y saludables.
+            </p>
           </div>
 
-          <h2 className="text-2xl sm:text-4xl text-[#2B2420] font-bold tracking-tight font-['Plus_Jakarta_Sans',sans-serif] leading-tight">
-            El Ritual de Manicura Rusa &amp; Bienestar Clínico
-          </h2>
-
-          <p className="text-sm sm:text-base text-[#5A4A43] leading-relaxed">
-            Un santuario de belleza y salud ungueal de alta precisión. Combinamos esterilización hospitalaria en autoclave a 134°C, limpieza en seco con tecnología de fresas diamantadas y nutrición regenerativa con aceites botánicos orgánicos para unas uñas impecables y saludables.
-          </p>
+          <div className="relative z-10 pt-4 flex flex-wrap items-center gap-4">
+            <span className="text-xs sm:text-sm text-[#5A4A43] font-medium flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[18px] text-[#2B2420]">verified</span>
+              {BUSINESS_CONFIG.branchName} · Atención personalizada en cabina privada · Reserva en línea
+            </span>
+          </div>
         </div>
-
-        <div className="relative z-10 pt-4 flex flex-wrap items-center gap-4">
-          <span className="text-xs sm:text-sm text-[#5A4A43] font-medium flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-[18px] text-[#2B2420]">verified</span>
-            {BUSINESS_CONFIG.branchName} · Atención personalizada en cabina privada · Reserva en línea
-          </span>
-        </div>
-      </div>
+      )}
 
       {/* Filter and Search Bar */}
       <div className="bg-white rounded-3xl p-4 sm:p-5 border border-[#C6BDAC] shadow-xs space-y-4">

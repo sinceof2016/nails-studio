@@ -50,24 +50,72 @@ service cloud.firestore {
     // =========================================================================
 
     function strMax(data, campo, max) {
-      return !(campo in data) || (data[campo] is string && data[campo].size() <= max);
+      let v = data.get(campo, '');
+      return v is string && v.size() <= max;
     }
 
     function numMax(data, campo, max) {
-      return !(campo in data) || (data[campo] is number && data[campo] >= 0 && data[campo] <= max);
+      let v = data.get(campo, 0);
+      return v is number && v >= 0 && v <= max;
     }
 
     function boolOpt(data, campo) {
-      return !(campo in data) || data[campo] is bool;
+      return data.get(campo, false) is bool;
     }
 
     function listMax(data, campo, max) {
-      return !(campo in data) || (data[campo] is list && data[campo].size() <= max);
+      let v = data.get(campo, []);
+      return v is list && v.size() <= max;
     }
 
-    // Id del bloqueo de horario que le corresponde a una cita (mismo formato que usa la app)
-    function lockIdDeCita(data) {
-      return data.date + '_' + data.specialistId + '_' + data.time.replace(':', '-').replace(' ', '-');
+    // Id del bloqueo de un horario concreto de una cita (mismo formato que usa la app: fecha_especialista_hora)
+    function lockIdDe(data, slot) {
+      return data.date + '_' + data.specialistId + '_' + slot.replace(':', '-').replace(' ', '-');
+    }
+
+    // Horarios de inicio de cita: 10:00 AM a 06:00 PM (la última cita empieza a las 6 y el local cierra a las 7).
+    // Si cambia el horario del negocio, hay que cambiar esta lista y la de slotSiguiente y probar las reglas.
+    function slotsDeAgenda() {
+      return ['10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM'];
+    }
+
+    function slotSiguiente(slot) {
+      return {
+        '10:00 AM': '11:00 AM', '11:00 AM': '12:00 PM', '12:00 PM': '01:00 PM', '01:00 PM': '02:00 PM',
+        '02:00 PM': '03:00 PM', '03:00 PM': '04:00 PM', '04:00 PM': '05:00 PM', '05:00 PM': '06:00 PM'
+      }.get(slot, '');
+    }
+
+    // Un servicio ocupa 1 hora (hasta 60 min) o 2 horas seguidas (hasta 120 min). No se admiten servicios de más de 2 horas.
+    function horasDeCita(data) {
+      let d = data.get('serviceDuration', 60);
+      return d is number ? (d <= 60 ? 1 : 2) : 1;
+    }
+
+    // El servicio debe empezar en un horario válido, durar máximo 2 horas y terminar antes del cierre (7:00 PM).
+    function citaCabeEnElHorario(data) {
+      return data.time in slotsDeAgenda() &&
+        data.get('serviceDuration', 60) <= 120 &&
+        (horasDeCita(data) == 1 || data.time != '06:00 PM');
+    }
+
+    // Un bloqueo de horario es válido para una cita si su horario es uno de los que ocupa la cita.
+    function lockCubreCita(apt, slot) {
+      return slot in slotsDeAgenda() &&
+        (slot == apt.time || (horasDeCita(apt) == 2 && slot == slotSiguiente(apt.time)));
+    }
+
+    // El bloqueo del horario de inicio nace en la misma operación y apunta a esta cita.
+    function lockDeEstaCita(data, slot, aptId) {
+      let ruta = /databases/$(database)/documents/slot_locks/$(lockIdDe(data, slot));
+      return existsAfter(ruta) && getAfter(ruta).data.appointmentId == aptId;
+    }
+
+    // Si el bloqueo es el del horario de inicio de una cita de 2 horas, el bloqueo de la segunda hora debe nacer en la misma operación.
+    // (Así la cita solo exige su primer bloqueo y este exige el segundo: la regla de la cita se mantiene corta.)
+    function segundoBloqueoPresente(apt, slot) {
+      return slot != apt.time || horasDeCita(apt) == 1 ||
+        existsAfter(/databases/$(database)/documents/slot_locks/$(lockIdDe(apt, slotSiguiente(apt.time))));
     }
 
     // =========================================================================
@@ -124,16 +172,14 @@ service cloud.firestore {
 
     // Validación estricta para creación de cita (pública o por staff)
     // El visitante solo puede crear una cita si en la MISMA operación se crea su bloqueo de horario.
-    // El bloqueo debe ser el que nace con esa misma cita (su appointmentId coincide), no uno ya existente de otra cita.
+    // El visitante solo crea citas dentro del horario, y con su bloqueo de horario (y el de la 2.ª hora si el servicio dura más de 1 hora).
+    // El bloqueo debe nacer con esa misma cita (su appointmentId coincide), no ser uno ya existente de otra cita.
     function isValidNewAppointment(data, aptId) {
       return isValidAppointmentFields(data) &&
       data.date is string && data.time is string && data.specialistId is string &&
       (esStaff() || data.get('autorizacionDatos', false) == true) &&
       data.status in ['confirmada', 'en_preparacion'] &&
-      (esStaff() || (
-        existsAfter(/databases/$(database)/documents/slot_locks/$(lockIdDeCita(data))) &&
-        getAfter(/databases/$(database)/documents/slot_locks/$(lockIdDeCita(data))).data.appointmentId == aptId
-      ));
+      (esStaff() || (citaCabeEnElHorario(data) && lockDeEstaCita(data, data.time, aptId)));
     }
 
     // Validación estricta para actualización de cita (solo staff)
@@ -276,20 +322,38 @@ service cloud.firestore {
                            !exists(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)) &&
                            existsAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)) &&
                            getAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.date == request.resource.data.date &&
-                           getAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.time == request.resource.data.slot &&
-                           getAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.specialistId == request.resource.data.specialistId
+                           lockCubreCita(getAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data, request.resource.data.slot) &&
+                           getAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.specialistId == request.resource.data.specialistId &&
+                           segundoBloqueoPresente(getAfter(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data, request.resource.data.slot)
                          ) ||
                          // (2) Reactivar una cita cancelada: solo el personal puede recrear el bloqueo de una cita que ya existe y coincide
                          (
                            esStaff() &&
                            exists(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)) &&
                            get(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.date == request.resource.data.date &&
-                           get(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.time == request.resource.data.slot &&
+                           lockCubreCita(get(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data, request.resource.data.slot) &&
                            get(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.specialistId == request.resource.data.specialistId
                          )
                        );
       allow update: if false;
       allow delete: if esStaff();
+    }
+
+    // Colección: agenda_blocks (agenda de una especialista bloqueada un día completo)
+    // Lee: Público (el calendario de reservas debe saber que ese día no está disponible).
+    // Crea / actualiza / borra: Solo SuperAdmin y Administrador. El id es fecha_especialista.
+    function isValidAgendaBlock(data, blockId) {
+      return data.keys().hasOnly(['specialistId', 'date', 'createdAt']) &&
+        data.specialistId is string && data.specialistId.size() > 0 && data.specialistId.size() <= 60 &&
+        data.date is string && data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') &&
+        blockId == data.date + '_' + data.specialistId &&
+        strMax(data, 'createdAt', 40);
+    }
+
+    match /agenda_blocks/{blockId} {
+      allow read: if true;
+      allow create, update: if esAdmin() && isValidAgendaBlock(request.resource.data, blockId);
+      allow delete: if esAdmin();
     }
 
     // Colección: salon_cuts (Libro de cobros y comisiones)
@@ -362,7 +426,7 @@ service cloud.firestore {
         data.category is string && data.category.size() > 0 && data.category.size() <= 60 &&
         data.categoryLabel is string && data.categoryLabel.size() <= 100 &&
         data.price is number && data.price >= 0 && data.price <= 10000000 &&
-        data.durationMinutes is number && data.durationMinutes >= 5 && data.durationMinutes <= 600 &&
+        data.durationMinutes is number && data.durationMinutes >= 5 && data.durationMinutes <= 120 &&
         (!('rating' in data) || (data.rating is number && data.rating >= 0 && data.rating <= 5)) &&
         (!('reviewsCount' in data) || (data.reviewsCount is number && data.reviewsCount >= 0)) &&
         (!('tag' in data) || (data.tag is string && data.tag.size() <= 40)) &&

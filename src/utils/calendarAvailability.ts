@@ -1,5 +1,13 @@
-import { Appointment, Specialist, SlotLock } from '../types';
+import { Appointment, Specialist, SlotLock, AgendaBlock } from '../types';
 import { SPECIALISTS } from '../data/mockData';
+import {
+  CLOSING_HOUR,
+  MAX_SLOTS_PER_APPOINTMENT,
+  SLOT_MINUTES,
+  WEEKLY_REST_DAYS,
+  SUNDAY_ROTATION,
+  buildSlotLabels
+} from '../config/agendaConfig';
 
 export interface CalendarDayOption {
   id: string; // e.g. "2026-09-28"
@@ -22,26 +30,35 @@ export interface SlotAvailability {
   status: 'available' | 'booked' | 'passed';
 }
 
-// Fixed 1-hour interval slots for Sanctuary SPA
-export const HOURLY_TIME_SLOTS: string[] = [
-  '08:00 AM',
-  '09:00 AM',
-  '10:00 AM',
-  '11:00 AM',
-  '12:00 PM',
-  '01:00 PM',
-  '02:00 PM',
-  '03:00 PM',
-  '04:00 PM',
-  '05:00 PM',
-  '06:00 PM',
-  '07:00 PM'
-];
+// Fixed 1-hour interval slots: 10:00 AM to 06:00 PM (9 slots)
+export const HOURLY_TIME_SLOTS: string[] = buildSlotLabels();
 
 const SPANISH_DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-const normalizeDayName = (str: string): string =>
+export const normalizeDayName = (str: string): string =>
   str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+function extractDateId(date: Date | string | CalendarDayOption): string {
+  if (typeof date === 'string') {
+    if (/^\d{4}-\d{2}-\d{2}/.test(date)) return date.slice(0, 10);
+    return date;
+  }
+  if (typeof date === 'object' && date !== null) {
+    if ('id' in date && typeof (date as CalendarDayOption).id === 'string' && /^\d{4}-\d{2}-\d{2}/.test((date as CalendarDayOption).id)) {
+      return (date as CalendarDayOption).id;
+    }
+    const d = 'dateObj' in date && (date as CalendarDayOption).dateObj instanceof Date
+      ? (date as CalendarDayOption).dateObj
+      : (date instanceof Date ? date : null);
+    if (d) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  }
+  return '';
+}
 
 // Get the Spanish day name for any date object, string or CalendarDayOption
 export function getSpanishDayName(date: Date | string | CalendarDayOption): string {
@@ -63,18 +80,6 @@ export function getSpanishDayName(date: Date | string | CalendarDayOption): stri
   return SPANISH_DAY_NAMES[d.getDay()] || 'Lunes';
 }
 
-// Check if a specialist works on a given day according to their availableDays configuration
-export function isSpecialistWorkingOnDay(
-  specialist: Specialist,
-  date: Date | string | CalendarDayOption
-): boolean {
-  if (!specialist.availableDays || specialist.availableDays.length === 0) {
-    return true; // Default fallback if not configured
-  }
-  const currentDayName = normalizeDayName(getSpanishDayName(date));
-  return specialist.availableDays.some((day) => normalizeDayName(day) === currentDayName);
-}
-
 // Helper to convert slot string e.g. "02:00 PM" to 24-hour number (14)
 export function parseSlotTo24Hour(slot: string): { hour: number; minute: number } {
   const parts = slot.trim().split(' ');
@@ -86,6 +91,110 @@ export function parseSlotTo24Hour(slot: string): { hour: number; minute: number 
   if (period.toUpperCase() === 'PM' && h < 12) h += 12;
   if (period.toUpperCase() === 'AM' && h === 12) h = 0;
   return { hour: h, minute: m };
+}
+
+// Calculates slots needed for a duration in minutes (max 2 = 120 mins)
+export function slotsNeeded(minutes?: number): number {
+  if (!minutes || minutes <= 0) return 1;
+  return Math.min(MAX_SLOTS_PER_APPOINTMENT, Math.max(1, Math.ceil(minutes / SLOT_MINUTES)));
+}
+
+// Returns the consecutive slots covered by a service starting at startSlot, or null if exceeds closing hour
+export function getCoveredSlots(startSlot: string, durationMinutes?: number): string[] | null {
+  const startIndex = HOURLY_TIME_SLOTS.indexOf(startSlot);
+  if (startIndex === -1) return null;
+  const needed = slotsNeeded(durationMinutes);
+  const { hour: startHour } = parseSlotTo24Hour(startSlot);
+  if (startHour + needed > CLOSING_HOUR) {
+    return null;
+  }
+  const slots: string[] = [];
+  for (let i = 0; i < needed; i++) {
+    const slotIndex = startIndex + i;
+    if (slotIndex >= HOURLY_TIME_SLOTS.length) return null;
+    slots.push(HOURLY_TIME_SLOTS[slotIndex]);
+  }
+  return slots;
+}
+
+// Returns existing occupied slots clipped at closing time
+export function getOccupiedSlots(startSlot: string, durationMinutes?: number): string[] {
+  const startIndex = HOURLY_TIME_SLOTS.indexOf(startSlot);
+  if (startIndex === -1) return [];
+  const needed = slotsNeeded(durationMinutes);
+  const slots: string[] = [];
+  for (let i = 0; i < needed; i++) {
+    const idx = startIndex + i;
+    if (idx < HOURLY_TIME_SLOTS.length) {
+      slots.push(HOURLY_TIME_SLOTS[idx]);
+    }
+  }
+  return slots;
+}
+
+// Sunday rotation: returns group index (0 or 1) for a Sunday, or null if not Sunday
+export function getSundayGroupIndex(dateStr: string): number | null {
+  if (!dateStr) return null;
+  const [y, m, d] = dateStr.split('-').map(Number);
+  if (!y || !m || !d) return null;
+  const targetDate = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+  if (targetDate.getUTCDay() !== 0) return null;
+  const [ry, rm, rd] = SUNDAY_ROTATION.referenceSunday.split('-').map(Number);
+  const refDate = new Date(Date.UTC(ry, rm - 1, rd, 12, 0, 0));
+  const diffDays = Math.round((targetDate.getTime() - refDate.getTime()) / (24 * 60 * 60 * 1000));
+  const diffWeeks = Math.round(diffDays / 7);
+  const groupCount = SUNDAY_ROTATION.groups.length || 2;
+  return ((diffWeeks % groupCount) + groupCount) % groupCount;
+}
+
+// Check if specialist is blocked on a date
+export function isSpecialistBlockedOnDate(
+  specialistId: string,
+  dateStr: string,
+  blocks: AgendaBlock[] = []
+): boolean {
+  if (!specialistId || !dateStr || !Array.isArray(blocks)) return false;
+  return blocks.some((b) => b.specialistId === specialistId && b.date === dateStr);
+}
+
+// Check if a specialist works on a given day according to agendaConfig and blocks
+export function isSpecialistWorkingOnDay(
+  specialist: Specialist,
+  date: Date | string | CalendarDayOption,
+  blocks: AgendaBlock[] = []
+): boolean {
+  const dateId = extractDateId(date);
+  if (dateId && isSpecialistBlockedOnDate(specialist.id, dateId, blocks)) {
+    return false;
+  }
+  const dayName = getSpanishDayName(date);
+  const normDay = normalizeDayName(dayName);
+
+  // Sunday rotation check
+  if (normDay === 'domingo') {
+    const sundayGroup = dateId ? getSundayGroupIndex(dateId) : null;
+    if (sundayGroup !== null) {
+      const workingIds = SUNDAY_ROTATION.groups[sundayGroup] || [];
+      if (specialist.id in WEEKLY_REST_DAYS) {
+        return workingIds.includes(specialist.id);
+      }
+    }
+  }
+
+  // Fixed rest days from WEEKLY_REST_DAYS (overrides stored Firestore availableDays)
+  if (specialist.id in WEEKLY_REST_DAYS) {
+    const restDays = WEEKLY_REST_DAYS[specialist.id] || [];
+    if (restDays.some((rd) => normalizeDayName(rd) === normDay)) {
+      return false;
+    }
+    return true;
+  }
+
+  // Fallback for new specialists not in WEEKLY_REST_DAYS
+  if (!specialist.availableDays || specialist.availableDays.length === 0) {
+    return true;
+  }
+  return specialist.availableDays.some((d) => normalizeDayName(d) === normDay);
 }
 
 // Generate the next 7 days starting from today with localized Spanish labels
@@ -171,14 +280,45 @@ export function datesMatch(aptDate: string, selectedDate: CalendarDayOption | st
   return false;
 }
 
-// Calculate availability for every slot for a given specialist and date
+// Helper to check if a specialist is completely free at a single slot
+function isSpecialistFreeAtSingleSlot(
+  spec: Specialist,
+  slot: string,
+  selectedDateOption: CalendarDayOption,
+  appointments: Appointment[],
+  slotLocks: SlotLock[],
+  agendaBlocks: AgendaBlock[]
+): boolean {
+  if (!isSpecialistWorkingOnDay(spec, selectedDateOption, agendaBlocks)) {
+    return false;
+  }
+  const hasApt = appointments.some(
+    (a) =>
+      a.status !== 'cancelada' &&
+      a.specialistId === spec.id &&
+      datesMatch(a.date, selectedDateOption) &&
+      getOccupiedSlots(a.time, a.serviceDuration || 60).includes(slot)
+  );
+  if (hasApt) return false;
+
+  const hasLock = slotLocks.some(
+    (l) => l.specialistId === spec.id && datesMatch(l.date, selectedDateOption) && l.slot === slot
+  );
+  if (hasLock) return false;
+
+  return true;
+}
+
+// Calculate availability for every slot for a given specialist, duration and date
 export function computeSlotAvailability(
   selectedDateOption: CalendarDayOption,
   specialistId: string, // specialist id or 'any'
   appointments: Appointment[] = [],
   slotLocks: SlotLock[] = [],
   now: Date = new Date(),
-  specialistsList: Specialist[] = SPECIALISTS
+  specialistsList: Specialist[] = SPECIALISTS,
+  serviceDurationMinutes: number = 60,
+  agendaBlocks: AgendaBlock[] = []
 ): SlotAvailability[] {
   const isToday = selectedDateOption.isToday;
   const currentHour = now.getHours();
@@ -189,11 +329,11 @@ export function computeSlotAvailability(
     : null;
 
   const chosenSpecWorksThisDay = chosenSpecialist
-    ? isSpecialistWorkingOnDay(chosenSpecialist, selectedDateOption)
+    ? isSpecialistWorkingOnDay(chosenSpecialist, selectedDateOption, agendaBlocks)
     : true;
 
   return HOURLY_TIME_SLOTS.map((slot) => {
-    const { hour: slotHour, minute: slotMinute } = parseSlotTo24Hour(slot);
+    const { hour: slotHour } = parseSlotTo24Hour(slot);
 
     // 1. Has this hour already passed today?
     let isPassed = false;
@@ -203,47 +343,46 @@ export function computeSlotAvailability(
       }
     }
 
-    // 2. Active appointments for this day & slot
-    const matchingApts = appointments.filter(
-      (a) =>
-        a.status !== 'cancelada' &&
-        a.time === slot &&
-        datesMatch(a.date, selectedDateOption)
-    );
+    // 2. Consecutive slots needed for this service
+    const coveredSlots = getCoveredSlots(slot, serviceDurationMinutes);
 
-    // 3. Slot locks públicos para este horario y día
-    const matchingLocks = slotLocks.filter(
-      (l) => l.slot === slot && datesMatch(l.date, selectedDateOption)
-    );
-
-    // Booked specialists at this hour from appointments and slot locks
-    const bookedFromApts = matchingApts.map((a) => a.specialistId);
-    const bookedFromLocks = matchingLocks.map((l) => l.specialistId);
-    const bookedSpecialistIds = Array.from(new Set([...bookedFromApts, ...bookedFromLocks]));
-
-    // Available specialists at this hour: MUST WORK on this day AND not be booked/locked
-    const availableSpecialistIds = specialistsList
-      .filter((s) => isSpecialistWorkingOnDay(s, selectedDateOption) && !bookedSpecialistIds.includes(s.id))
-      .map((s) => s.id);
+    // Specialists available for ALL consecutive slots needed
+    const availableSpecialistIds = coveredSlots !== null
+      ? specialistsList
+          .filter((s) =>
+            coveredSlots.every((st) =>
+              isSpecialistFreeAtSingleSlot(s, st, selectedDateOption, appointments, slotLocks, agendaBlocks)
+            )
+          )
+          .map((s) => s.id)
+      : [];
 
     let isBooked = false;
     let bookedByClient: string | undefined;
 
     if (specialistId === 'any') {
-      // If 'any' specialist is chosen, it is booked only if ALL working specialists are booked
       isBooked = availableSpecialistIds.length === 0;
     } else {
       if (!chosenSpecWorksThisDay) {
-        // Specialist does NOT work on this day: 100% booked / reservado
         isBooked = true;
         bookedByClient = 'Reservado';
+      } else if (coveredSlots === null) {
+        isBooked = true;
       } else {
-        // Booked if the chosen specialist has an active appointment or a slot lock at this slot
-        const chosenBooking = matchingApts.find((a) => a.specialistId === specialistId);
-        const isLocked = matchingLocks.some((l) => l.specialistId === specialistId);
-        if (chosenBooking || isLocked) {
+        const isChosenAvailable = availableSpecialistIds.includes(specialistId);
+        if (!isChosenAvailable) {
           isBooked = true;
-          bookedByClient = chosenBooking?.clientName;
+          // Look for direct appointment occupying this starting slot
+          const directApt = appointments.find(
+            (a) =>
+              a.status !== 'cancelada' &&
+              a.specialistId === specialistId &&
+              datesMatch(a.date, selectedDateOption) &&
+              getOccupiedSlots(a.time, a.serviceDuration || 60).includes(slot)
+          );
+          if (directApt) {
+            bookedByClient = directApt.clientName;
+          }
         }
       }
     }
@@ -274,8 +413,19 @@ export function countFreeSlots(
   appointments: Appointment[] = [],
   slotLocks: SlotLock[] = [],
   now: Date = new Date(),
-  specialistsList: Specialist[] = SPECIALISTS
+  specialistsList: Specialist[] = SPECIALISTS,
+  serviceDurationMinutes: number = 60,
+  agendaBlocks: AgendaBlock[] = []
 ): number {
-  const slots = computeSlotAvailability(dayOption, specialistId, appointments, slotLocks, now, specialistsList);
+  const slots = computeSlotAvailability(
+    dayOption,
+    specialistId,
+    appointments,
+    slotLocks,
+    now,
+    specialistsList,
+    serviceDurationMinutes,
+    agendaBlocks
+  );
   return slots.filter((s) => s.status === 'available').length;
 }

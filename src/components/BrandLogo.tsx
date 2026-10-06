@@ -2,84 +2,21 @@ import React from 'react';
 
 interface BrandLogoProps {
   className?: string;
+  /** Alto en pixeles (el ancho se ajusta solo para no deformar el logo). */
   size?: number;
 }
 
+// Logo oficial de La Pelu SPA (public/logo-la-pelu-400.webp, 400 x 306 px, con esquinas transparentes)
 export const BrandLogo: React.FC<BrandLogoProps> = ({ className = 'h-9 sm:h-10 w-auto', size }) => {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 500 500"
+    <img
+      src={`${import.meta.env.BASE_URL}logo-la-pelu-400.webp`}
+      alt="La Pelu SPA"
+      width={400}
+      height={306}
+      decoding="async"
       className={className}
-      style={size ? { width: size, height: size } : undefined}
-      aria-label="La Pelu SPA Logo"
-    >
-      <defs>
-        <linearGradient id="pelu-gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#C89B59" />
-          <stop offset="50%" stopColor="#DFB775" />
-          <stop offset="100%" stopColor="#B38441" />
-        </linearGradient>
-        <linearGradient id="pelu-rose-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#E8A5AC" />
-          <stop offset="100%" stopColor="#C57E86" />
-        </linearGradient>
-      </defs>
-
-      {/* Background circle subtle */}
-      <circle cx="250" cy="250" r="240" fill="#FFFFFF" />
-
-      {/* Outer Gold Circle */}
-      <circle cx="250" cy="250" r="236" stroke="url(#pelu-gold-grad)" strokeWidth="4.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-
-      {/* Inner Gold Circle Accent Arcs */}
-      <circle cx="250" cy="250" r="185" stroke="#C89B59" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeDasharray="280 40 400 40" opacity="0.85" />
-      <circle cx="250" cy="250" r="170" stroke="#C89B59" strokeWidth="2" fill="none" strokeLinecap="round" strokeDasharray="180 80 320 80" opacity="0.6" />
-
-      {/* Botanical Leaf Branch (Held by Hand) */}
-      <g fill="url(#pelu-rose-grad)">
-        {/* Main stem */}
-        <path d="M 230 145 Q 260 95 315 175" stroke="#C57E86" strokeWidth="3" fill="none" strokeLinecap="round" />
-
-        {/* Leaves */}
-        <path d="M 205 125 C 190 120 180 130 190 140 C 205 142 215 135 205 125 Z" />
-        <path d="M 215 105 C 200 95 190 105 200 115 C 215 118 225 110 215 105 Z" />
-        <path d="M 245 92 C 235 78 222 85 230 98 C 242 105 250 100 245 92 Z" />
-        <path d="M 270 90 C 265 75 252 80 258 92 C 268 102 275 98 270 90 Z" />
-        <path d="M 292 98 C 290 82 278 85 282 98 C 290 108 298 105 292 98 Z" />
-        <path d="M 312 120 C 315 105 305 105 305 118 C 310 128 320 128 312 120 Z" />
-        <path d="M 322 145 C 330 132 320 130 318 142 C 320 152 330 152 322 145 Z" />
-      </g>
-
-      {/* Elegant Hand with Manicured Nails */}
-      <g fill="url(#pelu-rose-grad)">
-        {/* Main Palm and Wrist */}
-        <path d="M 145 250 C 160 215 195 195 240 175 C 275 160 295 160 290 180 C 280 190 255 210 245 225 C 270 225 295 230 330 205 C 345 195 365 180 360 200 C 350 215 320 240 295 250 C 265 260 220 265 175 280 C 150 288 135 272 145 250 Z" />
-
-        {/* Fingers reaching gracefully upward to the branch */}
-        <path d="M 245 225 C 255 200 280 175 295 160 C 300 158 304 165 298 175 C 285 195 265 215 255 230 Z" />
-        <path d="M 265 220 C 278 185 292 165 305 155 C 310 152 314 160 308 172 C 295 195 282 215 272 232 Z" />
-        <path d="M 285 220 C 298 180 315 155 330 152 C 335 150 338 158 332 170 C 318 195 305 218 295 238 Z" />
-        <path d="M 305 222 C 322 185 340 165 352 175 C 355 178 352 188 342 200 C 328 218 318 230 310 242 Z" />
-        <path d="M 325 225 C 345 195 365 182 375 192 C 378 196 372 205 360 218 C 345 232 335 240 325 248 Z" />
-      </g>
-
-      {/* Golden Delicate Nail Details */}
-      <g stroke="#FFFFFF" strokeWidth="1.5" fill="none" opacity="0.9">
-        <path d="M 290 162 C 293 160 297 165 294 168" />
-        <path d="M 303 156 C 306 154 310 158 307 162" />
-        <path d="M 326 153 C 330 152 333 156 330 160" />
-        <path d="M 347 175 C 350 176 352 180 349 184" />
-        <path d="M 370 193 C 373 194 374 198 371 202" />
-      </g>
-
-      {/* Typography: LA PELU SPA */}
-      <text x="250" y="340" fill="url(#pelu-gold-grad)" fontFamily="'Plus Jakarta Sans', 'Segoe UI', sans-serif" fontWeight="800" letterSpacing="4px" textAnchor="middle" fontSize="42">
-        LA PELU
-      </text>
-      <text x="250" y="385" fill="#64444B" fontFamily="'Plus Jakarta Sans', 'Segoe UI', sans-serif" fontWeight="700" letterSpacing="8px" textAnchor="middle" fontSize="30">
-        SPA
-      </text>
-    </svg>
+      style={size ? { height: size, width: 'auto' } : undefined}
+    />
   );
 };

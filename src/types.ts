@@ -82,6 +82,18 @@ export interface SlotLock {
   createdAt: string;
 }
 
+/**
+ * Bloqueo de la agenda de una especialista durante un día completo (descanso, cita médica, etc.).
+ * El id del documento es `${date}_${specialistId}`. Lo leen todos (el calendario público lo respeta)
+ * y solo lo escriben SuperAdmin y Administrador.
+ */
+export interface AgendaBlock {
+  id: string;
+  specialistId: string;
+  date: string; // AAAA-MM-DD
+  createdAt?: string;
+}
+
 export interface Appointment {
   id: string;
   serviceId: string;
