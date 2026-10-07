@@ -25,6 +25,12 @@ export const Header: React.FC<HeaderProps> = ({
   const isAdmin = currentUser?.rol === 'Administrador' || isSuperAdmin;
   const isCaja = currentUser?.rol === 'Caja';
 
+  const TAB_ICON_FILES: Partial<Record<AppTab, string>> = {
+    reservar: 'icono-reservar.svg',
+    servicios: 'icono-servicios.svg',
+    especialistas: 'icono-especialistas.svg'
+  };
+
   const allTabs: { id: AppTab; label: string; icon: string; badge?: number; minRole: 'public' | 'caja' | 'admin' | 'superadmin' }[] = [
     { id: 'reservar', label: 'Reservar Turno', icon: 'calendar_month', minRole: 'public' },
     { id: 'servicios', label: 'Servicios & Carta', icon: 'spa', minRole: 'public' },
@@ -162,9 +168,13 @@ export const Header: React.FC<HeaderProps> = ({
                         : 'bg-[#C6BDAC]/40/70 hover:bg-[#C6BDAC]/40 text-[#5A4A43] hover:text-[#2B2420] border border-[#C6BDAC]/60'
                     }`}
                   >
-                    <span className={`material-symbols-outlined text-[16px] ${isActive ? 'fill' : ''}`}>
-                      {tab.icon}
-                    </span>
+                    {TAB_ICON_FILES[tab.id] ? (
+                      <img src={`${import.meta.env.BASE_URL}${TAB_ICON_FILES[tab.id]}`} alt="" aria-hidden="true" width={22} height={22} className={`w-[22px] h-[22px] object-contain ${isActive ? '' : 'opacity-70'}`} />
+                    ) : (
+                      <span className={`material-symbols-outlined text-[16px] ${isActive ? 'fill' : ''}`}>
+                        {tab.icon}
+                      </span>
+                    )}
                     <span>{tab.label}</span>
                     {tab.badge !== undefined && (
                       <span

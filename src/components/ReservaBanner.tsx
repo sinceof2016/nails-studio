@@ -5,12 +5,12 @@ interface ReservaBannerProps {
 }
 
 const BASE = import.meta.env.BASE_URL;
-const ICON = (f: string) => `${BASE}icons/${f}`;
+const ICON = (f: string) => `${BASE}${f}`;
 
 // Banner de "Reserva de Turno": imagen de fondo + texto y botones reales encima.
 // Escritorio: proporción 3285 x 718 y medidas en cqw (escalan con el ancho). Celular: tarjeta 366 x 291.
 export const ReservaBanner: React.FC<ReservaBannerProps> = ({ onExplorar }) => {
-  const btn = 'inline-flex items-center justify-center gap-[0.8cqw] sm:gap-[0.6cqw] rounded-full uppercase tracking-[0.06em] sm:tracking-[0.16em] font-["Poppins",sans-serif] cursor-pointer transition-colors';
+  const btn = 'inline-flex items-center justify-center gap-[1.2cqw] sm:gap-[0.6cqw] rounded-full uppercase tracking-[0.06em] sm:tracking-[0.16em] font-["Poppins",sans-serif] cursor-pointer transition-colors';
   return (
     <div className="relative overflow-hidden rounded-3xl border border-[#C6BDAC] shadow-xs bg-[#CEB5A4] text-[#110F0E] [container-type:inline-size]">
       <picture>
@@ -26,9 +26,17 @@ export const ReservaBanner: React.FC<ReservaBannerProps> = ({ onExplorar }) => {
         </p>
         <div className="absolute left-[6.5cqw] right-[6.5cqw] bottom-[5cqw] sm:right-auto sm:left-[9.2cqw] sm:bottom-auto sm:top-[14cqw] flex gap-[2.5cqw] sm:gap-[3.6cqw]">
           {onExplorar && (
-            <button type="button" onClick={onExplorar} className={`${btn} border border-[#110F0E] bg-transparent hover:bg-[#F1EDE8]/40 h-[9.5cqw] sm:h-[4.2cqw] flex-1 sm:flex-none sm:w-[29cqw] max-w-[62cqw] sm:max-w-none text-[2.6cqw] sm:text-[1.5cqw]`}>
-              <img src={ICON('icono-servicios.svg')} alt="" aria-hidden="true" className="w-[4.6cqw] h-[4.6cqw] sm:w-[2.2cqw] sm:h-[2.2cqw]" />
-              Explorar servicios
+            <button
+              type="button"
+              onClick={onExplorar}
+              className={`${btn} border border-[#110F0E] bg-transparent hover:bg-[#F1EDE8]/40 h-[9.5cqw] sm:h-[4.2cqw] px-[4cqw] sm:px-[1.8cqw] w-auto max-w-fit text-[2.6cqw] sm:text-[1.5cqw]`}
+            >
+              <span className="material-symbols-outlined text-[3.8cqw] sm:text-[2cqw] leading-none shrink-0 select-none flex items-center justify-center -translate-y-[0.05cqw]" aria-hidden="true">
+                spa
+              </span>
+              <span className="leading-none whitespace-nowrap">
+                Servicios &amp; Carta
+              </span>
             </button>
           )}
         </div>
