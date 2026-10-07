@@ -18,6 +18,7 @@ import { BookingStepService } from '../components/booking/BookingStepService';
 import { BookingStepDateTime } from '../components/booking/BookingStepDateTime';
 import { BookingStepCustomization } from '../components/booking/BookingStepCustomization';
 import { BookingStepClientInfo } from '../components/booking/BookingStepClientInfo';
+import { ReservaBanner } from '../components/ReservaBanner';
 
 interface BookingScreenProps {
   initialService?: Service | null;
@@ -483,48 +484,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   return (
     <div ref={bookingContainerRef} className="max-w-4xl mx-auto space-y-6 pb-12 animate-in fade-in duration-200">
       {/* Header Banner */}
-      <div className="rounded-3xl bg-gradient-to-r from-[#C6BDAC]/35 via-[#F4EFE9] to-white sm:p-7 border border-[#C6BDAC] shadow-xs relative overflow-hidden">
-        {/* Banner de la marca difuminado de fondo (se desvanece hacia la izquierda para no tapar el texto) */}
-        {/* Celular: franja difuminada arriba. Pantallas grandes: de fondo, desvaneciéndose hacia la izquierda para no tapar el texto */}
-        <img
-          src={`${import.meta.env.BASE_URL}banner-reserva.svg`}
-          alt=""
-          aria-hidden="true"
-          className="block sm:hidden w-full h-auto opacity-60 pointer-events-none select-none"
-          onError={(e) => { e.currentTarget.style.display = 'none'; }}
-        />
-        <img
-          src={`${import.meta.env.BASE_URL}banner-reserva.svg`}
-          alt=""
-          aria-hidden="true"
-          className="hidden sm:block absolute inset-0 w-full h-full object-cover object-right opacity-60 pointer-events-none select-none [mask-image:linear-gradient(to_right,transparent_5%,black_85%)] [-webkit-mask-image:linear-gradient(to_right,transparent_5%,black_85%)]"
-          onError={(e) => { e.currentTarget.style.display = 'none'; }}
-        />
-        <div className="relative z-10 p-6 sm:p-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/95 text-[#2B2420] text-xs font-semibold mb-2 border border-[#C6BDAC]">
-              <span className="material-symbols-outlined text-[15px] text-[#2B2420]">event_available</span>
-              {BUSINESS_CONFIG.branchName}
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold font-['Plus_Jakarta_Sans',sans-serif] text-[#2B2420]">
-              Reserva de Turno
-            </h1>
-            <p className="text-xs sm:text-sm text-[#5A4A43] mt-1 max-w-xl">
-              Selecciona tu ritual de belleza, tu especialista favorita y un horario disponible en nuestro calendario local sincronizado.
-            </p>
-          </div>
-
-          {onNavigateToServices && (
-            <button
-              onClick={onNavigateToServices}
-              className="px-4 py-2 rounded-full bg-white hover:bg-[#C6BDAC]/40 text-[#2B2420] border border-[#C6BDAC] text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 shrink-0 cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[16px]">spa</span>
-              <span>Explorar Servicios</span>
-            </button>
-          )}
-        </div>
-      </div>
+      <ReservaBanner onExplorar={onNavigateToServices} />
 
       {/* Booking Stepper */}
       <div ref={stepperRef} className="bg-white rounded-3xl p-4 sm:p-5 border border-[#C6BDAC] shadow-xs scroll-mt-24">
