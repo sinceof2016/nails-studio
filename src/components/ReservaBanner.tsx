@@ -31,12 +31,8 @@ export const ReservaBanner: React.FC<ReservaBannerProps> = ({ onExplorar }) => {
               onClick={onExplorar}
               className={`${btn} border border-[#110F0E] bg-transparent hover:bg-[#F1EDE8]/40 h-[9.5cqw] sm:h-[4.2cqw] px-[4cqw] sm:px-[1.8cqw] w-auto max-w-fit text-[2.6cqw] sm:text-[1.5cqw]`}
             >
-              <span className="material-symbols-outlined text-[3.8cqw] sm:text-[2cqw] leading-none shrink-0 select-none flex items-center justify-center -translate-y-[0.05cqw]" aria-hidden="true">
-                spa
-              </span>
-              <span className="leading-none whitespace-nowrap">
-                Servicios &amp; Carta
-              </span>
+              <img src={ICON('icono-servicios.svg')} alt="" aria-hidden="true" className="w-[4.6cqw] h-[4.6cqw] sm:w-[2.2cqw] sm:h-[2.2cqw] shrink-0" />
+              <span className="leading-none whitespace-nowrap">Explorar servicios</span>
             </button>
           )}
         </div>
