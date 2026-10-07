@@ -37,12 +37,6 @@ export function getUltraMsgConfig(): UltraMsgConfig {
     const saved = localStorage.getItem(ULTRAMSG_CONFIG_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      // Auto-migración si el navegador tenía la clave de prueba anterior
-      if (parsed.instanceId === 'instance191642') {
-        parsed.instanceId = '';
-        parsed.token = '';
-        localStorage.setItem(ULTRAMSG_CONFIG_KEY, JSON.stringify({ ...DEFAULT_ULTRAMSG_CONFIG, ...parsed }));
-      }
       return { ...DEFAULT_ULTRAMSG_CONFIG, ...parsed };
     }
   } catch (e) {

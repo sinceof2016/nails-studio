@@ -28,6 +28,17 @@ import { AdminAgendaTab } from '../components/admin/tabs/AdminAgendaTab';
 import { AdminCajaTab } from '../components/admin/tabs/AdminCajaTab';
 import { AdminCortesTab, SpecialistLiquidationItem } from '../components/admin/tabs/AdminCortesTab';
 import { AdminClientesTab } from '../components/admin/tabs/AdminClientesTab';
+import { AdminTabNav } from '../components/admin/AdminTabNav';
+import {
+  getAgendaStats,
+  filterCutsByDate,
+  filterExpensesByDate,
+  calculateCashIncome,
+  calculateDigitalIncome,
+  calculateTotalExpenses,
+  calculateSpecialistsLiquidation,
+  calculateClientProfiles
+} from '../utils/adminCalculations';
 import { ExpressAppointmentModal } from '../components/admin/modals/ExpressAppointmentModal';
 import { NewCutModal } from '../components/admin/modals/NewCutModal';
 import { NewExpenseModal } from '../components/admin/modals/NewExpenseModal';
@@ -216,107 +227,46 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
   const [isSubmittingClose, setIsSubmittingClose] = useState(false);
 
   // Agenda stats
-  const totalCount = appointments.length;
-  const confirmedCount = appointments.filter((a) => a.status === 'confirmada').length;
-  const inPrepCount = appointments.filter((a) => a.status === 'en_preparacion').length;
-  const completedCount = appointments.filter((a) => a.status === 'completada').length;
-  const canceledCount = appointments.filter((a) => a.status === 'cancelada').length;
+  const {
+    totalCount,
+    confirmedCount,
+    inPrepCount,
+    completedCount,
+    canceledCount
+  } = useMemo(() => getAgendaStats(appointments), [appointments]);
 
   // FILTRAR REGISTROS DE COBROS Y GASTOS POR LA FECHA SELECCIONADA
   const dayCuts = useMemo(() => {
-    return cuts.filter((c) => !c.fecha || c.fecha === selectedDate);
+    return filterCutsByDate(cuts, selectedDate);
   }, [cuts, selectedDate]);
 
   const dayExpenses = useMemo(() => {
-    return expenses.filter((e) => !e.fecha || e.fecha === selectedDate);
+    return filterExpensesByDate(expenses, selectedDate);
   }, [expenses, selectedDate]);
 
   // Daily totals calculation in COP based on selected date
   const totalCashIncome = useMemo(() => {
-    return dayCuts.reduce((acc, curr) => {
-      if (curr.metodoPago === 'efectivo') {
-        return acc + curr.servicioPrecio + curr.propina;
-      } else if (curr.metodoPago === 'mixto' && curr.montoEfectivo !== undefined) {
-        return acc + curr.montoEfectivo;
-      }
-      return acc;
-    }, 0);
+    return calculateCashIncome(dayCuts);
   }, [dayCuts]);
 
   const totalDigitalIncome = useMemo(() => {
-    return dayCuts.reduce((acc, curr) => {
-      if (curr.metodoPago === 'nequi_daviplata' || curr.metodoPago === 'tarjeta_datafono') {
-        return acc + curr.servicioPrecio + curr.propina;
-      } else if (curr.metodoPago === 'mixto' && curr.montoDigital !== undefined) {
-        return acc + curr.montoDigital;
-      }
-      return acc;
-    }, 0);
+    return calculateDigitalIncome(dayCuts);
   }, [dayCuts]);
 
   const totalExpensesAmount = useMemo(() => {
-    return dayExpenses.reduce((acc, curr) => acc + curr.monto, 0);
+    return calculateTotalExpenses(dayExpenses);
   }, [dayExpenses]);
 
   const expectedCashInHand = cashBase + totalCashIncome - totalExpensesAmount;
 
   // Specialists liquidation breakdown for selected date
   const specialistsLiquidation: SpecialistLiquidationItem[] = useMemo(() => {
-    return specialists.map((spec) => {
-      const specCuts = dayCuts.filter((c) => c.especialistaId === spec.id);
-      const totalServices = specCuts.reduce((acc, c) => acc + c.servicioPrecio, 0);
-      const totalCommission = specCuts.reduce((acc, c) => acc + c.comisionEspecialista, 0);
-      const totalTips = specCuts.reduce((acc, c) => acc + c.propina, 0);
-      return {
-        id: spec.id,
-        name: spec.name,
-        role: spec.role,
-        avatar: spec.avatar,
-        phone: spec.phone,
-        telefono: spec.telefono,
-        commissionRate: spec.commissionRate ?? 50,
-        cutsCount: specCuts.length,
-        totalServices,
-        totalCommission,
-        totalTips,
-        payoutTotal: totalCommission + totalTips
-      };
-    });
+    return calculateSpecialistsLiquidation(specialists, dayCuts);
   }, [specialists, dayCuts]);
 
   // Clients database synthesized with safe normalization
   const clientProfiles: ClientProfile[] = useMemo(() => {
-    const map = new Map<string, ClientProfile>();
-
-    appointments.forEach((apt) => {
-      const cleanPhone = (apt.clientPhone || '').replace(/\D/g, '').slice(-10);
-      const key = cleanPhone || (apt.clientName || 'Cliente').toLowerCase().trim();
-
-      if (!map.has(key)) {
-        map.set(key, {
-          id: `client-${key}`,
-          nombre: apt.clientName || 'Clienta Anónima',
-          telefono: apt.clientPhone || '',
-          email: apt.clientEmail || '',
-          totalCitas: 1,
-          gastoTotal: apt.totalPrice ?? 0,
-          primeraVisita: apt.date || 'Reciente',
-          ultimaVisita: apt.date || 'Reciente',
-          servicioFavorito: apt.serviceName || 'Manicura Rusa',
-          especialistaFavorita: apt.specialistName || 'Valentina R.',
-          clasificacion: 'Nuevo',
-          notasCuidado: apt.notes
-        });
-      } else {
-        const item = map.get(key)!;
-        item.totalCitas += 1;
-        item.gastoTotal += apt.totalPrice ?? 0;
-        item.ultimaVisita = apt.date || item.ultimaVisita;
-        item.clasificacion = item.totalCitas >= 3 ? 'VIP Frecuente' : 'Recurrente';
-      }
-    });
-
-    return Array.from(map.values());
+    return calculateClientProfiles(appointments);
   }, [appointments]);
 
   // Filtered appointments
@@ -860,68 +810,14 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
       </div>
 
       {/* Internal Sub-Navigation Tabs */}
-      <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar border-b border-[#C6BDAC]/70 pb-2">
-        <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            onClick={() => handleSelectTab('agenda')}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeAdminTab === 'agenda'
-                ? 'bg-[#BB9C87] text-[#2B2420] font-bold shadow-xs'
-                : 'bg-white text-[#5A4A43] hover:bg-[#C6BDAC]/40 border border-[#C6BDAC]/70'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">calendar_today</span>
-            <span>Agenda ({totalCount})</span>
-          </button>
-
-          <button
-            onClick={() => handleSelectTab('caja')}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeAdminTab === 'caja'
-                ? 'bg-[#BB9C87] text-[#2B2420] font-bold shadow-xs'
-                : 'bg-white text-[#5A4A43] hover:bg-[#C6BDAC]/40 border border-[#C6BDAC]/70'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">point_of_sale</span>
-            <span>Caja &amp; Arqueo</span>
-          </button>
-
-          {!isCajaRole && (
-            <button
-              onClick={() => handleSelectTab('cortes')}
-              className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeAdminTab === 'cortes'
-                  ? 'bg-[#BB9C87] text-[#2B2420] font-bold shadow-xs'
-                  : 'bg-white text-[#5A4A43] hover:bg-[#C6BDAC]/40 border border-[#C6BDAC]/70'
-              }`}
-            >
-              <span className="material-symbols-outlined text-[16px]">receipt_long</span>
-              <span>Liquidación</span>
-            </button>
-          )}
-
-          <button
-            onClick={() => handleSelectTab('clientes')}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeAdminTab === 'clientes'
-                ? 'bg-[#BB9C87] text-[#2B2420] font-bold shadow-xs'
-                : 'bg-white text-[#5A4A43] hover:bg-[#C6BDAC]/40 border border-[#C6BDAC]/70'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">group</span>
-            <span>Clientes ({clientProfiles.length})</span>
-          </button>
-        </div>
-
-        <button
-          onClick={() => setIsUltraMsgModalOpen(true)}
-          className="px-3.5 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-300 transition-all flex items-center gap-1.5 cursor-pointer shrink-0 shadow-2xs"
-          title="Configuración de Notificaciones Automáticas UltraMsg WhatsApp"
-        >
-          <span className="material-symbols-outlined text-[16px] text-emerald-600">bolt</span>
-          <span>UltraMsg WhatsApp</span>
-        </button>
-      </div>
+      <AdminTabNav
+        activeAdminTab={activeAdminTab}
+        onSelectTab={handleSelectTab}
+        isCajaRole={isCajaRole}
+        totalCount={totalCount}
+        clientProfilesCount={clientProfiles.length}
+        onOpenUltraMsgModal={() => setIsUltraMsgModalOpen(true)}
+      />
 
       {/* 1. AGENDA TAB */}
       {activeAdminTab === 'agenda' && (

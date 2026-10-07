@@ -383,7 +383,7 @@ export const UltraMsgConfigModal: React.FC<UltraMsgConfigModalProps> = ({
                     type="text"
                     value={config.instanceId}
                     onChange={(e) => setConfig({ ...config, instanceId: e.target.value })}
-                    placeholder="ej. instance191642"
+                    placeholder="ej. instance000000"
                     className="w-full p-3 rounded-2xl border border-[#C6BDAC] font-mono text-xs focus:ring-2 focus:ring-[#2B2420] text-[#2B2420]"
                   />
                 </div>

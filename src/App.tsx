@@ -40,20 +40,13 @@ import {
 } from './types';
 import {
   getCookieConsent,
-  saveCookieConsent,
-  acceptAllCookies,
-  rejectNonEssentialCookies,
-  revokeConsent,
   hasConsentAnswered
 } from './services/cookieService';
 import {
   getActiveUser,
-  createSession,
-  clearSession,
   touchSession,
   getActiveSession
 } from './services/sessionManager';
-import { logoutVault } from './services/securityVault';
 import { SERVICES, INITIAL_SERVICE_CATEGORIES, SPECIALISTS, withBrandPhoto } from './data/mockData';
 import { STORAGE_KEYS } from './config/storageKeys';
 import { addUnique } from './utils/collections';
@@ -76,22 +69,16 @@ import {
   subscribeToCashCloses,
   addCashCloseToFirestore,
   subscribeToServices,
-  saveServiceInFirestore,
-  deleteServiceInFirestore,
   subscribeToSpecialists,
   subscribeToSpecialistsPrivate,
-  saveSpecialistInFirestore,
-  deleteSpecialistInFirestore,
   subscribeToCategories,
-  saveCategoryInFirestore,
-  deleteCategoryInFirestore,
   subscribeToBusinessConfig,
-  saveBusinessConfigInFirestore,
-  subscribeToUsers,
-  saveUserInFirestore,
-  deleteUserInFirestore
+  subscribeToUsers
 } from './services/firestoreService';
 import { updateBusinessConfigFromFirestore, BusinessConfig } from './config/businessConfig';
+import { useCatalogActions } from './hooks/useCatalogActions';
+import { useUserActions } from './hooks/useUserActions';
+import { useCookieActions } from './hooks/useCookieActions';
 import { SpecialistPublic, SpecialistPrivate } from './types';
 
 // Pantallas de personal: se descargan solo cuando alguien entra a ellas, no con la página pública
@@ -339,40 +326,6 @@ export default function App() {
   const [bookingSpecialist, setBookingSpecialist] = useState<Specialist | null>(null);
   const [promoDiscount, setPromoDiscount] = useState<number>(0);
 
-  // Cookie Handlers
-  const handleAcceptAllCookies = () => {
-    const prefs = acceptAllCookies();
-    setCookieConsent(prefs);
-    setIsCookieBannerOpen(false);
-    showToast('Preferencias guardadas: Todas las cookies han sido autorizadas.');
-  };
-
-  const handleRejectOptionalCookies = () => {
-    const prefs = rejectNonEssentialCookies();
-    setCookieConsent(prefs);
-    setIsCookieBannerOpen(false);
-    showToast('Preferencias guardadas: Solo cookies técnicas necesarias activas.');
-  };
-
-  const handleSaveCookiePreferences = (customPrefs: {
-    preferences: boolean;
-    analytics: boolean;
-    marketing: boolean;
-  }) => {
-    const prefs = saveCookieConsent(customPrefs);
-    setCookieConsent(prefs);
-    setIsCookieBannerOpen(false);
-    showToast('Tus preferencias de cookies han sido actualizadas.');
-  };
-
-  const handleRevokeCookies = () => {
-    disableAnalytics();
-    revokeConsent();
-    setCookieConsent(null);
-    setIsCookieBannerOpen(true);
-    showToast('Consentimiento de cookies revocado. Puedes volver a configurar.');
-  };
-
   const isStaff = Boolean(
     currentUser && ['SuperAdmin', 'Administrador', 'Caja'].includes(currentUser.rol)
   );
@@ -604,6 +557,56 @@ export default function App() {
     }, 3500);
   };
 
+  const {
+    handleAddService,
+    handleUpdateService,
+    handleUpdateServiceImage,
+    handleDeleteService,
+    handleAddCategory,
+    handleUpdateCategory,
+    handleDeleteCategory,
+    handleAddSpecialist,
+    handleUpdateSpecialist,
+    handleUpdateSpecialistAvatar,
+    handleDeleteSpecialist
+  } = useCatalogActions({
+    services,
+    setServices,
+    serviceCategories,
+    setServiceCategories,
+    specialists,
+    setSelectedServiceDetail,
+    setSelectedSpecialist,
+    showToast
+  });
+
+  const {
+    handleAcceptAllCookies,
+    handleRejectOptionalCookies,
+    handleSaveCookiePreferences,
+    handleRevokeCookies
+  } = useCookieActions({
+    setCookieConsent,
+    setIsCookieBannerOpen,
+    setIsCookieSettingsOpen,
+    showToast
+  });
+
+  const {
+    handleLogin,
+    handleLogout,
+    handleAddUser,
+    handleUpdateUser,
+    handleDeleteUser,
+    handleSaveBusinessConfig
+  } = useUserActions({
+    setCurrentUser,
+    setSystemUsers,
+    setBusinessConfig,
+    handleNavigateTab,
+    showToast
+  });
+
   // Handlers
   const handleQuickBook = (service: Service) => {
     setBookingService(service);
@@ -774,266 +777,6 @@ export default function App() {
       const msg = error instanceof Error ? error.message : 'Error al guardar el arqueo de caja.';
       showToast(`⚠ Error: ${msg}`);
       throw error;
-    }
-  };
-
-  const handleLogin = (user: SystemUser) => {
-    createSession(user);
-    setCurrentUser(user);
-    showToast(`Sesión iniciada como: ${user.nombre} (${user.rol})`);
-  };
-
-  const handleLogout = async () => {
-    await logoutVault();
-    clearSession();
-    setCurrentUser(null);
-    handleNavigateTab('servicios');
-    showToast('Sesión cerrada. Ahora estás en Modo Público.');
-  };
-
-  const handleAddUser = async (newUser: SystemUser) => {
-    try {
-      await saveUserInFirestore(newUser);
-      showToast(`Usuario "${newUser.nombre}" guardado en Firestore.`);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
-      throw err;
-    }
-  };
-
-  const handleUpdateUser = async (updatedUser: SystemUser) => {
-    try {
-      await saveUserInFirestore(updatedUser);
-      showToast(`Usuario "${updatedUser.nombre}" actualizado en Firestore.`);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
-      throw err;
-    }
-  };
-
-  const handleDeleteUser = async (userId: string) => {
-    try {
-      await deleteUserInFirestore(userId);
-      showToast('Usuario eliminado de Firestore.');
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      showToast(`No se pudo eliminar en el servidor: ${msg}. El cambio NO se publicó.`);
-      throw err;
-    }
-  };
-
-  const handleSaveBusinessConfig = async (newConfig: BusinessConfig) => {
-    try {
-      await saveBusinessConfigInFirestore(newConfig);
-      setBusinessConfig(newConfig);
-      updateBusinessConfigFromFirestore(newConfig);
-      showToast('Datos del negocio guardados y sincronizados en Firestore.');
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
-      throw err;
-    }
-  };
-
-  const handleAddService = async (newService: Service) => {
-    try {
-      await saveServiceInFirestore(newService);
-      setServices((prev) => {
-        const updated = [newService, ...prev.filter((s) => s.id !== newService.id)];
-        try {
-          localStorage.setItem(STORAGE_KEYS.services, JSON.stringify(updated));
-        } catch {
-          /* localStorage no disponible */
-        }
-        return updated;
-      });
-      showToast(`Servicio "${newService.name}" guardado y sincronizado.`);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
-      throw err;
-    }
-  };
-
-  const handleUpdateService = async (updatedService: Service) => {
-    try {
-      await saveServiceInFirestore(updatedService);
-      setServices((prev) => {
-        const updated = prev.map((s) => (s.id === updatedService.id ? updatedService : s));
-        try {
-          localStorage.setItem(STORAGE_KEYS.services, JSON.stringify(updated));
-        } catch {
-          /* localStorage no disponible */
-        }
-        return updated;
-      });
-      showToast(`Servicio "${updatedService.name}" actualizado y sincronizado.`);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
-      throw err;
-    }
-  };
-
-  const handleUpdateServiceImage = async (serviceId: string, newImage: string) => {
-    const target = services.find((s) => s.id === serviceId);
-    if (!target) return;
-    const updatedService: Service = { ...target, image: newImage };
-    try {
-      await saveServiceInFirestore(updatedService);
-      setServices((prev) => {
-        const updated = prev.map((s) => (s.id === serviceId ? updatedService : s));
-        try {
-          localStorage.setItem(STORAGE_KEYS.services, JSON.stringify(updated));
-        } catch {
-          /* localStorage no disponible */
-        }
-        return updated;
-      });
-      setSelectedServiceDetail((prev) => (prev && prev.id === serviceId ? { ...prev, image: newImage } : prev));
-      showToast('Foto del servicio guardada y sincronizada en todos los servidores.');
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
-      throw err;
-    }
-  };
-
-  const handleDeleteService = async (serviceId: string) => {
-    try {
-      await deleteServiceInFirestore(serviceId);
-      setServices((prev) => {
-        const updated = prev.filter((s) => s.id !== serviceId);
-        try {
-          if (updated.length > 0) {
-            localStorage.setItem(STORAGE_KEYS.services, JSON.stringify(updated));
-          } else {
-            localStorage.removeItem(STORAGE_KEYS.services);
-          }
-        } catch {
-          /* localStorage no disponible */
-        }
-        return updated;
-      });
-      showToast('Servicio eliminado y sincronizado.');
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      showToast(`No se pudo eliminar en el servidor: ${msg}. El cambio NO se publicó.`);
-      throw err;
-    }
-  };
-
-  const handleAddCategory = async (newCategory: ServiceCategory) => {
-    try {
-      await saveCategoryInFirestore(newCategory);
-      setServiceCategories((prev) => {
-        const updated = [...prev.filter((c) => c.id !== newCategory.id), newCategory];
-        try {
-          localStorage.setItem(STORAGE_KEYS.categories, JSON.stringify(updated));
-        } catch {
-          /* localStorage no disponible */
-        }
-        return updated;
-      });
-      showToast(`Tipo de servicio "${newCategory.label}" creado y sincronizado.`);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
-      throw err;
-    }
-  };
-
-  const handleUpdateCategory = async (updatedCategory: ServiceCategory) => {
-    try {
-      await saveCategoryInFirestore(updatedCategory);
-      setServiceCategories((prev) => {
-        const updated = prev.map((c) => (c.id === updatedCategory.id ? updatedCategory : c));
-        try {
-          localStorage.setItem(STORAGE_KEYS.categories, JSON.stringify(updated));
-        } catch {
-          /* localStorage no disponible */
-        }
-        return updated;
-      });
-      showToast(`Tipo de servicio "${updatedCategory.label}" actualizado y sincronizado.`);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
-      throw err;
-    }
-  };
-
-  const handleDeleteCategory = async (categoryId: string) => {
-    try {
-      await deleteCategoryInFirestore(categoryId);
-      setServiceCategories((prev) => {
-        const updated = prev.filter((c) => c.id !== categoryId);
-        try {
-          if (updated.length > 0) {
-            localStorage.setItem(STORAGE_KEYS.categories, JSON.stringify(updated));
-          } else {
-            localStorage.removeItem(STORAGE_KEYS.categories);
-          }
-        } catch {
-          /* localStorage no disponible */
-        }
-        return updated;
-      });
-      showToast('Tipo de servicio eliminado y sincronizado.');
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      showToast(`No se pudo eliminar en el servidor: ${msg}. El cambio NO se publicó.`);
-      throw err;
-    }
-  };
-
-  const handleAddSpecialist = async (newSpecialist: Specialist) => {
-    try {
-      await saveSpecialistInFirestore(newSpecialist);
-      showToast(`Manicurista "${newSpecialist.name}" registrada y sincronizada en Firestore.`);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
-      throw err;
-    }
-  };
-
-  const handleUpdateSpecialist = async (updatedSpecialist: Specialist) => {
-    try {
-      await saveSpecialistInFirestore(updatedSpecialist);
-      showToast(`Manicurista "${updatedSpecialist.name}" actualizada y sincronizada en Firestore.`);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
-      throw err;
-    }
-  };
-
-  const handleUpdateSpecialistAvatar = async (specialistId: string, newAvatar: string) => {
-    const target = specialists.find((s) => s.id === specialistId);
-    if (!target) return;
-    const updated = { ...target, avatar: newAvatar };
-    try {
-      await saveSpecialistInFirestore(updated);
-      setSelectedSpecialist((prev) => (prev && prev.id === specialistId ? { ...prev, avatar: newAvatar } : prev));
-      showToast('Foto de la especialista guardada y sincronizada en Firestore.');
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      showToast(`No se pudo guardar en el servidor: ${msg}. El cambio NO se publicó.`);
-      throw err;
-    }
-  };
-
-  const handleDeleteSpecialist = async (specialistId: string) => {
-    try {
-      await deleteSpecialistInFirestore(specialistId);
-      showToast('Manicurista eliminada de Firestore.');
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      showToast(`No se pudo eliminar en el servidor: ${msg}. El cambio NO se publicó.`);
-      throw err;
     }
   };
 

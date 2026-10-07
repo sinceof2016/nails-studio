@@ -565,10 +565,10 @@ app.get('/api/v1/citas/activas', validateKmsApiKey, (req, res) => {
     kmsAuth: { verified: true, role: res.getHeader('X-KMS-Key-Role'), keyId: res.getHeader('X-KMS-Key-Id') },
     data: {
       totalCitas: 4,
-      sede: 'Santuario Chicó Calle 85',
+      sede: 'Santuario Patio Bonito',
       turnos: [
-        { codigo: 'AURA-7829', cliente: 'Mariana Duque', servicio: 'Manicura Rusa Glazed', estado: 'confirmada' },
-        { codigo: 'AURA-8902', cliente: 'Dra. Carolina Restrepo', servicio: 'Soft Gel Pastel Art', estado: 'en_preparacion' }
+        { codigo: 'AURA-7829', cliente: 'Cliente de ejemplo 1', servicio: 'Servicio de ejemplo 1', estado: 'confirmada' },
+        { codigo: 'AURA-8902', cliente: 'Cliente de ejemplo 2', servicio: 'Servicio de ejemplo 2', estado: 'en_preparacion' }
       ]
     }
   });
@@ -582,7 +582,7 @@ app.get('/api/v1/caja/balance', validateKmsApiKey, (req, res) => {
       efectivoCaja: 260000,
       cobrosHoy: 2,
       moneda: 'COP',
-      sede: 'Santuario Chicó Calle 85'
+      sede: 'Santuario Patio Bonito'
     }
   });
 });
@@ -594,7 +594,7 @@ app.get('/api/v1/clientes/metricas', validateKmsApiKey, (req, res) => {
     data: {
       totalClientes: 4,
       clientesFrecuentes: 3,
-      sede: 'Santuario Chicó Calle 85'
+      sede: 'Santuario Patio Bonito'
     }
   });
 });

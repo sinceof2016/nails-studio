@@ -63,7 +63,7 @@ export const ApiConsoleScreen: React.FC<ApiConsoleScreenProps> = ({
   const [gatewayStatus, setGatewayStatus] = useState({
     status: 'connected',
     provider: 'UltraMsg WhatsApp Cloud Gateway',
-    instance: 'instance192909',
+    instance: 'no configurada',
     tokenSecured: true,
     serverSideProxy: true
   });
