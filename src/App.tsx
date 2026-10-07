@@ -54,7 +54,7 @@ import {
   getActiveSession
 } from './services/sessionManager';
 import { logoutVault } from './services/securityVault';
-import { SERVICES, INITIAL_SERVICE_CATEGORIES, SPECIALISTS } from './data/mockData';
+import { SERVICES, INITIAL_SERVICE_CATEGORIES, SPECIALISTS, withBrandPhoto } from './data/mockData';
 import { STORAGE_KEYS } from './config/storageKeys';
 import { addUnique } from './utils/collections';
 import {
@@ -257,6 +257,8 @@ export default function App() {
       return SERVICES;
     }
   });
+
+  const servicesView = useMemo(() => services.map(withBrandPhoto), [services]);
 
   // Service categories list (SuperAdmin editable, syncs with Firestore)
   const [serviceCategories, setServiceCategories] = useState<ServiceCategory[]>(() => {
@@ -1074,7 +1076,7 @@ export default function App() {
             onOpenServiceDetail={setSelectedServiceDetail}
             onOpenCookieSettings={() => setIsCookieSettingsOpen(true)}
             onOpenCookiePolicy={() => setIsCookiePolicyOpen(true)}
-            services={services}
+            services={servicesView}
             specialists={specialists}
             serviceCategories={serviceCategories}
             currentUser={currentUser}
@@ -1095,7 +1097,7 @@ export default function App() {
             onNavigateToAppointments={() => handleNavigateTab('agenda')}
             onNavigateToServices={() => handleNavigateTab('servicios')}
             isPublicView={!currentUser}
-            services={services}
+            services={servicesView}
             specialists={specialists}
             showToast={showToast}
             onOpenDataPolicy={() => setIsDataPolicyOpen(true)}
@@ -1129,7 +1131,7 @@ export default function App() {
             cuts={cuts}
             expenses={expenses}
             cashCloses={cashCloses}
-            services={services}
+            services={servicesView}
             specialists={specialists}
             agendaBlocks={agendaBlocks}
             onAddAgendaBlocks={handleAddAgendaBlocks}
@@ -1182,7 +1184,7 @@ export default function App() {
             onAddUser={handleAddUser}
             onUpdateUser={handleUpdateUser}
             onDeleteUser={handleDeleteUser}
-            services={services}
+            services={servicesView}
             onAddService={handleAddService}
             onUpdateService={handleUpdateService}
             onDeleteService={handleDeleteService}
@@ -1214,7 +1216,7 @@ export default function App() {
         {/* PANTALLA 404 PERSONALIZADA */}
         {currentTab === '404' && (
           <NotFoundScreen
-            services={services}
+            services={servicesView}
             onNavigateHome={() => setCurrentTab('servicios')}
             onNavigateToBooking={() => setCurrentTab('reservar')}
             onNavigateToSpecialists={() => setCurrentTab('especialistas')}

@@ -596,3 +596,56 @@ export const ADD_ON_OPTIONS: AddOnOption[] = [
     description: 'Remoción cuidadosa de sistemas artificiales preservando la salud de la lámina ungueal.'
   }
 ];
+
+export const SERVICE_PHOTO_IDS_A: Record<string, string> = {
+  'pedicure-nina': '1564935192630-328856ef4f52',
+  'pedicure-tradicional': '1577117633143-a2437fb9bdda',
+  'pedicure-semipermanente': '1762114468465-11f06d38cc33',
+  'limpieza-pies': '1636333885549-86304699925f',
+  'cambio-esmalte-pies': '1519419451778-14599a49ec41',
+  'manicure-nina': '1690749138086-7422f71dc159',
+  'manicure-tradicional': '1522337660859-02fbefca4702',
+  'manicure-semipermanente': '1693776529070-2cdea397595b',
+  'manicure-hombre-semipermanente': '1605719202787-7b360456843f',
+  'limpieza-manos': '1540555700478-4be289fbecef',
+  'cambio-esmalte-manos': '1659391542239-9648f307c0b1',
+  'base-rubber': '1610992015762-45dca7fa3a85',
+  'mantenimiento-base-rubber': '1610992015732-2449b76344bc',
+  'base-rubber-tradicional': '1607779097040-26e80aa78e66',
+  'mantenimiento-base-rubber-tradicional': '1612887390768-fb02affea7a6',
+  'pres-on-jelly-tips': '1604902396830-aca29e19b067',
+};
+
+export const SERVICE_PHOTO_IDS_B: Record<string, string> = {
+  'mantenimiento-pres-on-semipermanente': '1754799670410-b282791342c3',
+  'acrilico-2-semipermanente': '1777287852750-53eb2ca506e9',
+  'mantenimiento-acrilico': '1632345031435-8727f6897d53',
+  'polygel-2-semipermanente': '1736434518489-0eb84070017f',
+  'retoque-polygel': '1772983149677-3b47a14f2fe9',
+  'bano-acrilico-semipermanente': '1630843599725-32ead7671867',
+  'mantenimiento-bano-acrilico': '1633955726992-2b7c0d2d2a69',
+  'bano-polygel-semipermanente': '1762373349045-c2decd4ec3f3',
+  'mantenimiento-bano-polygel': '1767515341359-dab11a15a9fc',
+  'largo-adicional': '1780402695869-49cfb47f9f9b',
+  'arreglo-una-una': '1519014816548-bf5fe059798b',
+  'arreglo-permanente': '1604654894610-df63bc536371',
+  'extension-de-una': '1777287216958-84144739db83',
+  'retiro-acrilico-polygel-pres-on': '1777287216954-2b4b22bb6bf2',
+  'retiro-semipermanente': '1767515341175-d4b19ef34ddd',
+  'adicional-secado-rapido': '1758738880326-a7c672d93851',
+};
+
+export const SERVICE_PHOTO_IDS: Record<string, string> = { ...SERVICE_PHOTO_IDS_A, ...SERVICE_PHOTO_IDS_B };
+
+const LEGACY_STOCK_PHOTO_IDS = ['1519014816548', '1540555700478', '1522337360788', '1604654894610', '1632345031435', '1506794778202', '1599940824399', '1607779097040'];
+
+export const servicePhotoUrl = (id: string): string =>
+  `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&q=80&w=800`;
+
+export function withBrandPhoto(service: Service): Service {
+  const photoId = SERVICE_PHOTO_IDS[service.id];
+  if (!photoId) return service;
+  const current = service.image || '';
+  const isLegacy = !current || LEGACY_STOCK_PHOTO_IDS.some((id) => current.includes('photo-' + id));
+  return isLegacy ? { ...service, image: servicePhotoUrl(photoId) } : service;
+}
