@@ -399,6 +399,9 @@ export const UltraMsgConfigModal: React.FC<UltraMsgConfigModalProps> = ({
                     placeholder="ej. eanhimzs6xv0o1e2"
                     className="w-full p-3 rounded-2xl border border-[#C6BDAC] font-mono text-xs focus:ring-2 focus:ring-[#2B2420] text-[#2B2420]"
                   />
+                  <p className="mt-1 text-[11px] text-[#5A4A43]">
+                    El token solo se guarda mientras esta abierta esta pestaña; al cerrarla hay que volver a pegarlo.
+                  </p>
                 </div>
               </div>
 

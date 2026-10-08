@@ -7,7 +7,8 @@
 import assert from 'node:assert/strict';
 import { addUnique } from '../utils/collections';
 import { STORAGE_KEYS } from '../config/storageKeys';
-import { DEFAULT_COMMISSION_RATE } from '../config/businessConfig';
+import { DEFAULT_COMMISSION_RATE, BUSINESS_CONFIG } from '../config/businessConfig';
+import { generateBookingCode } from '../utils/dateAndId';
 
 console.log('1. addUnique agrega al inicio un registro nuevo');
 const base = [{ id: 'a' }, { id: 'b' }];
@@ -36,4 +37,19 @@ assert.equal(resolver('abc'), DEFAULT_COMMISSION_RATE);
 assert.equal(resolver(undefined), DEFAULT_COMMISSION_RATE);
 console.log('   OK');
 
-console.log('PRUEBAS DE AYUDANTES PASARON (4/4)');
+console.log('5. Códigos de reserva con aleatoriedad segura (200 códigos únicos y formato correcto)');
+const prefix = BUSINESS_CONFIG.bookingCodePrefix || 'AURA';
+const codePattern = new RegExp(`^${prefix}-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$`);
+const generatedCodes: string[] = [];
+
+for (let i = 0; i < 200; i++) {
+  const code = generateBookingCode(generatedCodes);
+  assert.match(code, codePattern, `El código ${code} no cumple con el formato esperado ${prefix}-XXXXXX`);
+  assert.ok(!generatedCodes.includes(code), `Código duplicado generado: ${code}`);
+  generatedCodes.push(code);
+}
+assert.equal(generatedCodes.length, 200);
+assert.equal(new Set(generatedCodes).size, 200, 'Los 200 códigos deben ser completamente únicos');
+console.log('   OK');
+
+console.log('PRUEBAS DE AYUDANTES PASARON (5/5)');

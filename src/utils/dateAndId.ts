@@ -86,8 +86,16 @@ export function generateBookingCode(existingCodes: string[] = []): string {
   
   for (let attempt = 0; attempt < 50; attempt++) {
     let randomPart = '';
-    for (let i = 0; i < 6; i++) {
-      randomPart += chars[Math.floor(Math.random() * chars.length)];
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      const bytes = new Uint8Array(6);
+      crypto.getRandomValues(bytes);
+      for (let i = 0; i < 6; i++) {
+        randomPart += chars[bytes[i] % chars.length];
+      }
+    } else {
+      for (let i = 0; i < 6; i++) {
+        randomPart += chars[Math.floor(Math.random() * chars.length)];
+      }
     }
     const prefix = BUSINESS_CONFIG.bookingCodePrefix || 'AURA';
     const candidate = `${prefix}-${randomPart}`;

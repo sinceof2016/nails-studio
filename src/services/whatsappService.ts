@@ -9,6 +9,7 @@ import { BUSINESS_CONFIG } from '../config/businessConfig';
 
 const WHATSAPP_HISTORY_KEY = 'aura_whatsapp_history';
 const ULTRAMSG_CONFIG_KEY = 'aura_ultramsg_config';
+const ULTRAMSG_TOKEN_KEY = 'aura_ultramsg_token';
 
 export interface UltraMsgConfig {
   instanceId: string;
@@ -33,26 +34,69 @@ export const DEFAULT_ULTRAMSG_CONFIG: UltraMsgConfig = {
 };
 
 export function getUltraMsgConfig(): UltraMsgConfig {
+  let baseConfig = { ...DEFAULT_ULTRAMSG_CONFIG };
+
   try {
     const saved = localStorage.getItem(ULTRAMSG_CONFIG_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      return { ...DEFAULT_ULTRAMSG_CONFIG, ...parsed };
+
+      // Migración: si la configuración vieja de localStorage trae un token,
+      // pasarlo a sessionStorage y quitarlo de localStorage la primera vez que se lea.
+      if (parsed && typeof parsed.token === 'string' && parsed.token.trim()) {
+        try {
+          sessionStorage.setItem(ULTRAMSG_TOKEN_KEY, parsed.token);
+        } catch {
+          /* sessionStorage no disponible */
+        }
+        delete parsed.token;
+        try {
+          localStorage.setItem(ULTRAMSG_CONFIG_KEY, JSON.stringify(parsed));
+        } catch {
+          /* localStorage no disponible */
+        }
+      }
+
+      baseConfig = { ...baseConfig, ...parsed, token: '' };
     }
   } catch (e) {
     console.warn('Error reading UltraMsg config', e);
   }
-  return DEFAULT_ULTRAMSG_CONFIG;
+
+  // Leer token desde sessionStorage
+  try {
+    const sessionToken = sessionStorage.getItem(ULTRAMSG_TOKEN_KEY);
+    if (sessionToken) {
+      baseConfig.token = sessionToken;
+    }
+  } catch (e) {
+    console.warn('Error reading UltraMsg token from sessionStorage', e);
+  }
+
+  return baseConfig;
 }
 
 export function saveUltraMsgConfig(config: Partial<UltraMsgConfig>): UltraMsgConfig {
   const current = getUltraMsgConfig();
   const updated = { ...current, ...config };
+
+  // Guardar token exclusivamente en sessionStorage
   try {
-    localStorage.setItem(ULTRAMSG_CONFIG_KEY, JSON.stringify(updated));
+    if (typeof updated.token === 'string') {
+      sessionStorage.setItem(ULTRAMSG_TOKEN_KEY, updated.token);
+    }
   } catch (e) {
-    console.error('Error saving UltraMsg config', e);
+    console.error('Error saving UltraMsg token to sessionStorage', e);
   }
+
+  // Guardar el resto de la configuración en localStorage SIN el token
+  try {
+    const { token: _omittedToken, ...configWithoutToken } = updated;
+    localStorage.setItem(ULTRAMSG_CONFIG_KEY, JSON.stringify(configWithoutToken));
+  } catch (e) {
+    console.error('Error saving UltraMsg config to localStorage', e);
+  }
+
   return updated;
 }
 
@@ -68,14 +112,39 @@ export interface WhatsAppDispatchRecord {
 }
 
 export function getWhatsAppHistory(): WhatsAppDispatchRecord[] {
+  let legacyHistory: WhatsAppDispatchRecord[] | null = null;
+
+  // Migración: si hay historial previo en localStorage, leerlo y borrar la clave vieja
   try {
-    const saved = localStorage.getItem(WHATSAPP_HISTORY_KEY);
-    if (saved) {
-      return JSON.parse(saved);
+    const legacySaved = localStorage.getItem(WHATSAPP_HISTORY_KEY);
+    if (legacySaved) {
+      legacyHistory = JSON.parse(legacySaved);
+      localStorage.removeItem(WHATSAPP_HISTORY_KEY);
     }
   } catch (e) {
-    console.warn('Error reading WhatsApp history', e);
+    console.warn('Error migrating legacy WhatsApp history from localStorage', e);
   }
+
+  try {
+    const saved = sessionStorage.getItem(WHATSAPP_HISTORY_KEY);
+    if (saved) {
+      const parsed: WhatsAppDispatchRecord[] = JSON.parse(saved);
+      return parsed.slice(0, 50);
+    }
+    // Si no había en sessionStorage pero se migró de localStorage, guardar y devolver hasta 50
+    if (legacyHistory && Array.isArray(legacyHistory)) {
+      const trimmed = legacyHistory.slice(0, 50);
+      try {
+        sessionStorage.setItem(WHATSAPP_HISTORY_KEY, JSON.stringify(trimmed));
+      } catch {
+        /* sessionStorage no disponible */
+      }
+      return trimmed;
+    }
+  } catch (e) {
+    console.warn('Error reading WhatsApp history from sessionStorage', e);
+  }
+
   return [];
 }
 
@@ -83,9 +152,9 @@ export function addWhatsAppHistoryRecord(record: WhatsAppDispatchRecord): void {
   try {
     const history = getWhatsAppHistory();
     history.unshift(record);
-    localStorage.setItem(WHATSAPP_HISTORY_KEY, JSON.stringify(history.slice(0, 50)));
+    sessionStorage.setItem(WHATSAPP_HISTORY_KEY, JSON.stringify(history.slice(0, 50)));
   } catch (e) {
-    console.error('Error saving WhatsApp history record', e);
+    console.error('Error saving WhatsApp history record to sessionStorage', e);
   }
 }
 

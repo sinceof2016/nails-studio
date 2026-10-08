@@ -4,6 +4,7 @@
  */
 
 import { lazy, Suspense, useState, useEffect, useRef, useMemo } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
 import { Header } from './components/Header';
 import { Toast } from './components/Toast';
 import { LoginModal } from './components/LoginModal';
@@ -45,8 +46,10 @@ import {
 import {
   getActiveUser,
   touchSession,
-  getActiveSession
+  getActiveSession,
+  clearSession
 } from './services/sessionManager';
+import { auth } from './firebase';
 import { SERVICES, INITIAL_SERVICE_CATEGORIES, SPECIALISTS, withBrandPhoto } from './data/mockData';
 import { STORAGE_KEYS } from './config/storageKeys';
 import { addUnique } from './utils/collections';
@@ -616,6 +619,20 @@ export default function App() {
     currentUser,
     showToast
   });
+
+  // Validar sesión del panel contra Firebase Auth
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (!firebaseUser && currentUser) {
+        clearSession();
+        setCurrentUser(null);
+        setCurrentTab('reservar');
+        showToast('Tu sesión ya no es válida. Ingresa nuevamente.');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [currentUser]);
 
   // Handlers
   const handleQuickBook = (service: Service) => {
